@@ -11,6 +11,8 @@ ee_exports_*
 log.txt
 .~lock.*
 
+\sheets\*
+
 NaN_errors*
 illegal_SC*
 illegal_sc*
@@ -126,3 +128,4 @@ local.properties
 .cache-main
 .scala_dependencies
 .worksheet
+/sheets/

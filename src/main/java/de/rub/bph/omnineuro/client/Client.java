@@ -1,6 +1,8 @@
 package de.rub.bph.omnineuro.client;
 
+import de.rub.bph.omnineuro.client.imported.log.Log;
 import de.rub.bph.omnineuro.client.ui.DialogFrame;
+import de.rub.bph.omnineuro.client.ui.OmniFrame;
 
 import javax.swing.*;
 import java.awt.*;
@@ -29,7 +31,8 @@ public class Client {
 						| IllegalAccessException e) {
 					e.printStackTrace();
 				}
-				System.out.println("Database client started!");
+				Log.i("Initialling Client Frame");
+				new OmniFrame();
 			}
 		});
 	}

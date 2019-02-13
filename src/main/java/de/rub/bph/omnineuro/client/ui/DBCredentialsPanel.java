@@ -14,7 +14,7 @@ public class DBCredentialsPanel extends JPanel {
 	private JPanel holderPL;
 
 	private ArrayList<DBCredentialsActionListener> credentialListenerList;
-	private ArrayList<DBTextListener> actionListenerList;
+	private ArrayList<DBTextListener> textListenerList;
 
 	public DBCredentialsPanel() {
 		hostnameTF.addActionListener(actionEvent -> onAction());
@@ -108,22 +108,38 @@ public class DBCredentialsPanel extends JPanel {
 		});
 
 		credentialListenerList = new ArrayList<>();
-		actionListenerList = new ArrayList<>();
+		textListenerList = new ArrayList<>();
+	}
+
+	public String getHostname() {
+		return hostnameTF.getText();
+	}
+
+	public String getPort() {
+		return portTF.getText();
+	}
+
+	public String getDatabaseName() {
+		return DBNameTF.getText();
+	}
+
+	public String getUserName() {
+		return usernameTF.getText();
+	}
+
+	public String getPassword() {
+		return String.valueOf(PWTF.getPassword());
 	}
 
 	private void onAction() {
 		for (DBCredentialsActionListener listener : credentialListenerList) {
 			listener.onAction();
 		}
-
-		for (DBCredentialsActionListener listener : credentialListenerList) {
-			listener.onAction();
-		}
 	}
 
 	private void onTextChange() {
-		for (DBTextListener listener : actionListenerList) {
-			listener.onTextChange();
+		for (DBTextListener listener : textListenerList) {
+			listener.onTextChange(getHostname(), getPort(), getDatabaseName(), getUserName(), getPassword());
 		}
 	}
 
@@ -131,8 +147,8 @@ public class DBCredentialsPanel extends JPanel {
 		credentialListenerList.add(listener);
 	}
 
-	public void addActionListener(DBTextListener listener) {
-		actionListenerList.add(listener);
+	public void addTextListener(DBTextListener listener) {
+		textListenerList.add(listener);
 	}
 
 	public void setData(DBCredentialsPanel data) {
@@ -150,7 +166,7 @@ public class DBCredentialsPanel extends JPanel {
 	}
 
 	public static interface DBTextListener {
-		public void onTextChange();
+		public void onTextChange(String hostname, String port, String databaseName, String username, String password);
 	}
 }
 
