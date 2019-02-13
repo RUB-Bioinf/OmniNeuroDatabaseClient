@@ -3,19 +3,20 @@ package de.rub.bph.omnineuro.client.core.sheet.reader;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.util.CellReference;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.File;
+import java.io.IOException;
 
-public class SheetReader {
+public abstract class SheetReader {
 
-	protected File source;
 	protected Sheet sheet;
 
-	public SheetReader(File source) {
-		this.source = source;
+	public SheetReader(Workbook workbook, String sheetName) throws IOException {
+		sheet = workbook.getSheet(sheetName);
+		workbook.close();
 	}
 
 	public Sheet getSheet() {
@@ -30,21 +31,17 @@ public class SheetReader {
 		CellReference cellReference = new CellReference(cellName);
 		Row row = sheet.getRow(cellReference.getRow());
 		if (row == null) {
-			throw new SheetReaderException("(row is null)-Error fetching cell data at " + cellName + " in " + source.getAbsolutePath()
-					+ " Looks like the row is not available!");
+			throw new SheetReaderException("(row is null)-Error fetching cell data at " + cellName + "! Looks like the row is not available!");
 		}
 
 		Cell cell = row.getCell(cellReference.getCol());
 		if (cell == null) {
-			throw new SheetReaderException("(cell is null)-Error fetching cell data at " + cellName + " in "
-					+ source.getAbsolutePath() + " Looks like the cell is empty!");
-			// error in
-			// X:\bioinfdata\work\datenstruktur_iuf\VIP\experiments\Arbeitspakete\4.2\auswertung_debug\Migration\Human\BMBF_JB-V109_VPA_692_M72.xlsx
+			throw new SheetReaderException("(cell is null)-Error fetching cell data at " + cellName + "! Looks like the cell is empty!");
 		}
 
 		switch (cell.getCellTypeEnum()) {
 			case ERROR:
-				throw new SheetReaderException("Error field at " + source.getAbsolutePath() + " in " + cellName);
+				throw new SheetReaderException("Error in cell " + cellName);
 			case NUMERIC:
 				return String.valueOf(cell.getNumericCellValue());
 			case STRING:
@@ -61,18 +58,19 @@ public class SheetReader {
 				return "";
 
 			default:
-				throw new SheetReaderException("Unexpected cell type ('" + cell.getCellTypeEnum().toString() + "') for "
-						+ source.getAbsolutePath() + " at " + cellName + "!");
+				throw new SheetReaderException("Unexpected cell type ('" + cell.getCellTypeEnum().toString() + "') at " + cellName + "!");
 		}
+	}
+
+	public abstract JSONObject readSheet() throws JSONException, SheetReaderException;
+
+	public void addRowPair(JSONObject data, int line) throws SheetReaderException, JSONException {
+		data.put(getValueAt("A" + line), getValueAt("B" + line));
 	}
 
 	public class SheetReaderException extends Exception {
 		public SheetReaderException(String s) {
 			super(s);
 		}
-	}
-
-	public void addRowPair(JSONObject data,int line) throws SheetReaderException, JSONException {
-		data.put(getValueAt("A"+line),getValueAt("B"+line));
 	}
 }

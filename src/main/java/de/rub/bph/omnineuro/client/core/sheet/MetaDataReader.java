@@ -4,16 +4,14 @@ import de.rub.bph.omnineuro.client.core.sheet.reader.SheetReader;
 import de.rub.bph.omnineuro.client.imported.filemanager.FileManager;
 import de.rub.bph.omnineuro.client.imported.log.Log;
 import org.apache.poi.ss.usermodel.Workbook;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 
-public class ReaderManager extends SheetReader {
+public class MetaDataReader extends SheetReader {
 
 	public static final String JSON_METADATA_TYPE_CONTROLS = "Controls";
 	public static final String JSON_METADATA_TYPE_COMMENTS = "Comments";
@@ -25,19 +23,12 @@ public class ReaderManager extends SheetReader {
 	public static final String JSON_EXTRACTION_ENTRY_DATA = "Data";
 	public static final String JSON_EXTRACTION_ENTRY_DATA_COUNT = JSON_EXTRACTION_ENTRY_DATA + "Count";
 
-	public ReaderManager(File source, String name) throws IOException {
-		super(source);
-		Log.i("Preparing workbook: " + source.getAbsolutePath() + ", page: '" + name + "'.");
-
-		FileInputStream excelFile = new FileInputStream(source);
-		Workbook workbook = new XSSFWorkbook(excelFile);
-		sheet = workbook.getSheet(name);
-		workbook.close();
-
-		setSheet(sheet);
-		Log.i("Workbook prepared without problems.");
+	public MetaDataReader(Workbook workbook, String name) throws IOException {
+		super(workbook, name);
+		Log.i("Prepared Metadata sheet.");
 	}
 
+	@Override
 	public JSONObject readSheet() throws JSONException, SheetReaderException {
 		FileManager fileManager = new FileManager();
 		JSONObject data = new JSONObject();
@@ -59,7 +50,6 @@ public class ReaderManager extends SheetReader {
 
 		return data;
 	}
-
 
 	public JSONObject readRows(int start, int end) throws JSONException {
 		return readRows(start, end, new JSONObject());
