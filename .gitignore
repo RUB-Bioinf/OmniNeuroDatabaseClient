@@ -8,8 +8,12 @@ ExperimentExporter.iml
 db_credentials.xml
 endpoint_overview.csv
 ee_exports_*
-log.txt
 .~lock.*
+
+/sheets/
+/log/
+/cache/
+/json/
 
 \sheets\*
 
@@ -128,4 +132,3 @@ local.properties
 .cache-main
 .scala_dependencies
 .worksheet
-/sheets/

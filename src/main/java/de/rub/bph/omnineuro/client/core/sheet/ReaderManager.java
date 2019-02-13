@@ -1,6 +1,7 @@
 package de.rub.bph.omnineuro.client.core.sheet;
 
 import de.rub.bph.omnineuro.client.core.sheet.reader.SheetReader;
+import de.rub.bph.omnineuro.client.imported.filemanager.FileManager;
 import de.rub.bph.omnineuro.client.imported.log.Log;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -13,6 +14,16 @@ import java.io.FileInputStream;
 import java.io.IOException;
 
 public class ReaderManager extends SheetReader {
+
+	public static final String JSON_METADATA_TYPE_CONTROLS = "Controls";
+	public static final String JSON_METADATA_TYPE_COMMENTS = "Comments";
+	public static final String JSON_METADATA_TYPE_OPERATION_PROCEDURES = "OperationProcedures";
+	public static final String JSON_METADATA_TYPE_REAGENTS = "Reagents";
+
+	public static final String JSON_EXTRACTION_ENTRY_ERRORS = "Errors";
+	public static final String JSON_EXTRACTION_ENTRY_ERRORS_COUNT = JSON_EXTRACTION_ENTRY_ERRORS + "Count";
+	public static final String JSON_EXTRACTION_ENTRY_DATA = "Data";
+	public static final String JSON_EXTRACTION_ENTRY_DATA_COUNT = JSON_EXTRACTION_ENTRY_DATA + "Count";
 
 	public ReaderManager(File source, String name) throws IOException {
 		super(source);
@@ -28,22 +39,23 @@ public class ReaderManager extends SheetReader {
 	}
 
 	public JSONObject readSheet() throws JSONException, SheetReaderException {
+		FileManager fileManager = new FileManager();
 		JSONObject data = new JSONObject();
 
 		data.put("CompoundCount", getValueAt("B32"));
 
 		try {
-			data.put("Controls", readRows(51, 53));
-			data.put("Reagents", readRows(56, 77));
-			data.put("OperationProcedures", readRows(81, 88));
-			data.put("Comments", getValueAt("A90"));
+			data.put(JSON_METADATA_TYPE_CONTROLS, readRows(51, 53));
+			data.put(JSON_METADATA_TYPE_REAGENTS, readRows(56, 77));
+			data.put(JSON_METADATA_TYPE_OPERATION_PROCEDURES, readRows(81, 88));
+			data.put(JSON_METADATA_TYPE_COMMENTS, getValueAt("A90"));
 		} catch (Exception e) {
 			Log.e("Failed to generate Control JSON!", e);
 		}
 
 		JSONObject metaData = readRows(1, 24);
 		metaData = readRows(26, 30, metaData);
-		data.put("Values", metaData);
+		data.put("General", metaData);
 
 		return data;
 	}
@@ -57,13 +69,13 @@ public class ReaderManager extends SheetReader {
 		JSONArray errors;
 		JSONObject data;
 
-		if (input.has("Errors")) {
-			errors = input.getJSONArray("Errors");
+		if (input.has(JSON_EXTRACTION_ENTRY_ERRORS)) {
+			errors = input.getJSONArray(JSON_EXTRACTION_ENTRY_ERRORS);
 		} else {
 			errors = new JSONArray();
 		}
-		if (input.has("Data")) {
-			data = input.getJSONObject("Data");
+		if (input.has(JSON_EXTRACTION_ENTRY_DATA)) {
+			data = input.getJSONObject(JSON_EXTRACTION_ENTRY_DATA);
 		} else {
 			data = new JSONObject();
 		}
@@ -76,10 +88,12 @@ public class ReaderManager extends SheetReader {
 			}
 		}
 
-		input.put("Data", data);
-		input.put("ErrorCount", errors.length());
-		input.put("DataCount", data.length());
-		input.put("Errors", errors);
+		data.remove("");
+
+		input.put(JSON_EXTRACTION_ENTRY_DATA, data);
+		input.put(JSON_EXTRACTION_ENTRY_ERRORS_COUNT, errors.length());
+		input.put(JSON_EXTRACTION_ENTRY_DATA_COUNT, data.length());
+		input.put(JSON_EXTRACTION_ENTRY_ERRORS, errors);
 		return input;
 	}
 

@@ -1,5 +1,7 @@
 package de.rub.bph.omnineuro.client.imported.log;
 
+import de.rub.bph.omnineuro.client.imported.filemanager.FileManager;
+
 import java.io.*;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -127,7 +129,9 @@ public abstract class Log {
 	}
 
 	public static File getLogFile() {
-		return new File("log.txt"); //TODO replace with your own log file
+		File dir = new FileManager().getLogDir();
+		String dateTag = new SimpleDateFormat("MM-dd").format(new Date());
+		return new File(dir, dateTag+"-log.txt");
 	}
 
 	public enum LogLevel {
