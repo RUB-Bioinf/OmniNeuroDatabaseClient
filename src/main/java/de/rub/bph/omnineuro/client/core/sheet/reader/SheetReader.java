@@ -28,6 +28,10 @@ public abstract class SheetReader {
 	}
 
 	public String getValueAt(String cellName) throws SheetReaderException {
+		return getValueAt(cellName, true);
+	}
+
+	public String getValueAt(String cellName, boolean forceNumeric) throws SheetReaderException {
 		CellReference cellReference = new CellReference(cellName);
 		Row row = sheet.getRow(cellReference.getRow());
 		if (row == null) {
@@ -36,7 +40,9 @@ public abstract class SheetReader {
 
 		Cell cell = row.getCell(cellReference.getCol());
 		if (cell == null) {
-			throw new SheetReaderException("(cell is null)-Error fetching cell data at " + cellName + "! Looks like the cell is empty!");
+			if (forceNumeric) {
+				throw new SheetReaderException("(cell is null)-Error fetching cell data at " + cellName + "! Looks like the cell is empty!");
+			} else return "";
 		}
 
 		switch (cell.getCellTypeEnum()) {
@@ -47,18 +53,46 @@ public abstract class SheetReader {
 			case STRING:
 				return cell.getStringCellValue();
 			case FORMULA:
-				try {
-					return String.valueOf(cell.getNumericCellValue());
-				} catch (Exception e) {
-					// e.printStackTrace();
-
-					return "NaN";
+				if (forceNumeric) {
+					try {
+						return String.valueOf(cell.getNumericCellValue());
+					} catch (Exception e) {
+						return "NaN";
+					}
+				} else {
+					try {
+						return cell.getStringCellValue();
+					} catch (Exception e) {
+						throw new SheetReaderException("Cannot get a STRING value from a ERROR formula cell at " + cellName + "!");
+					}
 				}
 			case BLANK:
 				return "";
 
 			default:
 				throw new SheetReaderException("Unexpected cell type ('" + cell.getCellTypeEnum().toString() + "') at " + cellName + "!");
+		}
+	}
+
+	/**
+	 * Credits go to:
+	 * https://stackoverflow.com/questions/10813154/how-do-i-convert-a-number-to-a-letter-in-java
+	 *
+	 * @param index The column index
+	 * @return The column name
+	 */
+	public String getExcelColumn(int index) {
+		if (index < 0) {
+			return "-" + getExcelColumn(-index - 1);
+		}
+
+		int quot = index / 26;
+		int rem = index % 26;
+		char letter = (char) ((int) 'A' + rem);
+		if (quot == 0) {
+			return "" + letter;
+		} else {
+			return getExcelColumn(quot - 1) + letter;
 		}
 	}
 

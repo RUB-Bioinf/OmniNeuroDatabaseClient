@@ -2,6 +2,7 @@ package de.rub.bph.omnineuro.client.ui;
 
 import de.rub.bph.omnineuro.client.Client;
 import de.rub.bph.omnineuro.client.core.sheet.MetaDataReader;
+import de.rub.bph.omnineuro.client.core.sheet.reader.ExperimentDataReader;
 import de.rub.bph.omnineuro.client.imported.filemanager.FileManager;
 import de.rub.bph.omnineuro.client.imported.log.Log;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -20,6 +21,9 @@ public class OmniFrame extends JFrame implements DBCredentialsPanel.DBTextListen
 	public static final int JSON_ROW_SPACES = 4;
 	public static final String JSON_ENTRY_METADATA = "MetaData";
 	public static final String JSON_ENTRY_SOURCEFILE = "SourceFile";
+	public static final String EXCEL_SHEET_SUBNAME_METADATA = "exp. protocol";
+	public static final String EXCEL_SHEET_SUBNAME_EXPERIMENT_DATA = "DB import";
+	private static final String JSON_ENTRY_EXPERIMENTDATA = "ExperimentData";
 	private JPanel rootPanel;
 	private DBCredentialsPanel DBCredentialsPanel1;
 	private JButton button1;
@@ -27,12 +31,7 @@ public class OmniFrame extends JFrame implements DBCredentialsPanel.DBTextListen
 	public OmniFrame() {
 		add(rootPanel);
 
-		button1.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent actionEvent) {
-				testDBReader();
-			}
-		});
+		button1.addActionListener(actionEvent -> testDBReader());
 
 		DBCredentialsPanel1.addActionListener(this);
 		DBCredentialsPanel1.addTextListener(this);
@@ -50,19 +49,21 @@ public class OmniFrame extends JFrame implements DBCredentialsPanel.DBTextListen
 		Log.i("Testing DB Reader.");
 		File f = new File("sheets\\NPC2-5_layout_24JAN18.xlsx");
 
-		readSheet(f, "exp. protocol", 4);
+		readSheet(f);
 	}
 
-	public void readSheet(File file, String sheetName, int threads) {
+	public boolean readSheet(File file) {
 		Workbook workbook = null;
-		Log.i("Reading Excel file: "+file.getAbsolutePath());
+		JSONObject experiment = new JSONObject();
+
+		Log.i("Reading Excel file: " + file.getAbsolutePath());
 		try {
 			FileInputStream excelFile = new FileInputStream(file);
 			Log.i("File read. Interpreting it now.");
 			workbook = new XSSFWorkbook(excelFile);
 		} catch (IOException e) {
 			Log.e(e);
-			return;
+			return false;
 		}
 		Log.i("Interpretation complete.");
 
@@ -72,22 +73,32 @@ public class OmniFrame extends JFrame implements DBCredentialsPanel.DBTextListen
 		MetaDataReader metaDataReader = null;
 		FileManager fileManager = new FileManager();
 		try {
-			metaDataReader = new MetaDataReader(workbook, sheetName);
+			metaDataReader = new MetaDataReader(workbook, EXCEL_SHEET_SUBNAME_METADATA);
 		} catch (IOException e) {
 			Log.e(e);
-			return;
+			return false;
 		}
 
-		JSONObject experiment = new JSONObject();
+		// EXPERIMENT DATA
+
+		Log.i("Starting up experiment data instructions!");
+		ExperimentDataReader experimentDataReader = null;
+		try {
+			experimentDataReader = new ExperimentDataReader(workbook, EXCEL_SHEET_SUBNAME_EXPERIMENT_DATA, new JSONObject());
+		} catch (IOException e) {
+			Log.e(e);
+			return false;
+		}
+
 		try {
 			experiment.put(JSON_ENTRY_METADATA, metaDataReader.readSheet());
+			experiment.put(JSON_ENTRY_EXPERIMENTDATA, experimentDataReader.readSheet());
 			experiment.put(JSON_ENTRY_SOURCEFILE, file.getAbsolutePath());
 		} catch (Exception e) {
 			e.printStackTrace();
 			Log.e("FATAL ERROR! Failed to resolve meta data!", e);
-			return;
+			return false;
 		}
-		Log.i("Experiment data read: " + experiment.toString());
 
 		File outFile = new File(fileManager.getJSONOutDir(), file.getName().replace(".xlsx", "") + ".json");
 		Log.i("Writing file to: " + outFile.getAbsolutePath());
@@ -96,6 +107,9 @@ public class OmniFrame extends JFrame implements DBCredentialsPanel.DBTextListen
 		} catch (IOException | JSONException e) {
 			e.printStackTrace();
 		}
+		Log.i("Experiment data read: " + experiment.toString());
+
+		return true;
 	}
 
 	@Override
