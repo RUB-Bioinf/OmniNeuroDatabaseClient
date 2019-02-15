@@ -1,11 +1,24 @@
 package de.rub.bph.omnineuro.client.ui;
 
+import de.rub.bph.omnineuro.client.imported.filemanager.FileManager;
+import de.rub.bph.omnineuro.client.imported.log.Log;
+import org.w3c.dom.Document;
+import org.xml.sax.SAXException;
+
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 
 public class DBCredentialsPanel extends JPanel {
+
+	public static final String FILENAME_DB_CREDENTIALS = "db_credentials.xml";
+
 	private JTextField hostnameTF;
 	private JTextField portTF;
 	private JTextField DBNameTF;
@@ -109,6 +122,44 @@ public class DBCredentialsPanel extends JPanel {
 
 		credentialListenerList = new ArrayList<>();
 		textListenerList = new ArrayList<>();
+
+		File credentialsFile = getCredentialsFile();
+		if (credentialsFile.exists()) {
+			try {
+				readCredentialFile(credentialsFile);
+			} catch (ParserConfigurationException | IOException | SAXException e) {
+				Log.e("Failed to read provided credential file: " + credentialsFile.getAbsolutePath(), e);
+			}
+		} else {
+			Log.e("DB Credentials file not found. You could add your own if it had this path: " + credentialsFile.getAbsolutePath());
+		}
+	}
+
+	public static File getCredentialsFile() {
+		FileManager manager = new FileManager();
+		return new File(manager.getExternalDir(), FILENAME_DB_CREDENTIALS);
+	}
+
+	private void readCredentialFile(File credentialsFile) throws ParserConfigurationException, IOException, SAXException {
+		DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
+		DocumentBuilder documentBuilder = documentBuilderFactory.newDocumentBuilder();
+		Document document = documentBuilder.parse(credentialsFile);
+
+		extractCredential(document, "Location", hostnameTF);
+		extractCredential(document, "Port", portTF);
+		extractCredential(document, "DBName", DBNameTF);
+		extractCredential(document, "Username", usernameTF);
+		extractCredential(document, "Password", PWTF);
+	}
+
+	private void extractCredential(Document document, String tag, JTextField textField) {
+		try {
+			String location = document.getElementsByTagName(tag).item(0).getTextContent();
+			textField.setText(location);
+			Log.i("Extracted field '" + tag + "' from credentials without problems!");
+		} catch (Exception e) {
+			Log.e(e);
+		}
 	}
 
 	public String getHostname() {
@@ -151,22 +202,16 @@ public class DBCredentialsPanel extends JPanel {
 		textListenerList.add(listener);
 	}
 
-	public void setData(DBCredentialsPanel data) {
-	}
-
-	public void getData(DBCredentialsPanel data) {
-	}
-
 	public boolean isModified(DBCredentialsPanel data) {
 		return false;
 	}
 
-	public static interface DBCredentialsActionListener {
-		public void onAction();
+	public interface DBCredentialsActionListener {
+		void onAction();
 	}
 
-	public static interface DBTextListener {
-		public void onTextChange(String hostname, String port, String databaseName, String username, String password);
+	public interface DBTextListener {
+		void onTextChange(String hostname, String port, String databaseName, String username, String password);
 	}
 }
 
