@@ -11,8 +11,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import javax.swing.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -25,16 +23,17 @@ public class OmniFrame extends JFrame implements DBCredentialsPanel.DBTextListen
 	public static final String EXCEL_SHEET_SUBNAME_EXPERIMENT_DATA = "DB import";
 	private static final String JSON_ENTRY_EXPERIMENTDATA = "ExperimentData";
 	private JPanel rootPanel;
-	private DBCredentialsPanel DBCredentialsPanel1;
+	private DBCredentialsPanel DBCredentialsPanel;
 	private JButton button1;
+	private FolderChooserPanel folderChooserPanel1;
 
 	public OmniFrame() {
 		add(rootPanel);
 
 		button1.addActionListener(actionEvent -> testDBReader());
 
-		DBCredentialsPanel1.addActionListener(this);
-		DBCredentialsPanel1.addTextListener(this);
+		DBCredentialsPanel.addActionListener(this);
+		DBCredentialsPanel.addTextListener(this);
 
 		setTitle("OmniNeuro [Release " + Client.VERSION + "]");
 		setDefaultCloseOperation(EXIT_ON_CLOSE);

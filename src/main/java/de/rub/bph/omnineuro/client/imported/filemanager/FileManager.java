@@ -27,7 +27,7 @@ public class FileManager {
 	public FileManager() {
 	}
 
-	public static String readFile(File file) throws IOException {
+	public String readFile(File file) throws IOException {
 		StringBuilder builder = new StringBuilder();
 		BufferedReader br = new BufferedReader(new FileReader(file));
 		for (String line; (line = br.readLine()) != null; ) {
