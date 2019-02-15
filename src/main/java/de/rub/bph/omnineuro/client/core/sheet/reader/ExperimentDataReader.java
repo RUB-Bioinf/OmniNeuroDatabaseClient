@@ -3,6 +3,7 @@ package de.rub.bph.omnineuro.client.core.sheet.reader;
 import de.rub.bph.omnineuro.client.core.sheet.data.EndpointHeader;
 import de.rub.bph.omnineuro.client.imported.log.Log;
 import org.apache.poi.ss.usermodel.Workbook;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -27,20 +28,26 @@ public class ExperimentDataReader extends SheetReader {
 		Log.i("Endpoint count: " + endpointHeaders.size());
 		Log.i("Endpoints: " + endpointHeaders);
 
+		JSONObject endpoints = new JSONObject();
 		for (EndpointHeader header : endpointHeaders) {
-			readEndpointValues(header);
+			String name = header.getName();
+			JSONObject values = readEndpointValues(header);
+			endpoints.put(name, values);
 		}
 
+		data.put("Endpoints", endpoints);
 		return data;
 	}
 
-	public void readEndpointValues(EndpointHeader header) throws SheetReaderException {
+	public JSONObject readEndpointValues(EndpointHeader header) throws SheetReaderException, JSONException {
+		JSONObject data = new JSONObject();
+
 		String column = getExcelColumn(header.getColumnIndex());
 		int expectedValues = header.getExpectedValues();
 		Log.i("Reading endpoint data for header: '" + header.getName() + "' in col: " + column);
 
 		int replicate = 0;
-		String lastConcentration="";
+		String lastConcentration = "";
 
 		for (int i = 3; i < 3 + expectedValues; i++) {
 			String value;
@@ -48,16 +55,17 @@ public class ExperimentDataReader extends SheetReader {
 
 			String currentConcentration;
 			try {
-				currentConcentration = getValueAt("A"+i,false);;
+				currentConcentration = getValueAt("A" + i, false);
+				;
 			} catch (SheetReaderException e) {
 				//TODO remove try catch and let this operation fail!
 				currentConcentration = "#NV";
 			}
 
-			if (!currentConcentration.equals(lastConcentration)){
-				lastConcentration=currentConcentration;
-				replicate=0;
-			}else{
+			if (!currentConcentration.equals(lastConcentration)) {
+				lastConcentration = currentConcentration;
+				replicate = 0;
+			} else {
 				replicate++;
 			}
 
@@ -68,8 +76,15 @@ public class ExperimentDataReader extends SheetReader {
 				//TODO handle exception
 				value = "NaN";
 			}
-			Log.i("Reading cell " + cell + ": " + value+". Conc: "+currentConcentration+", Replicate: "+replicate);
+			Log.i("Reading cell " + cell + ": " + value + ". Conc: " + currentConcentration + ", Replicate: " + replicate);
+
+			if (!data.has(currentConcentration)) data.put(currentConcentration, new JSONArray());
+			JSONArray array = data.getJSONArray(currentConcentration);
+			array.put(value);
+			data.put(currentConcentration, array);
 		}
+
+		return data;
 	}
 
 	public ArrayList<EndpointHeader> readEndpoints() throws SheetReaderException, NumberFormatException {
