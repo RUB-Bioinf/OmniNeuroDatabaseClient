@@ -37,23 +37,6 @@ public class Client {
 		});
 	}
 
-	public static synchronized void saveListFile(ArrayList<String> list, File outFile) throws IOException {
-		saveListFile(list, outFile, true);
-	}
-
-	public static synchronized void saveListFile(ArrayList<String> list, File outFile, boolean sort) throws IOException {
-		ArrayList<String> outList = new ArrayList<>(list);
-		if (sort) Collections.sort(outList);
-
-		BufferedWriter writer = new BufferedWriter(new FileWriter(outFile));
-		for (String s : outList) {
-			writer.write(s);
-			writer.newLine();
-		}
-		writer.close();
-		System.out.println("Saved a list file with " + outList.size() + " entries to " + outFile.getAbsolutePath());
-	}
-
 	public static void showInfoMessage(String message, Component parent) {
 		System.out.println("Info-Message displayed: '" + cropString(message) + "'");
 		JOptionPane.showMessageDialog(parent, message, "Information", JOptionPane.INFORMATION_MESSAGE);

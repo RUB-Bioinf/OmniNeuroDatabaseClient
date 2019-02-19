@@ -6,8 +6,7 @@ import de.rub.bph.omnineuro.client.imported.log.Log;
 import java.awt.*;
 import java.io.*;
 import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.Date;
+import java.util.*;
 
 public class FileManager {
 
@@ -95,6 +94,22 @@ public class FileManager {
 			return false;
 		}
 		return true;
+	}
+
+	public void saveListFile(Collection<String> list, File outFile) throws IOException {
+		saveListFile(list, outFile, false);
+	}
+
+	public void saveListFile(Collection<String> list, File outFile, boolean sort) throws IOException {
+		ArrayList<String> outList = new ArrayList<>(list);
+		if (sort) Collections.sort(outList);
+
+		StringBuilder builder = new StringBuilder();
+		for (String s : outList) {
+			builder.append(s);
+			builder.append("\n");
+		}
+		writeFile(outFile, builder.toString().trim());
 	}
 
 	public boolean createDirectory(File f) {

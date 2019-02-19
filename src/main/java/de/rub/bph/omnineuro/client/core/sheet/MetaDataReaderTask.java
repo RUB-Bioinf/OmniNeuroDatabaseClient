@@ -1,6 +1,6 @@
 package de.rub.bph.omnineuro.client.core.sheet;
 
-import de.rub.bph.omnineuro.client.core.sheet.reader.SheetReader;
+import de.rub.bph.omnineuro.client.core.sheet.reader.SheetReaderTask;
 import de.rub.bph.omnineuro.client.imported.filemanager.FileManager;
 import de.rub.bph.omnineuro.client.imported.log.Log;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -8,10 +8,9 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.File;
 import java.io.IOException;
 
-public class MetaDataReader extends SheetReader {
+public class MetaDataReaderTask extends SheetReaderTask {
 
 	public static final String JSON_METADATA_TYPE_CONTROLS = "Controls";
 	public static final String JSON_METADATA_TYPE_COMMENTS = "Comments";
@@ -23,7 +22,7 @@ public class MetaDataReader extends SheetReader {
 	public static final String JSON_EXTRACTION_ENTRY_DATA = "Data";
 	public static final String JSON_EXTRACTION_ENTRY_DATA_COUNT = JSON_EXTRACTION_ENTRY_DATA + "Count";
 
-	public MetaDataReader(Workbook workbook, String name) throws IOException {
+	public MetaDataReaderTask(Workbook workbook, String name) throws IOException {
 		super(workbook, name);
 		Log.i("Prepared Metadata sheet.");
 	}

@@ -10,11 +10,11 @@ import org.json.JSONObject;
 import java.io.IOException;
 import java.util.ArrayList;
 
-public class ExperimentDataReader extends SheetReader {
+public class ExperimentDataReaderTask extends SheetReaderTask {
 
 	private JSONObject concentrations;
 
-	public ExperimentDataReader(Workbook workbook, String sheetName, JSONObject concentrations) throws IOException {
+	public ExperimentDataReaderTask(Workbook workbook, String sheetName, JSONObject concentrations) throws IOException {
 		super(workbook, sheetName);
 		this.concentrations = concentrations;
 		Log.i("Finished setting up experiment Data reader.");
