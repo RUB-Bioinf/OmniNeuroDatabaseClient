@@ -60,4 +60,8 @@ public class OmniFrame extends JFrame implements DBCredentialsPanel.DBTextListen
 	public void onTextChange(String hostname, String port, String databaseName, String username, String password) {
 		Log.v("DB Credentials changed. [IP: '" + hostname + "', Port: '" + port + "', DB: '" + databaseName + "', Username: '" + username + "', PW: '" + password + "']");
 	}
+
+	private void createUIComponents() {
+		folderChooserPanel1 = new FolderChooserPanel(new File(FolderChooserPanel.CACHE_FILENAME), "Source directory: ");
+	}
 }

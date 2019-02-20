@@ -10,18 +10,18 @@
     <children>
       <nested-form id="f7624" form-file="de/rub/bph/omnineuro/client/ui/DBCredentialsPanel.form" binding="DBCredentialsPanel">
         <constraints>
-          <grid row="0" column="0" row-span="1" col-span="2" vsize-policy="7" hsize-policy="7" anchor="1" fill="1" indent="0" use-parent-layout="false"/>
+          <grid row="0" column="0" row-span="1" col-span="2" vsize-policy="3" hsize-policy="7" anchor="1" fill="1" indent="0" use-parent-layout="false"/>
         </constraints>
       </nested-form>
       <component id="351c1" class="javax.swing.JButton" binding="button1" default-binding="true">
         <constraints>
-          <grid row="3" column="0" row-span="1" col-span="2" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+          <grid row="3" column="0" row-span="1" col-span="2" vsize-policy="7" hsize-policy="7" anchor="0" fill="0" indent="0" use-parent-layout="false"/>
         </constraints>
         <properties>
           <text value="Start import!"/>
         </properties>
       </component>
-      <nested-form id="aa24a" form-file="de/rub/bph/omnineuro/client/ui/FolderChooserPanel.form" binding="folderChooserPanel1" default-binding="true">
+      <nested-form id="aa24a" form-file="de/rub/bph/omnineuro/client/ui/FolderChooserPanel.form" binding="folderChooserPanel1" custom-create="true" default-binding="true">
         <constraints>
           <grid row="1" column="0" row-span="1" col-span="2" vsize-policy="3" hsize-policy="7" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
         </constraints>
