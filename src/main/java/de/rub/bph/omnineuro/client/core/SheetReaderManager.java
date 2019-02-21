@@ -14,6 +14,7 @@ import java.util.concurrent.Executors;
 public class SheetReaderManager {
 
 	public static final String EXCEL_FILE_EXTENSION = "xlsx";
+	public static final String JSON_FILE_OUTDIRNAME = "json";
 	public static final String[] DEFAULT_ALLOWED_EXTENSIONS = new String[]{EXCEL_FILE_EXTENSION};
 
 	private File sourceDir;
@@ -47,10 +48,13 @@ public class SheetReaderManager {
 		}
 
 		ArrayList<SheetReader> readers = new ArrayList<>();
+		File outDir = new File(sourceDir, JSON_FILE_OUTDIRNAME);
+		outDir.mkdirs();
+
 		for (int i = 0; i < files.size(); i++) {
 			File f = files.get(i);
 			Log.i("[" + (i + 1) + "/" + count + "] Setting up an executor service for " + f.getName());
-			SheetReader reader = new SheetReader(f);
+			SheetReader reader = new SheetReader(f, outDir);
 
 			readers.add(reader);
 			service.submit(reader);

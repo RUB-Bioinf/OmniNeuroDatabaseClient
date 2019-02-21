@@ -9,6 +9,7 @@ import org.json.JSONObject;
 import javax.swing.*;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Date;
 
 public class OmniFrame extends JFrame implements DBCredentialsPanel.DBTextListener, DBCredentialsPanel.DBCredentialsActionListener {
 	public static final String OUT_DIR_NAME_STATISTICS = "statistics";
@@ -44,12 +45,11 @@ public class OmniFrame extends JFrame implements DBCredentialsPanel.DBTextListen
 			readExcelSheets(dir);
 		} else {
 			Client.showErrorMessage("The specified path does not exist or is invalid!", this);
-			return;
 		}
-		readExcelSheets(dir);
 	}
 
 	public void readExcelSheets(File sourceDir) {
+		long startTime = new Date().getTime();
 		int cores = (int) threadsSP.getValue();
 		SheetReaderManager readerManager = new SheetReaderManager(sourceDir, cores);
 		ArrayList<JSONObject> readExperiments = readerManager.startReading();
@@ -69,6 +69,9 @@ public class OmniFrame extends JFrame implements DBCredentialsPanel.DBTextListen
 			Log.e(e);
 			Client.showErrorMessage("Failed to calculate statistics, due to: " + e.getMessage(), this);
 		}
+
+		long timeTaken = new Date().getTime()-startTime;
+		Client.showInfoMessage("Job done. Execution time: "+timeTaken+" ms.",this);
 	}
 
 	@Override

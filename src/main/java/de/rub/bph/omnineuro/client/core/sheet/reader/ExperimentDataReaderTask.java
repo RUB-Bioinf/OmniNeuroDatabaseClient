@@ -7,15 +7,17 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 
 public class ExperimentDataReaderTask extends SheetReaderTask {
 
+	public static final String CELL_VALUE_ZERO = "0.0";
 	private JSONObject concentrations;
 
-	public ExperimentDataReaderTask(Workbook workbook, String sheetName, JSONObject concentrations) throws IOException {
-		super(workbook, sheetName);
+	public ExperimentDataReaderTask(Workbook workbook, String sheetName, JSONObject concentrations, File sourceFile) throws IOException {
+		super(workbook, sheetName, sourceFile);
 		this.concentrations = concentrations;
 		Log.i("Finished setting up experiment Data reader.");
 	}
@@ -54,12 +56,17 @@ public class ExperimentDataReaderTask extends SheetReaderTask {
 			String cell = column + i;
 
 			String currentConcentration;
+			String currentConcentrationLocation = "A" + i;
 			try {
-				currentConcentration = getValueAt("A" + i, false);
-				;
-			} catch (SheetReaderException e) {
-				//TODO remove try catch and let this operation fail!
-				currentConcentration = "#NV";
+				currentConcentration = getValueAt(currentConcentrationLocation, false);
+			} catch (SheetReaderException ignored) {
+				try {
+					currentConcentration = getValueAt(currentConcentrationLocation, true);
+				} catch (SheetReaderException e) {
+					//TODO remove try catch and let this operation fail?
+					currentConcentration = "#NV";
+					Log.i("Failed to resolve a concentration at " + currentConcentrationLocation + ". Trailing error msg: " + ignored.getMessage(), e);
+				}
 			}
 
 			if (!currentConcentration.equals(lastConcentration)) {
@@ -70,13 +77,27 @@ public class ExperimentDataReaderTask extends SheetReaderTask {
 			}
 
 			try {
-				value = getValueAt(cell);
+				value = getValueAt(cell, true);
 			} catch (SheetReaderException e) {
-				e.printStackTrace();
-				//TODO handle exception
+				Log.e(e);
 				value = "NaN";
 			}
-			Log.i("Reading cell " + cell + ": " + value + ". Conc: " + currentConcentration + ", Replicate: " + replicate);
+
+			if (value.equals(CELL_VALUE_ZERO)) {
+				Log.i("Warning. Cell " + cell + " is zero! Type: " + getCellType(cell));
+
+				try {
+					String stringValue = getValueAt(cell, false);
+					Log.i("Testing for String value. If that's a blank string then it's confirmed that here's a missing value! Criteria: " + stringValue);
+					if (stringValue.equals("")) {
+						value = "NaN";
+					}
+				} catch (SheetReaderException e) {
+					Log.i("Testing resulted in an error. I guess it's confirmed then.", e);
+				}
+			}
+
+			Log.i("Reading cell " + cell + ": " + value + " [ExcelType: " + getCellType(cell) + "]. Conc: " + currentConcentration + ", Replicate: " + replicate);
 
 			if (!data.has(currentConcentration)) data.put(currentConcentration, new JSONArray());
 			JSONArray array = data.getJSONArray(currentConcentration);

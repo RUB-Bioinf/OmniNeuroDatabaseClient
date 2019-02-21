@@ -8,6 +8,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.File;
 import java.io.IOException;
 
 public class MetaDataReaderTask extends SheetReaderTask {
@@ -22,8 +23,8 @@ public class MetaDataReaderTask extends SheetReaderTask {
 	public static final String JSON_EXTRACTION_ENTRY_DATA = "Data";
 	public static final String JSON_EXTRACTION_ENTRY_DATA_COUNT = JSON_EXTRACTION_ENTRY_DATA + "Count";
 
-	public MetaDataReaderTask(Workbook workbook, String name) throws IOException {
-		super(workbook, name);
+	public MetaDataReaderTask(Workbook workbook, String name, File sourceFile) throws IOException {
+		super(workbook, name, sourceFile);
 		Log.i("Prepared Metadata sheet.");
 	}
 

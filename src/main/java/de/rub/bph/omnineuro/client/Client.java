@@ -38,7 +38,7 @@ public class Client {
 	}
 
 	public static void showInfoMessage(String message, Component parent) {
-		System.out.println("Info-Message displayed: '" + cropString(message) + "'");
+		Log.i("Info-Message displayed: '" + cropString(message) + "'");
 		JOptionPane.showMessageDialog(parent, message, "Information", JOptionPane.INFORMATION_MESSAGE);
 	}
 
@@ -52,7 +52,7 @@ public class Client {
 
 	public static void showErrorMessage(String message, Component parent, boolean concurrent) {
 		Runnable r = () -> {
-			System.out.println("Error-Message displayed: '" + cropString(message) + "'");
+			Log.i("Error-Message displayed: '" + cropString(message) + "'");
 			JOptionPane.showMessageDialog(parent, message, "Information", JOptionPane.ERROR_MESSAGE);
 		};
 
@@ -101,7 +101,7 @@ public class Client {
 		int i = JOptionPane.showConfirmDialog(parent, message, "Please confirm.", JOptionPane.YES_NO_OPTION,
 				JOptionPane.INFORMATION_MESSAGE);
 		boolean yes = i == JOptionPane.YES_OPTION;
-		System.out.println("A Confirm Message was displayed. Confirm-Result: " + yes + ". Message content: '" + cropString(message)
+		Log.i("A Confirm Message was displayed. Confirm-Result: " + yes + ". Message content: '" + cropString(message)
 				+ "'.");
 		return yes;
 	}

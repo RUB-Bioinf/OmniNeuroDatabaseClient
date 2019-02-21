@@ -1,6 +1,7 @@
 package de.rub.bph.omnineuro.client.core;
 
 import de.rub.bph.omnineuro.client.imported.filemanager.FileManager;
+import de.rub.bph.omnineuro.client.imported.log.Log;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -58,7 +59,7 @@ public class ExperimentReaderStatistics {
 				JSONObject concentrations = endpoints.getJSONObject(key);
 				for (String concentration : keyList(concentrations)) {
 					if (concentration.equals(ERROR_VALUE_NV)) {
-						builder.append(name + ";" + key + ";-;Unknown concentration;\n");
+						builder.append(name + ";" + key + ";-;Unknown concentration: '"+concentration+"';\n");
 					}
 
 					JSONArray replicas = concentrations.getJSONArray(concentration);
@@ -71,11 +72,15 @@ public class ExperimentReaderStatistics {
 
 						double d = Double.parseDouble(s);
 						if (d == 0) {
-							builder.append(name + ";" + key + ";" + i + ";Value zero!;\n");
+							//String w = name + ";" + key + ";" + i + ";Value zero!;\n";
+							//builder.append(w);
+							//Log.w("Warning: " + w);
 							continue;
 						}
 						if (d < 0) {
-							builder.append(name + ";" + key + ";" + i + ";Negative value: " + d + ";\n");
+							//String w = name + ";" + key + ";" + i + ";Negative value: " + d + ";\n";
+							//builder.append(w);
+							//Log.w("Warning: " + w);
 							continue;
 						}
 					}

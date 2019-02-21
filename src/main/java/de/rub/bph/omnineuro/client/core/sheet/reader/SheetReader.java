@@ -22,10 +22,12 @@ public class SheetReader implements Runnable {
 	private static final String JSON_ENTRY_EXPERIMENTDATA = "ExperimentData";
 
 	private File sourceFile;
+	private File outDir;
 	private JSONObject bufferedExperiment;
 
-	public SheetReader(File sourceFile) {
+	public SheetReader(File sourceFile, File outDir) {
 		this.sourceFile = sourceFile;
+		this.outDir = outDir;
 	}
 
 	public File getSourceFile() {
@@ -54,7 +56,7 @@ public class SheetReader implements Runnable {
 		MetaDataReaderTask metaDataReader = null;
 		FileManager fileManager = new FileManager();
 		try {
-			metaDataReader = new MetaDataReaderTask(workbook, EXCEL_SHEET_SUBNAME_METADATA);
+			metaDataReader = new MetaDataReaderTask(workbook, EXCEL_SHEET_SUBNAME_METADATA, sourceFile);
 		} catch (IOException e) {
 			Log.e(e);
 			return;
@@ -65,7 +67,7 @@ public class SheetReader implements Runnable {
 		Log.i("Starting up experiment data instructions!");
 		ExperimentDataReaderTask experimentDataReader = null;
 		try {
-			experimentDataReader = new ExperimentDataReaderTask(workbook, EXCEL_SHEET_SUBNAME_EXPERIMENT_DATA, new JSONObject());
+			experimentDataReader = new ExperimentDataReaderTask(workbook, EXCEL_SHEET_SUBNAME_EXPERIMENT_DATA, new JSONObject(), sourceFile);
 		} catch (IOException e) {
 			Log.e(e);
 			return;
@@ -81,14 +83,14 @@ public class SheetReader implements Runnable {
 			return;
 		}
 
-		File outFile = new File(fileManager.getJSONOutDir(), sourceFile.getName().replace(".xlsx", "") + ".json");
+		File outFile = new File(outDir, sourceFile.getName().replace(".xlsx", "") + ".json");
 		Log.i("Writing file to: " + outFile.getAbsolutePath());
 		try {
 			fileManager.writeFile(outFile, experiment.toString(JSON_ROW_SPACES));
 		} catch (IOException | JSONException e) {
 			e.printStackTrace();
 		}
-		Log.i("Experiment data read: " + experiment.toString());
+		Log.v("Experiment data read: " + experiment.toString());
 
 		bufferedExperiment = experiment;
 	}

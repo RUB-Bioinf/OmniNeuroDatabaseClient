@@ -1,22 +1,26 @@
 package de.rub.bph.omnineuro.client.core.sheet.reader;
 
-import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.util.CellReference;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.File;
 import java.io.IOException;
 
 public abstract class SheetReaderTask {
 
 	protected Sheet sheet;
+	protected File sourceFile;
 
-	public SheetReaderTask(Workbook workbook, String sheetName) throws IOException {
+	public SheetReaderTask(Workbook workbook, String sheetName, File sourceFile) throws IOException {
+		this.sourceFile = sourceFile;
 		sheet = workbook.getSheet(sheetName);
 		workbook.close();
+	}
+
+	public File getSourceFile() {
+		return sourceFile;
 	}
 
 	public Sheet getSheet() {
@@ -31,14 +35,41 @@ public abstract class SheetReaderTask {
 		return getValueAt(cellName, true);
 	}
 
+	public CellReference getCellReference(String cellName) {
+		return new CellReference(cellName);
+	}
+
+	public Row getRow(String cellName) {
+		return getRow(getCellReference(cellName));
+	}
+
+	public Row getRow(CellReference cellReference) {
+		return sheet.getRow(cellReference.getRow());
+	}
+
+	public short getCol(String cellName) {
+		return getCol(getCellReference(cellName));
+	}
+
+	public short getCol(CellReference cellReference) {
+		return cellReference.getCol();
+	}
+
+	public Cell getCell(String cellName) {
+		return getRow(cellName).getCell(getCol(cellName));
+	}
+
+	public CellType getCellType(String cellName) {
+		return getCell(cellName).getCellTypeEnum();
+	}
+
 	public String getValueAt(String cellName, boolean forceNumeric) throws SheetReaderException {
-		CellReference cellReference = new CellReference(cellName);
-		Row row = sheet.getRow(cellReference.getRow());
+		Row row = getRow(cellName);
 		if (row == null) {
 			throw new SheetReaderException("(row is null)-Error fetching cell data at " + cellName + "! Looks like the row is not available!");
 		}
 
-		Cell cell = row.getCell(cellReference.getCol());
+		Cell cell = row.getCell(getCol(cellName));
 		if (cell == null) {
 			if (forceNumeric) {
 				throw new SheetReaderException("(cell is null)-Error fetching cell data at " + cellName + "! Looks like the cell is empty!");
