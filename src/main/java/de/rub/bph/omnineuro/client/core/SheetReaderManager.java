@@ -34,15 +34,16 @@ public class SheetReaderManager {
 		this.filter = filter;
 	}
 
-	public void startReading() {
+	public ArrayList<JSONObject> startReading() {
 		Log.i("Starting to discover valid experiment files.");
 		ArrayList<File> files = discoverFiles(sourceDir);
+		ArrayList<JSONObject> experiments = new ArrayList<>();
 		int count = files.size();
 		Log.i("Finished discovering. Files found: " + count);
 
 		if (count == 0) {
 			Log.w("No files were found! Aborting!");
-			return;
+			return experiments;
 		}
 
 		ArrayList<SheetReader> readers = new ArrayList<>();
@@ -56,13 +57,13 @@ public class SheetReaderManager {
 		}
 
 		waitForTasks();
-		ArrayList<JSONObject> experiments = new ArrayList<>();
-		for (SheetReader reader:readers){
-			if (reader.hasBufferedExperiment()){
+		for (SheetReader reader : readers) {
+			if (reader.hasBufferedExperiment()) {
 				experiments.add(reader.getBufferedExperiment());
 			}
 		}
-		Log.i("Files read: "+readers.size()+". Experiments extracted: "+experiments.size());
+		Log.i("Files read: " + readers.size() + ". Experiments extracted: " + experiments.size());
+		return experiments;
 	}
 
 	private void waitForTasks() {

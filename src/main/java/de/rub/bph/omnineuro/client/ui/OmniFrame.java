@@ -1,13 +1,17 @@
 package de.rub.bph.omnineuro.client.ui;
 
 import de.rub.bph.omnineuro.client.Client;
+import de.rub.bph.omnineuro.client.core.ExperimentReaderStatistics;
 import de.rub.bph.omnineuro.client.core.SheetReaderManager;
 import de.rub.bph.omnineuro.client.imported.log.Log;
+import org.json.JSONObject;
 
 import javax.swing.*;
 import java.io.File;
+import java.util.ArrayList;
 
 public class OmniFrame extends JFrame implements DBCredentialsPanel.DBTextListener, DBCredentialsPanel.DBCredentialsActionListener {
+	public static final String OUT_DIR_NAME_STATISTICS = "statistics";
 	private JPanel rootPanel;
 	private DBCredentialsPanel DBCredentialsPanel;
 	private JButton button1;
@@ -48,7 +52,23 @@ public class OmniFrame extends JFrame implements DBCredentialsPanel.DBTextListen
 	public void readExcelSheets(File sourceDir) {
 		int cores = (int) threadsSP.getValue();
 		SheetReaderManager readerManager = new SheetReaderManager(sourceDir, cores);
-		readerManager.startReading();
+		ArrayList<JSONObject> readExperiments = readerManager.startReading();
+
+		if (readExperiments == null || readExperiments.size() == 0) {
+			Client.showInfoMessage("No Experiments were found!", this);
+			return;
+		}
+
+		File statisticsDir = new File(sourceDir, OUT_DIR_NAME_STATISTICS);
+		Log.i("Saving statistics to: " + statisticsDir.getAbsolutePath());
+
+		ExperimentReaderStatistics statistics = new ExperimentReaderStatistics(readExperiments, statisticsDir);
+		try {
+			statistics.calculateAll();
+		} catch (Exception e) {
+			Log.e(e);
+			Client.showErrorMessage("Failed to calculate statistics, due to: " + e.getMessage(), this);
+		}
 	}
 
 	@Override

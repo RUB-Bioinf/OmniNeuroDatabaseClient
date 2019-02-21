@@ -46,9 +46,22 @@ public class FileManager {
 	}
 
 	public void writeFile(File file, String text) throws IOException {
+		File parent = file.getParentFile();
+		if (!parent.exists()) parent.mkdirs();
+
 		BufferedWriter writer = new BufferedWriter(new FileWriter(file));
 		writer.write(text);
 		writer.close();
+	}
+
+	public void appendFile(File file, String text) throws IOException {
+		File parent = file.getParentFile();
+		if (!parent.exists()) parent.mkdirs();
+
+		FileWriter fw = new FileWriter(file, true);
+		BufferedWriter bw = new BufferedWriter(fw);
+		PrintWriter out = new PrintWriter(bw);
+		out.println(text);
 	}
 
 	public File getGenericExternalDir(String name) {
