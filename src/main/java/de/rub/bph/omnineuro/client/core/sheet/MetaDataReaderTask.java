@@ -38,7 +38,7 @@ public class MetaDataReaderTask extends SheetReaderTask {
 		try {
 			data.put(JSON_METADATA_TYPE_CONTROLS, readRows(51, 53));
 			data.put(JSON_METADATA_TYPE_REAGENTS, readRows(56, 77));
-			data.put(JSON_METADATA_TYPE_OPERATION_PROCEDURES, readRows(81, 88));
+			data.put(JSON_METADATA_TYPE_OPERATION_PROCEDURES, readRows(78, 80));
 			data.put(JSON_METADATA_TYPE_COMMENTS, getValueAt("A90"));
 		} catch (Exception e) {
 			Log.e("Failed to generate Control JSON!", e);
@@ -86,6 +86,5 @@ public class MetaDataReaderTask extends SheetReaderTask {
 		input.put(JSON_EXTRACTION_ENTRY_ERRORS, errors);
 		return input;
 	}
-
 
 }

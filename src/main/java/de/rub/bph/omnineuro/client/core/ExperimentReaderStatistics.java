@@ -102,13 +102,29 @@ public class ExperimentReaderStatistics {
 			String name = getExperimentName(experiment);
 
 			for (String key : keys) {
-				JSONObject data = metaData.getJSONObject(key);
-				int c = data.getInt("ErrorsCount");
+				JSONObject categoryData = metaData.getJSONObject(key);
+				int c = categoryData.getInt("ErrorsCount");
 				errorCount += c;
 
-				JSONArray errors = data.getJSONArray("Errors");
+				JSONArray errors = categoryData.getJSONArray("Errors");
 				for (int i = 0; i < c; i++) {
 					builder.append(name + ";" + key + ";" + errors.get(i) + ";\n");
+				}
+
+				JSONObject data = categoryData.getJSONObject("Data");
+				Iterator dataIterator = data.keys();
+				while (dataIterator.hasNext()){
+					String dataKey = dataIterator.next().toString();
+					String value = data.getString(dataKey);
+
+					if (value==null||value.equals("")){
+						builder.append(name + ";" + key + ";No entry for key '" +dataKey+ "';\n");
+					}
+					if (value==null||value.equals("NaN")){
+						builder.append(name + ";" + key + ";Invalid value for key '" +dataKey+ "';\n");
+					}
+
+					Log.v("K/V data comparison: '"+dataKey+"' -> '"+value+"'");
 				}
 			}
 		}
