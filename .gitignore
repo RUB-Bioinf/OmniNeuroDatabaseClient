@@ -14,7 +14,6 @@ ee_exports_*
 /log/
 /cache/
 /json/
-db_credentials.xml
 
 \sheets\*
 

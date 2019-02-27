@@ -3,15 +3,21 @@ package de.rub.bph.omnineuro.client.ui;
 import de.rub.bph.omnineuro.client.Client;
 import de.rub.bph.omnineuro.client.core.ExperimentReaderStatistics;
 import de.rub.bph.omnineuro.client.core.SheetReaderManager;
+import de.rub.bph.omnineuro.client.core.db.db.DBConnection;
 import de.rub.bph.omnineuro.client.imported.log.Log;
 import org.json.JSONObject;
 
 import javax.swing.*;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
 import java.io.File;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Date;
 
-public class OmniFrame extends JFrame implements DBCredentialsPanel.DBTextListener, DBCredentialsPanel.DBCredentialsActionListener {
+public class OmniFrame extends JFrame implements DBCredentialsPanel.DBTextListener, DBCredentialsPanel.DBCredentialsActionListener, WindowListener {
+
 	public static final String OUT_DIR_NAME_STATISTICS = "statistics";
 	private JPanel rootPanel;
 	private DBCredentialsPanel DBCredentialsPanel;
@@ -30,6 +36,7 @@ public class OmniFrame extends JFrame implements DBCredentialsPanel.DBTextListen
 
 		DBCredentialsPanel.addActionListener(this);
 		DBCredentialsPanel.addTextListener(this);
+		addWindowListener(this);
 
 		setTitle("OmniNeuro [Release " + Client.VERSION + "]");
 		setDefaultCloseOperation(EXIT_ON_CLOSE);
@@ -70,13 +77,27 @@ public class OmniFrame extends JFrame implements DBCredentialsPanel.DBTextListen
 			Client.showErrorMessage("Failed to calculate statistics, due to: " + e.getMessage(), this);
 		}
 
-		long timeTaken = new Date().getTime()-startTime;
-		Client.showInfoMessage("Job done. Execution time: "+timeTaken+" ms.",this);
+		long timeTaken = new Date().getTime() - startTime;
+		Client.showInfoMessage("Job done. Execution time: " + timeTaken + " ms.", this);
+	}
+
+	private void testDBConnection() {
+		Log.i("Testing DB Connection");
+		DBConnection connection = DBConnection.getDBConnection();
+
+		try {
+			Connection con = connection.connect(DBCredentialsPanel.getDatabaseName(),DBCredentialsPanel.getPort(),DBCredentialsPanel.getDatabaseName(),DBCredentialsPanel.getUserName(),DBCredentialsPanel.getPassword());
+			Log.i("Connected without problems!");
+		} catch (Exception e) {
+			e.printStackTrace();
+			Log.e(e);
+		}
 	}
 
 	@Override
 	public void onAction() {
 		Log.i("CredentialsPNL: Action listener!!");
+		testDBConnection();
 	}
 
 	@Override
@@ -86,5 +107,51 @@ public class OmniFrame extends JFrame implements DBCredentialsPanel.DBTextListen
 
 	private void createUIComponents() {
 		folderChooserPanel1 = new FolderChooserPanel(new File(FolderChooserPanel.CACHE_FILENAME), "Source directory: ");
+	}
+
+	@Override
+	public void windowOpened(WindowEvent windowEvent) {
+		Log.i("Window opened. Hello there! You are a bold one, to use this application!");
+
+		DBConnection connection = DBConnection.getDBConnection();
+		try {
+			if (connection.isConnected()){
+				Log.i("Client connected to the Database. Trying to close connection.");
+				connection.disconnect();
+			}
+		} catch (Throwable e) {
+			e.printStackTrace();
+			Log.e("Failed to close DB Connection.",e);
+		}
+	}
+
+	@Override
+	public void windowClosing(WindowEvent windowEvent) {
+		Log.i("Window closing.");
+	}
+
+	@Override
+	public void windowClosed(WindowEvent windowEvent) {
+		Log.i("Window closed. Goodbye.");
+	}
+
+	@Override
+	public void windowIconified(WindowEvent windowEvent) {
+
+	}
+
+	@Override
+	public void windowDeiconified(WindowEvent windowEvent) {
+
+	}
+
+	@Override
+	public void windowActivated(WindowEvent windowEvent) {
+
+	}
+
+	@Override
+	public void windowDeactivated(WindowEvent windowEvent) {
+
 	}
 }
