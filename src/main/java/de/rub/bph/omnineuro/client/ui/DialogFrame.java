@@ -3,7 +3,7 @@ package de.rub.bph.omnineuro.client.ui;
 import javax.swing.*;
 import java.awt.*;
 
-public class DialogFrame extends JFrame {
+public class DialogFrame extends NFrame {
 	public DialogFrame(String title, String message, Component parent) {
 		setTitle(title);
 		GridBagLayout gridBagLayout = new GridBagLayout();

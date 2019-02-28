@@ -12,11 +12,10 @@ import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.io.File;
 import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Date;
 
-public class OmniFrame extends JFrame implements DBCredentialsPanel.DBTextListener, DBCredentialsPanel.DBCredentialsActionListener, WindowListener {
+public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListener, DBCredentialsPanel.DBCredentialsActionListener, WindowListener {
 
 	public static final String OUT_DIR_NAME_STATISTICS = "statistics";
 	private JPanel rootPanel;
@@ -86,11 +85,13 @@ public class OmniFrame extends JFrame implements DBCredentialsPanel.DBTextListen
 		DBConnection connection = DBConnection.getDBConnection();
 
 		try {
-			Connection con = connection.connect(DBCredentialsPanel.getHostname(),DBCredentialsPanel.getPort(),DBCredentialsPanel.getDatabaseName(),DBCredentialsPanel.getUserName(),DBCredentialsPanel.getPassword());
+			Connection con = connection.connect(DBCredentialsPanel.getHostname(), DBCredentialsPanel.getPort(), DBCredentialsPanel.getDatabaseName(), DBCredentialsPanel.getUserName(), DBCredentialsPanel.getPassword());
 			Log.i("Connected without problems!");
+			showInfoMessage("Connection to the Database established without problems.");
 		} catch (Exception e) {
 			e.printStackTrace();
 			Log.e(e);
+			showErrorMessage(e);
 		}
 	}
 
@@ -112,22 +113,25 @@ public class OmniFrame extends JFrame implements DBCredentialsPanel.DBTextListen
 	@Override
 	public void windowOpened(WindowEvent windowEvent) {
 		Log.i("Window opened. Hello there! You are a bold one, to use this application!");
-
-		DBConnection connection = DBConnection.getDBConnection();
-		try {
-			if (connection.isConnected()){
-				Log.i("Client connected to the Database. Trying to close connection.");
-				connection.disconnect();
-			}
-		} catch (Throwable e) {
-			e.printStackTrace();
-			Log.e("Failed to close DB Connection.",e);
-		}
 	}
 
 	@Override
 	public void windowClosing(WindowEvent windowEvent) {
 		Log.i("Window closing.");
+
+		DBConnection connection = DBConnection.getDBConnection();
+		try {
+			if (connection.isConnected()) {
+				Log.i("Client connected to the Database. Trying to close connection.");
+				connection.disconnect();
+			} else {
+				Log.i("Client not connected. No need to disconnect.");
+			}
+		} catch (Throwable e) {
+			e.printStackTrace();
+			Log.e("Failed to close DB Connection.", e);
+			showErrorMessage("Failed to close Connection to the Database!", e);
+		}
 	}
 
 	@Override
