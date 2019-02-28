@@ -86,7 +86,7 @@ public class OmniFrame extends JFrame implements DBCredentialsPanel.DBTextListen
 		DBConnection connection = DBConnection.getDBConnection();
 
 		try {
-			Connection con = connection.connect(DBCredentialsPanel.getDatabaseName(),DBCredentialsPanel.getPort(),DBCredentialsPanel.getDatabaseName(),DBCredentialsPanel.getUserName(),DBCredentialsPanel.getPassword());
+			Connection con = connection.connect(DBCredentialsPanel.getHostname(),DBCredentialsPanel.getPort(),DBCredentialsPanel.getDatabaseName(),DBCredentialsPanel.getUserName(),DBCredentialsPanel.getPassword());
 			Log.i("Connected without problems!");
 		} catch (Exception e) {
 			e.printStackTrace();
