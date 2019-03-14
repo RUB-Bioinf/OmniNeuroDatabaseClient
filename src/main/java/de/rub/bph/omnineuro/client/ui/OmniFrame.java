@@ -3,8 +3,9 @@ package de.rub.bph.omnineuro.client.ui;
 import de.rub.bph.omnineuro.client.Client;
 import de.rub.bph.omnineuro.client.core.ExperimentReaderStatistics;
 import de.rub.bph.omnineuro.client.core.SheetReaderManager;
-import de.rub.bph.omnineuro.client.core.db.db.DBConnection;
+import de.rub.bph.omnineuro.client.core.db.DBConnection;
 import de.rub.bph.omnineuro.client.imported.log.Log;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import javax.swing.*;
@@ -46,23 +47,58 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 	}
 
 	public void startImport() {
+		long startTime = new Date().getTime();
 		File dir = new File(folderChooserPanel1.getText());
+		boolean error = false;
+
+		ArrayList<JSONObject> readExperiments = new ArrayList<>();
+
 		if (dir.exists() && dir.isDirectory()) {
-			readExcelSheets(dir);
+			readExperiments = readExcelSheets(dir);
 		} else {
+			error = true;
 			Client.showErrorMessage("The specified path does not exist or is invalid!", this);
+			return;
+		}
+
+		if (readExperiments.isEmpty()) {
+			showErrorMessage("No experiments located!");
+			return;
+		} else {
+			try {
+				debugImport(readExperiments);
+			} catch (JSONException e) {
+				Log.e(e);
+				error = true;
+			}
+		}
+
+		if (!error) {
+			long timeTaken = new Date().getTime() - startTime;
+			Client.showInfoMessage("Job done. Execution time: " + timeTaken + " ms.", this);
 		}
 	}
 
-	public void readExcelSheets(File sourceDir) {
-		long startTime = new Date().getTime();
+	public void debugImport(ArrayList<JSONObject> readExperiments) throws JSONException {
+		Log.i("Starting debug import");
+
+		for (JSONObject experiment : readExperiments) {
+			String comment = experiment.getJSONObject("MetaData").getString("Comments").trim();
+			Log.i("Read comment: '" + comment + "'!");
+
+
+		}
+		Log.i("Finished");
+	}
+
+	public ArrayList<JSONObject> readExcelSheets(File sourceDir) {
 		int cores = (int) threadsSP.getValue();
 		SheetReaderManager readerManager = new SheetReaderManager(sourceDir, cores);
 		ArrayList<JSONObject> readExperiments = readerManager.startReading();
 
 		if (readExperiments == null || readExperiments.size() == 0) {
 			Client.showInfoMessage("No Experiments were found!", this);
-			return;
+			return null;
 		}
 
 		File statisticsDir = new File(sourceDir, OUT_DIR_NAME_STATISTICS);
@@ -76,8 +112,7 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 			Client.showErrorMessage("Failed to calculate statistics, due to: " + e.getMessage(), this);
 		}
 
-		long timeTaken = new Date().getTime() - startTime;
-		Client.showInfoMessage("Job done. Execution time: " + timeTaken + " ms.", this);
+		return readExperiments;
 	}
 
 	private void testDBConnection() {

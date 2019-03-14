@@ -1,4 +1,4 @@
-package de.rub.bph.omnineuro.client.core.db.db;
+package de.rub.bph.omnineuro.client.core.db;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
