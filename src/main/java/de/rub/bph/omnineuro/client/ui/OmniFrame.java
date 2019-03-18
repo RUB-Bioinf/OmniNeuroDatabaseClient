@@ -22,8 +22,10 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 	private JPanel rootPanel;
 	private DBCredentialsPanel DBCredentialsPanel;
 	private JButton button1;
-	private FolderChooserPanel folderChooserPanel1;
+	private FolderChooserPanel importDirChooserPanel1;
+	private FolderChooserPanel exportDirChooserPanel;
 	private JSpinner threadsSP;
+	private JButton startExportButton;
 
 	public OmniFrame() {
 		add(rootPanel);
@@ -48,7 +50,7 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 
 	public void startImport() {
 		long startTime = new Date().getTime();
-		File dir = new File(folderChooserPanel1.getText());
+		File dir = new File(importDirChooserPanel1.getText());
 		boolean error = false;
 
 		ArrayList<JSONObject> readExperiments = new ArrayList<>();
@@ -142,7 +144,8 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 	}
 
 	private void createUIComponents() {
-		folderChooserPanel1 = new FolderChooserPanel(new File(FolderChooserPanel.CACHE_FILENAME), "Source directory: ");
+		importDirChooserPanel1 = new FolderChooserPanel(new File(FolderChooserPanel.CACHE_IMPORT_SOURCE_DIR_FILENAME), "Source directory: ");
+		exportDirChooserPanel = new FolderChooserPanel(new File(FolderChooserPanel.CACHE_EXPORT_DIR_FILENAME), "Target directory: ");
 	}
 
 	@Override

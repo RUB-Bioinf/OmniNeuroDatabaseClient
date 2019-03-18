@@ -47,7 +47,7 @@ public class FileManager {
 
 	public void writeFile(File file, String text) throws IOException {
 		File parent = file.getParentFile();
-		if (!parent.exists()) parent.mkdirs();
+		if (parent != null && !parent.exists()) parent.mkdirs();
 
 		BufferedWriter writer = new BufferedWriter(new FileWriter(file));
 		writer.write(text);

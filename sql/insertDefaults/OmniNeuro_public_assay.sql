@@ -1,0 +1,1 @@
+INSERT INTO public.assay (id, name) VALUES (0, 'NPC1ab');

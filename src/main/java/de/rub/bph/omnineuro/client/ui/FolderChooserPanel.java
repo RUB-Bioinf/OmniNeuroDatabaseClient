@@ -12,7 +12,8 @@ import java.io.File;
 import java.io.IOException;
 
 public class FolderChooserPanel extends JPanel implements ActionListener, DocumentListener {
-	public static final String CACHE_FILENAME = "source.cache";
+	public static final String CACHE_IMPORT_SOURCE_DIR_FILENAME = "db_import_source_dir.cache";
+	public static final String CACHE_EXPORT_DIR_FILENAME = "db_export_dir.cache";
 	private JTextField textField1;
 	private JButton browseBT;
 	private JPanel holderPL;
@@ -109,7 +110,7 @@ public class FolderChooserPanel extends JPanel implements ActionListener, Docume
 		FileManager manager = new FileManager();
 		try {
 			manager.writeFile(cacheFile, text);
-		} catch (IOException e) {
+		} catch (Throwable e) {
 			Log.e("Failed to write cache file: '" + cacheFile.getAbsolutePath() + "'!", e);
 			return;
 		}

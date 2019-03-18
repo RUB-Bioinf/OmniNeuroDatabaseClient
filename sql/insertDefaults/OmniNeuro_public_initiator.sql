@@ -1,0 +1,1 @@
+INSERT INTO public.initiator (id, name, country_id) VALUES (0, 'EFSA', 3);

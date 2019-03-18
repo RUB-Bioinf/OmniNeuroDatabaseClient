@@ -1,0 +1,1 @@
+INSERT INTO public.source_lab (id, name, country_id) VALUES (0, 'IUF', 2);
