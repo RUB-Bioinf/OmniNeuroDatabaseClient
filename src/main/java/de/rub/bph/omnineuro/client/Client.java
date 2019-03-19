@@ -5,6 +5,7 @@ import de.rub.bph.omnineuro.client.ui.DialogFrame;
 import de.rub.bph.omnineuro.client.ui.OmniFrame;
 
 import javax.swing.*;
+import javax.swing.plaf.nimbus.NimbusLookAndFeel;
 import java.awt.*;
 import java.io.BufferedWriter;
 import java.io.File;

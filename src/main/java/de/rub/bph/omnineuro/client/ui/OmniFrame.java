@@ -9,6 +9,8 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import javax.swing.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.io.File;
@@ -46,6 +48,12 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 		setMinimumSize(getMinimumSize());
 		setLocationRelativeTo(null);
 		setVisible(true);
+		startExportButton.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent actionEvent) {
+				requestExport();
+			}
+		});
 	}
 
 	public void startImport() {
@@ -117,25 +125,50 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 		return readExperiments;
 	}
 
-	private void testDBConnection() {
+	private boolean testDBConnection() {
+		return testDBConnection(true);
+	}
+
+	private boolean testDBConnection(boolean silent) {
 		Log.i("Testing DB Connection");
 		DBConnection connection = DBConnection.getDBConnection();
 
 		try {
 			Connection con = connection.connect(DBCredentialsPanel.getHostname(), DBCredentialsPanel.getPort(), DBCredentialsPanel.getDatabaseName(), DBCredentialsPanel.getUserName(), DBCredentialsPanel.getPassword());
 			Log.i("Connected without problems!");
-			showInfoMessage("Connection to the Database established without problems.");
+
+			if (!silent) {
+				showInfoMessage("Connection to the Database established without problems.");
+			}
+			return true;
 		} catch (Exception e) {
 			e.printStackTrace();
 			Log.e(e);
-			showErrorMessage(e);
+
+			if (!silent) {
+				showErrorMessage(e);
+			}
+			return false;
 		}
+	}
+
+	public void requestExport() {
+		Log.i("User requested Export");
+
+		if (!testDBConnection()){
+			Log.i("Connection to the database failed. Can't export if there's no connection available.");
+			return;
+		}
+
+		ExportDialog dialog = new ExportDialog();
+		dialog.setLocationRelativeTo(this);
+		dialog.setVisible(true);
 	}
 
 	@Override
 	public void onAction() {
-		Log.i("CredentialsPNL: Action listener!!");
-		testDBConnection();
+		Log.i("CredentialsPNL: Action listener: Testing DB Connection");
+		testDBConnection(false);
 	}
 
 	@Override
