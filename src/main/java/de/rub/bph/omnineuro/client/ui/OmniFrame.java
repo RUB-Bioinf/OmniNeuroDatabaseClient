@@ -4,8 +4,8 @@ import de.rub.bph.omnineuro.client.Client;
 import de.rub.bph.omnineuro.client.core.ExperimentReaderStatistics;
 import de.rub.bph.omnineuro.client.core.SheetReaderManager;
 import de.rub.bph.omnineuro.client.core.db.DBConnection;
+import de.rub.bph.omnineuro.client.core.db.in.InsertManager;
 import de.rub.bph.omnineuro.client.imported.log.Log;
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import javax.swing.*;
@@ -21,6 +21,8 @@ import java.util.Date;
 public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListener, DBCredentialsPanel.DBCredentialsActionListener, WindowListener {
 
 	public static final String OUT_DIR_NAME_STATISTICS = "statistics";
+	public static final String OUT_DIR_NAME_INSERTER = "inserts";
+
 	private JPanel rootPanel;
 	private DBCredentialsPanel DBCredentialsPanel;
 	private JButton button1;
@@ -57,52 +59,39 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 	}
 
 	public void startImport() {
+		if (!testDBConnection(true)) {
+			Client.showErrorMessage("Failed to connect to the database.\nPlease run diagnostics and try again.\nCan't import anything to the DB if a connection can't be established.", this);
+			return;
+		} else {
+			Log.i("Connection to the DB is possible. Starting import process.");
+		}
+
+		int cores = (int) threadsSP.getValue();
 		long startTime = new Date().getTime();
 		File dir = new File(importDirChooserPanel1.getText());
-		boolean error = false;
 
 		ArrayList<JSONObject> readExperiments = new ArrayList<>();
 
 		if (dir.exists() && dir.isDirectory()) {
-			readExperiments = readExcelSheets(dir);
+			readExperiments = readExcelSheets(dir, cores);
 		} else {
-			error = true;
 			Client.showErrorMessage("The specified path does not exist or is invalid!", this);
 			return;
 		}
 
-		if (readExperiments.isEmpty()) {
+		if (readExperiments == null || readExperiments.isEmpty()) {
 			showErrorMessage("No experiments located!");
 			return;
-		} else {
-			try {
-				debugImport(readExperiments);
-			} catch (JSONException e) {
-				Log.e(e);
-				error = true;
-			}
 		}
 
-		if (!error) {
-			long timeTaken = new Date().getTime() - startTime;
-			Client.showInfoMessage("Job done. Execution time: " + timeTaken + " ms.", this);
-		}
+		InsertManager insertManager = new InsertManager(new File(dir, OUT_DIR_NAME_INSERTER), cores, readExperiments);
+		insertManager.insert();
+
+		long timeTaken = new Date().getTime() - startTime;
+		Client.showInfoMessage("Job done. Execution time: " + timeTaken + " ms.", this);
 	}
 
-	public void debugImport(ArrayList<JSONObject> readExperiments) throws JSONException {
-		Log.i("Starting debug import");
-
-		for (JSONObject experiment : readExperiments) {
-			String comment = experiment.getJSONObject("MetaData").getString("Comments").trim();
-			Log.i("Read comment: '" + comment + "'!");
-
-
-		}
-		Log.i("Finished");
-	}
-
-	public ArrayList<JSONObject> readExcelSheets(File sourceDir) {
-		int cores = (int) threadsSP.getValue();
+	public ArrayList<JSONObject> readExcelSheets(File sourceDir, int cores) {
 		SheetReaderManager readerManager = new SheetReaderManager(sourceDir, cores);
 		ArrayList<JSONObject> readExperiments = readerManager.startReading();
 
@@ -155,7 +144,7 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 	public void requestExport() {
 		Log.i("User requested Export");
 
-		if (!testDBConnection()){
+		if (!testDBConnection()) {
 			Log.i("Connection to the database failed. Can't export if there's no connection available.");
 			return;
 		}
