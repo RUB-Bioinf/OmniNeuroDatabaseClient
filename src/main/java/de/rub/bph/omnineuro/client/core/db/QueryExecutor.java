@@ -109,6 +109,35 @@ public class QueryExecutor {
 		throw new SQLException("Unable to retrieve a value for sequence '" + sequenceName + "'!");
 	}
 
+	public boolean restartSequence(String name) throws SQLException {
+		return execute("ALTER SEQUENCE " + name + " RESTART;");
+	}
+
+	public boolean restartTableSequence(String tableName) throws SQLException {
+		return restartSequence(tableName + "_id_seq");
+	}
+
+	public boolean deleteTable(String tableName, boolean resetSequence) throws SQLException {
+		if (resetSequence) {
+			return deleteTable(tableName, tableName + "_id_seq");
+		} else {
+			return deleteTable(tableName, null);
+		}
+	}
+
+	public boolean deleteTable(String tableName) throws SQLException {
+		return deleteTable(tableName, false);
+	}
+
+	public boolean deleteTable(String tableName, String sequenceName) throws SQLException {
+		boolean b = execute("DELETE FROM " + tableName + ";");
+
+		if (sequenceName != null) {
+			b &= restartSequence(sequenceName);
+		}
+		return b;
+	}
+
 	public Connection getConnection() {
 		return connection;
 	}

@@ -4,6 +4,7 @@ import de.rub.bph.omnineuro.client.Client;
 import de.rub.bph.omnineuro.client.core.ExperimentReaderStatistics;
 import de.rub.bph.omnineuro.client.core.SheetReaderManager;
 import de.rub.bph.omnineuro.client.core.db.DBConnection;
+import de.rub.bph.omnineuro.client.core.db.OmniNeuroQueryExecutor;
 import de.rub.bph.omnineuro.client.core.db.in.InsertManager;
 import de.rub.bph.omnineuro.client.imported.log.Log;
 import org.json.JSONObject;
@@ -15,6 +16,7 @@ import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.io.File;
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Date;
 
@@ -30,6 +32,7 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 	private FolderChooserPanel exportDirChooserPanel;
 	private JSpinner threadsSP;
 	private JButton startExportButton;
+	private JButton resetDatabaseButton;
 
 	public OmniFrame() {
 		add(rootPanel);
@@ -54,6 +57,12 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 			@Override
 			public void actionPerformed(ActionEvent actionEvent) {
 				requestExport();
+			}
+		});
+		resetDatabaseButton.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent actionEvent) {
+				resetDatabase();
 			}
 		});
 	}
@@ -152,6 +161,19 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 		ExportDialog dialog = new ExportDialog();
 		dialog.setLocationRelativeTo(this);
 		dialog.setVisible(true);
+	}
+
+	public void resetDatabase() {
+		Log.i("Reset Database has been requested!");
+		testDBConnection();
+
+		DBConnection connection = DBConnection.getDBConnection();
+		try {
+			new OmniNeuroQueryExecutor(connection.getConnection()).resetDatabase();
+		} catch (SQLException e) {
+			Log.e(e);
+		}
+		Log.i("Finished DB reset. Did it work?");
 	}
 
 	@Override

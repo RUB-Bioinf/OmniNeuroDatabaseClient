@@ -22,7 +22,16 @@ public class OmniNeuroQueryExecutor extends QueryExecutor {
 
 	public boolean insertExperiment(long id, long timestamp, String name, long projectID, long labID, long individualID, long compoundID, long cellTypeID, long assayID, long plateFormatID) throws SQLException {
 		return execute("INSERT INTO experiment VALUES (" + id + "," + timestamp + ",'" + name + "'," + projectID +
-				"," + labID + "," + individualID + "," + compoundID + "," + cellTypeID + "," + assayID + "," + plateFormatID+");");
+				"," + labID + "," + individualID + "," + compoundID + "," + cellTypeID + "," + assayID + "," + plateFormatID + ");");
+	}
+
+	public boolean resetDatabase() throws SQLException {
+		boolean b = true;
+		b &= deleteTable("comment", true);
+		b &= deleteTable("experiment", true);
+		b &= deleteTable("measurement", true);
+
+		return b;
 	}
 
 	/*

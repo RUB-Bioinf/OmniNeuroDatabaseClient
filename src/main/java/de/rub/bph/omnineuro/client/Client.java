@@ -5,15 +5,8 @@ import de.rub.bph.omnineuro.client.ui.DialogFrame;
 import de.rub.bph.omnineuro.client.ui.OmniFrame;
 
 import javax.swing.*;
-import javax.swing.plaf.nimbus.NimbusLookAndFeel;
 import java.awt.*;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -67,7 +60,7 @@ public class Client {
 		showErrorMessage(message, parent, false);
 	}
 
-	public static void showErrorMessage(String message, Component parent, Exception exception) {
+	public static void showErrorMessage(String message, Component parent, Throwable exception) {
 		if (exception instanceof SQLException) {
 			if (message.trim().equals("")) {
 				showSQLErrorMessage((SQLException) exception, parent);
