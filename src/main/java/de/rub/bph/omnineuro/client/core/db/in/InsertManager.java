@@ -51,15 +51,19 @@ public class InsertManager {
 		}
 		Log.i("Done waiting.");
 
+		int errorExperimentCount = 0;
 		for (JSONInserter inserter : inserters) {
-			errors.addAll(inserter.getErrors());
+			if (inserter.hasError()) {
+				errors.addAll(inserter.getErrors());
+				errorExperimentCount++;
+			}
 		}
-		Log.i("Overall, there were " + errors.size() + " error(s) while inserting!");
+		Log.i("Overall, there were " + errors.size() + " error(s) in " + errorExperimentCount + " out of " + inserters.size() + " experiment(s).");
 
 		File errorFile = new File(outDir, "errors.txt");
-		Log.i("Saving errors to: "+errorFile.getAbsolutePath());
+		Log.i("Saving errors to: " + errorFile.getAbsolutePath());
 		try {
-			manager.saveListFile(errors, errorFile, true);
+			manager.saveListFile(errors, errorFile, false);
 		} catch (IOException e) {
 			Log.e("Failed to create insertion error list at: " + errorFile.getAbsolutePath());
 		}
