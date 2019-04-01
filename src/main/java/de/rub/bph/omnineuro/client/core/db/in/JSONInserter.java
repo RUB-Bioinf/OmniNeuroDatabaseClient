@@ -105,14 +105,10 @@ public class JSONInserter implements Runnable {
 			try {
 				compoundID = executor.getIDViaName("compound", compound);
 			} catch (Throwable e) {
-				addError("Failed to resolve compound name: " + compound + ". That's okay, if a valid Cas Nr. is provided instead: '" + casNR + "'.");
+				addError("Failed to resolve compound name: '" + compound + "'. That's okay, if a valid Cas Nr. is provided instead: '" + casNR + "'.");
 
-				//try {
 				compoundID = executor.getIDViaFeature("compound", "cas_no", casNR);
-				//TODO Remove 'NaN' Entry from DB
-				//} catch (Throwable t) {
-				//	addError("Failed to even get the Cas No. [" + casNR + "] from the database!");
-				//}
+				addError("\t\t\tBut that CAS Nr. existed in the DB and the compound was resolved.");
 			}
 
 			long experimentID;

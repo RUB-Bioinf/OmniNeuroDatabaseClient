@@ -129,8 +129,8 @@ public abstract class SheetReaderTask {
 
 	public abstract JSONObject readSheet() throws JSONException, SheetReaderException;
 
-	public void addRowPair(JSONObject data, int line) throws SheetReaderException, JSONException {
-		data.put(getValueAt("A" + line), getValueAt("B" + line));
+	public void addRowPair(JSONObject data, int line, boolean forceNumeric) throws SheetReaderException, JSONException {
+		data.put(getValueAt("A" + line, false), getValueAt("B" + line, forceNumeric));
 	}
 
 	public class SheetReaderException extends Exception {

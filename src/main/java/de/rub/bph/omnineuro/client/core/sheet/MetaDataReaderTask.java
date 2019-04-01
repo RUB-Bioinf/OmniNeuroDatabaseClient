@@ -1,7 +1,6 @@
 package de.rub.bph.omnineuro.client.core.sheet;
 
 import de.rub.bph.omnineuro.client.core.sheet.reader.SheetReaderTask;
-import de.rub.bph.omnineuro.client.imported.filemanager.FileManager;
 import de.rub.bph.omnineuro.client.imported.log.Log;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.json.JSONArray;
@@ -30,22 +29,21 @@ public class MetaDataReaderTask extends SheetReaderTask {
 
 	@Override
 	public JSONObject readSheet() throws JSONException, SheetReaderException {
-		FileManager fileManager = new FileManager();
 		JSONObject data = new JSONObject();
 
 		data.put("CompoundCount", getValueAt("B32"));
 
 		try {
-			data.put(JSON_METADATA_TYPE_CONTROLS, readRows(51, 53));
-			data.put(JSON_METADATA_TYPE_REAGENTS, readRows(56, 77));
-			data.put(JSON_METADATA_TYPE_OPERATION_PROCEDURES, readRows(78, 80));
-			data.put(JSON_METADATA_TYPE_COMMENTS, getValueAt("A90"));
+			data.put(JSON_METADATA_TYPE_CONTROLS, readRows(41, 44));
+			data.put(JSON_METADATA_TYPE_REAGENTS, readRows(47, 64));
+			data.put(JSON_METADATA_TYPE_OPERATION_PROCEDURES, readRows(68, 75));
+			data.put(JSON_METADATA_TYPE_COMMENTS, getValueAt("A77"));
 		} catch (Exception e) {
 			Log.e("Failed to generate Control JSON!", e);
 		}
 
-		JSONObject metaData = readRows(1, 24);
-		metaData = readRows(26, 30, metaData);
+		JSONObject metaData = readRows(1, 25);
+		metaData = readRows(27, 31, metaData);
 		data.put("General", metaData);
 
 		return data;
@@ -72,7 +70,7 @@ public class MetaDataReaderTask extends SheetReaderTask {
 
 		for (int i = start; i < end + 1; i++) {
 			try {
-				addRowPair(data, i);
+				addRowPair(data, i, false);
 			} catch (Exception e) {
 				errors.put(e.getMessage());
 			}
