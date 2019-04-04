@@ -3,6 +3,7 @@ package de.rub.bph.omnineuro.client.core.sheet.reader;
 import de.rub.bph.omnineuro.client.core.sheet.MetaDataReaderTask;
 import de.rub.bph.omnineuro.client.imported.filemanager.FileManager;
 import de.rub.bph.omnineuro.client.imported.log.Log;
+import de.rub.bph.omnineuro.client.util.JSONOperator;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.json.JSONException;
@@ -12,7 +13,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 
-public class SheetReader implements Runnable {
+public class SheetReader extends JSONOperator implements Runnable {
 
 	public static final int JSON_ROW_SPACES = 4;
 	public static final String JSON_ENTRY_METADATA = "MetaData";

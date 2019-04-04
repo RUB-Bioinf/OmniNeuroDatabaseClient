@@ -29,7 +29,7 @@ public class OmniNeuroQueryExecutor extends QueryExecutor {
 		boolean b = true;
 		b &= deleteTable("comment", true);
 		b &= deleteTable("experiment", true);
-		b &= deleteTable("measurement", true);
+		b &= deleteTable("response", true);
 
 		return b;
 	}

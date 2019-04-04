@@ -4,6 +4,7 @@ import de.rub.bph.omnineuro.client.core.db.DBConnection;
 import de.rub.bph.omnineuro.client.core.db.OmniNeuroQueryExecutor;
 import de.rub.bph.omnineuro.client.core.sheet.data.DateInterpreter;
 import de.rub.bph.omnineuro.client.imported.log.Log;
+import de.rub.bph.omnineuro.client.util.JSONOperator;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -14,7 +15,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 
-public class JSONInserter implements Runnable {
+public class JSONInserter extends JSONOperator implements Runnable {
 
 	private static OmniNeuroQueryExecutor executor;
 
@@ -78,8 +79,13 @@ public class JSONInserter implements Runnable {
 				addError("Unable to interpret plating date: '" + platingDate + "'! Are you sure this is the right format?");
 			}
 
-			String sourceLab = "IUF";
-			addError("Sourcelab for " + getName() + " has been defaulted to '" + sourceLab + "'");
+			String department = "IUF";
+			//TODO add department to sheet
+			addError("Department for " + getName() + " has been defaulted to '" + department + "'");
+
+			String workgroup = "AG Fritsche";
+			//TODO add workgroup to sheet
+			addError("Workgroup for " + getName() + " has been defaulted to '" + workgroup + "'");
 
 			String sex = "undefined";
 			//TODO Add SEX to sheet
@@ -97,7 +103,8 @@ public class JSONInserter implements Runnable {
 			long cellTypeID = executor.getIDViaName("cell_type", cellType);
 			long projectID = executor.getIDViaName("project", projectName);
 			long plateformatID = executor.getIDViaName("plate_format", plateFormat);
-			long labID = executor.getIDViaName("source_lab", sourceLab);
+			long departmentID = executor.getIDViaName("department", department);
+			long workgroupID = executor.getIDViaName("workgroup", workgroup);
 
 			long individualID = getIndividualID(individual, sex, species);
 
@@ -114,13 +121,51 @@ public class JSONInserter implements Runnable {
 			long experimentID;
 			synchronized (executor) {
 				experimentID = executor.getNextSequenceTableVal("experiment");
-				executor.insertExperiment(experimentID, date.getTime(), name, projectID, labID, individualID, compoundID, cellTypeID, assayID, plateformatID);
+				executor.insertExperiment(experimentID, date.getTime(), name, projectID, workgroupID, individualID, compoundID, cellTypeID, assayID, plateformatID);
 			}
 
 			executor.insertComment(comment, experimentID);
+
+	/*
+			//Now comes actual experiment data
+			NumberUtils numberUtils = new NumberUtils();
+			JSONObject experimentData = data.getJSONObject("ExperimentData").getJSONObject("Endpoints");
+
+			for (String endpoint : getKeys(experimentData)) {
+				JSONObject concentrations = experimentData.getJSONObject(endpoint);
+
+				long endpointID;
+				try {
+					endpointID = executor.getIDViaName("endpoint", endpoint);
+				} catch (Throwable t) {
+					Log.e(t);
+					addError("Unable to find an endpoint in the database named '" + endpoint + "'.");
+					continue;
+				}
+
+				for (String concentration : getKeys(concentrations)) {
+					boolean control = !numberUtils.isNumeric(concentration);
+
+					long controlID = -1;
+					if (control) {
+						try {
+							controlID = executor.getIDViaName("control", concentration);
+						} catch (Throwable e) {
+							Log.e(e);
+							addError("I think this concentration is actually a control. But I can't find a control in the database with this name: '" + concentration + "'.");
+							continue;
+						}
+					}
+
+					JSONArray results = concentrations.getJSONArray(concentration);
+					Log.i(endpoint + " -> " + concentration + " [Control: " + control + "] -> " + results);
+				}
+			}
+	 */
+
 		} catch (Throwable e) {
 			Log.e("Failed to insert Experiment: " + getName(), e);
-			addError("Failed to insert Experiment " + getName() + " into the database! Error Type: " + e.getClass().getSimpleName() + ". Reason: " + e.getMessage());
+			addError("Failed to insert Experiment " + getName() + " into the database! Error Type: " + e.getClass().getSimpleName() + ". Reason: '" + e.getMessage() + "'");
 		}
 	}
 

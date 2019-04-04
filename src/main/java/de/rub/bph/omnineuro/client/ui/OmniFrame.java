@@ -10,8 +10,6 @@ import de.rub.bph.omnineuro.client.imported.log.Log;
 import org.json.JSONObject;
 
 import javax.swing.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.io.File;
@@ -53,18 +51,8 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 		setMinimumSize(getMinimumSize());
 		setLocationRelativeTo(null);
 		setVisible(true);
-		startExportButton.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent actionEvent) {
-				requestExport();
-			}
-		});
-		resetDatabaseButton.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent actionEvent) {
-				resetDatabase();
-			}
-		});
+		startExportButton.addActionListener(actionEvent -> requestExport());
+		resetDatabaseButton.addActionListener(actionEvent -> resetDatabase());
 	}
 
 	public void startImport() {

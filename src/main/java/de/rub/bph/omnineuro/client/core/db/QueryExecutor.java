@@ -18,13 +18,13 @@ public class QueryExecutor {
 
 	public synchronized ResultSet executeQuery(String query) throws SQLException {
 		Statement stmt = connection.createStatement();
-		Log.i("Executing query: '" + query + "'");
+		Log.i("Executing query: '" + query.replace("\n", " ").replace("  ", " ") + "'");
 		return stmt.executeQuery(query);
 	}
 
 	public synchronized boolean execute(String query) throws SQLException {
 		Statement stmt = connection.createStatement();
-		Log.i("Executing query: '" + query + "'");
+		Log.i("Executing query: '" + query.replace("\n", " ".replace("  ", " ")) + "'");
 		return stmt.execute(query);
 	}
 
@@ -32,7 +32,9 @@ public class QueryExecutor {
 		ArrayList<String> list = getColumn(tableName, "id");
 		ArrayList<Long> ids = new ArrayList<>();
 
-		for (String s : list) ids.add(Long.valueOf(s));
+		for (String s : list) {
+			ids.add(Long.valueOf(s));
+		}
 
 		return ids;
 	}
