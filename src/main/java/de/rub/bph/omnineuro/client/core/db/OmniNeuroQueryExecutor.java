@@ -28,10 +28,31 @@ public class OmniNeuroQueryExecutor extends QueryExecutor {
 	public boolean resetDatabase() throws SQLException {
 		boolean b = true;
 		b &= deleteTable("comment", true);
-		b &= deleteTable("experiment", true);
 		b &= deleteTable("response", true);
+		b &= deleteTable("concentration", true);
+		b &= deleteTable("experiment", true);
 
 		return b;
+	}
+
+	public boolean insertResponse(double value, int timestamp, long endpointID, long concentrationID, long experimentID) throws SQLException {
+		long outlierTypeID = getIDViaName("outlier_type", "Unchecked");
+		return insertResponse(value, timestamp, endpointID, concentrationID, experimentID, outlierTypeID);
+	}
+
+	public boolean insertResponse(double value, int timestamp, long endpointID, long concentrationID, long experimentID, long outlierTypeID) throws SQLException {
+		return execute("INSERT INTO response VALUES (DEFAULT, " + value + "," + timestamp + "," + endpointID + "," + concentrationID + "," + experimentID + "," + outlierTypeID + ");");
+	}
+
+	public long insertConcentration(double value) throws SQLException {
+		long controlID = getIDViaName("control", "No control");
+		return insertConcentration(value, controlID);
+	}
+
+	public long insertConcentration(double value, long controlID) throws SQLException {
+		long id = getNextSequenceTableVal("concentration");
+		execute("INSERT INTO concentration values (" + id + "," + value + "," + controlID + ");");
+		return id;
 	}
 
 	/*

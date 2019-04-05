@@ -5,6 +5,8 @@ import de.rub.bph.omnineuro.client.core.db.OmniNeuroQueryExecutor;
 import de.rub.bph.omnineuro.client.core.sheet.data.DateInterpreter;
 import de.rub.bph.omnineuro.client.imported.log.Log;
 import de.rub.bph.omnineuro.client.util.JSONOperator;
+import de.rub.bph.omnineuro.client.util.NumberUtils;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -22,11 +24,15 @@ public class JSONInserter extends JSONOperator implements Runnable {
 	private ArrayList<String> errors;
 	private JSONObject data;
 	private String name;
+	private int insertedResponses;
+	private int NaNCounts;
 
 	public JSONInserter(JSONObject data) {
 		this.data = data;
 		Connection connection = DBConnection.getDBConnection().getConnection();
 		errors = new ArrayList<>();
+		insertedResponses = 0;
+		NaNCounts = 0;
 
 		if (executor == null) {
 			executor = new OmniNeuroQueryExecutor(connection);
@@ -126,11 +132,11 @@ public class JSONInserter extends JSONOperator implements Runnable {
 
 			executor.insertComment(comment, experimentID);
 
-	/*
 			//Now comes actual experiment data
 			NumberUtils numberUtils = new NumberUtils();
 			JSONObject experimentData = data.getJSONObject("ExperimentData").getJSONObject("Endpoints");
 
+			long outlierID = executor.getIDViaName("outlier_type", "Unchecked");
 			for (String endpoint : getKeys(experimentData)) {
 				JSONObject concentrations = experimentData.getJSONObject(endpoint);
 
@@ -143,10 +149,14 @@ public class JSONInserter extends JSONOperator implements Runnable {
 					continue;
 				}
 
+				int timestamp = 24;
+				addError("Timestamp for endpoint '" + endpoint + "' has been defaulted to " + timestamp + "h. For now.");
+
 				for (String concentration : getKeys(concentrations)) {
 					boolean control = !numberUtils.isNumeric(concentration);
 
-					long controlID = -1;
+					long controlID;
+					long concentrationID;
 					if (control) {
 						try {
 							controlID = executor.getIDViaName("control", concentration);
@@ -155,18 +165,40 @@ public class JSONInserter extends JSONOperator implements Runnable {
 							addError("I think this concentration is actually a control. But I can't find a control in the database with this name: '" + concentration + "'.");
 							continue;
 						}
+						concentrationID = executor.insertConcentration(0, controlID);
+					} else {
+						controlID = executor.getIDViaName("control", "No control");
+						double d = Double.parseDouble(concentration);
+						concentrationID = executor.insertConcentration(d);
 					}
 
 					JSONArray results = concentrations.getJSONArray(concentration);
-					Log.i(endpoint + " -> " + concentration + " [Control: " + control + "] -> " + results);
+					Log.i(endpoint + " -> " + concentration + " [ID: " + concentrationID + "] (Control: " + control + " [ID: " + controlID + "]) -> Responses: " + results);
+
+					for (int i = 0; i < results.length(); i++) {
+						double result = results.getDouble(i);
+
+						if (Double.isNaN(result)) {
+							NaNCounts++;
+						}
+
+						try {
+							executor.insertResponse(result, timestamp, endpointID, concentrationID, experimentID, outlierID);
+						} catch (Throwable e) {
+							Log.e(e);
+							addError("Failed to insert response '" + result + "' for endpoint " + endpoint + " at " + timestamp + "h for concentration " + concentration + " into the database. Reason: " + e.getMessage().replace("\n", " "));
+							continue;
+						}
+
+						insertedResponses++;
+					}
 				}
 			}
-	 */
-
 		} catch (Throwable e) {
 			Log.e("Failed to insert Experiment: " + getName(), e);
 			addError("Failed to insert Experiment " + getName() + " into the database! Error Type: " + e.getClass().getSimpleName() + ". Reason: '" + e.getMessage() + "'");
 		}
+		Log.i("Finished inserting responses for " + getName() + ". Count: " + getInsertedResponses());
 	}
 
 	private synchronized long getIndividualID(String individual, String sex, String species) throws JSONException, SQLException {
@@ -190,6 +222,14 @@ public class JSONInserter extends JSONOperator implements Runnable {
 		return individualID;
 	}
 
+	public int getInsertedResponses() {
+		return insertedResponses;
+	}
+
+	public int getNaNCount() {
+		return NaNCounts;
+	}
+
 	private void addError(String text) {
 		String s = getName() + ": " + text;
 		Log.w("Inserter error: " + s);
@@ -198,6 +238,10 @@ public class JSONInserter extends JSONOperator implements Runnable {
 
 	public boolean hasError() {
 		return !errors.isEmpty();
+	}
+
+	public boolean hasNaNs() {
+		return getNaNCount() != 0;
 	}
 
 	public ArrayList<String> getErrors() {

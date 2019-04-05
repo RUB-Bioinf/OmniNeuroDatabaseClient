@@ -99,6 +99,7 @@ INSERT INTO public.control (id, name, acronym) VALUES (2, 'Positive control (PC)
 INSERT INTO public.control (id, name, acronym) VALUES (3, 'Background (BG)', 'BG');
 INSERT INTO public.control (id, name, acronym) VALUES (4, 'Lysis control (LC)', 'LC');
 INSERT INTO public.control (id, name, acronym) VALUES (0, 'No control', null);
+INSERT INTO public.control (id, name, acronym) VALUES (5, 'Background BrdU (BGBrdU)', 'BGBrdU');
 create table country
 (
     id   serial not null
@@ -147,7 +148,12 @@ create unique index endpoint_id_uindex
 create unique index endpoint_name_uindex
     on endpoint (name);
 
-
+INSERT INTO public.endpoint (id, name) VALUES (1, 'Proliferation (BrdU)');
+INSERT INTO public.endpoint (id, name) VALUES (2, 'Proliferation Area');
+INSERT INTO public.endpoint (id, name) VALUES (3, 'Cytotoxicity 120h');
+INSERT INTO public.endpoint (id, name) VALUES (4, 'Viabillity 120h');
+INSERT INTO public.endpoint (id, name) VALUES (5, 'Viabillity 120h prol');
+INSERT INTO public.endpoint (id, name) VALUES (6, 'Cytotoxicity 48h prol');
 create table experiment
 (
     id              serial  not null
@@ -290,7 +296,7 @@ create unique index project_id_uindex
     on project (id);
 
 INSERT INTO public.project (id, name, initiator_id) VALUES (0, 'EFSA DNT2', 0);
-create table responce
+create table response
 (
     id               serial           not null
         constraint measurement_pkey
@@ -311,11 +317,11 @@ create table responce
             references outlier_type
 );
 
-alter table responce
+alter table response
     owner to nilfoe;
 
 create unique index measurement_id_uindex
-    on responce (id);
+    on response (id);
 
 
 create table sex

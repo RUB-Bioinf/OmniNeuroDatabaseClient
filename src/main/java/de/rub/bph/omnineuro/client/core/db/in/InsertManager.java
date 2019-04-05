@@ -51,21 +51,51 @@ public class InsertManager {
 		}
 		Log.i("Done waiting.");
 
-		int errorExperimentCount = 0;
+		//Posprocessing statistics and errors
+		ArrayList<String> containsErrorList = new ArrayList<>();
+		ArrayList<String> containsNaNList = new ArrayList<>();
+		ArrayList<String> insertedResponsesList = new ArrayList<>();
+		ArrayList<String> triviaList = new ArrayList<>();
+
+		int errorNaNCount = 0;
+		int insertedResponsesCount = 0;
+
 		for (JSONInserter inserter : inserters) {
+			String name = inserter.getName();
+			insertedResponsesCount += inserter.getInsertedResponses();
+			insertedResponsesList.add(name + ";" + inserter.getInsertedResponses());
+
 			if (inserter.hasError()) {
 				errors.addAll(inserter.getErrors());
-				errorExperimentCount++;
+				containsErrorList.add(name + ";" + inserter.getErrors().size());
+			}
+
+			if (inserter.hasNaNs()) {
+				containsNaNList.add(name + ";" + inserter.getNaNCount());
+				errorNaNCount += inserter.getNaNCount();
 			}
 		}
-		Log.i("Overall, there were " + errors.size() + " error(s) in " + errorExperimentCount + " out of " + inserters.size() + " experiment(s).");
 
-		File errorFile = new File(outDir, "errors.txt");
-		Log.i("Saving errors to: " + errorFile.getAbsolutePath());
+		triviaList.add("Total errors discovered: " + errors.size());
+		triviaList.add("Errors in experiments: " + containsErrorList.size() + " out of " + inserters.size());
+		triviaList.add("Total NaNs discovered: " + errorNaNCount);
+		triviaList.add("NaNs in experiments: " + containsNaNList.size() + " out of " + inserters.size());
+		triviaList.add("Errors discovered: " + errors.size());
+		triviaList.add("Total responses inserted: " + insertedResponsesCount);
+
+		for (String trivia : triviaList) {
+			Log.i("Insertion trivia: " + trivia);
+		}
+
+		Log.i("Saving additional infos to: " + outDir.getAbsolutePath());
 		try {
-			manager.saveListFile(errors, errorFile, false);
+			manager.saveListFile(errors, new File(outDir, "errors.txt"), false);
+			manager.saveListFile(containsErrorList, new File(outDir, "contains_errors.csv"), false);
+			manager.saveListFile(containsNaNList, new File(outDir, "contains_nan.csv"), false);
+			manager.saveListFile(insertedResponsesList, new File(outDir, "inserted_responses.csv"), false);
+			manager.saveListFile(triviaList, new File(outDir, "trivia.txt"), false);
 		} catch (IOException e) {
-			Log.e("Failed to create insertion error list at: " + errorFile.getAbsolutePath());
+			Log.e("Failed to create insertion information file at: " + outDir.getAbsolutePath());
 		}
 	}
 

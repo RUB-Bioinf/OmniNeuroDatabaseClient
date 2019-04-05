@@ -94,6 +94,19 @@ public class QueryExecutor {
 		return set.getObject(columnName);
 	}
 
+	public int selectRowCount(String table, String columnName, boolean distinct) throws SQLException {
+		String query = ("SELECT count(");
+		if (distinct) {
+			query = query + "DISTINCT ";
+		}
+		query = query + columnName + ") FROM " + table + ";";
+		ResultSet set = executeQuery(query);
+		boolean b = set.next();
+		if (!b) return 0;
+
+		return 1;
+	}
+
 	public void deleteRow(String tableName, long id) throws SQLException {
 		execute("DELETE FROM " + tableName + " " +
 				"WHERE " + tableName + ".id = " + id + ";");
