@@ -104,7 +104,7 @@ public class QueryExecutor {
 		boolean b = set.next();
 		if (!b) return 0;
 
-		return 1;
+		return set.getInt("count");
 	}
 
 	public void deleteRow(String tableName, long id) throws SQLException {

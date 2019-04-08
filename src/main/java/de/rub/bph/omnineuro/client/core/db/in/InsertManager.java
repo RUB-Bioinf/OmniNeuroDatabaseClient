@@ -1,5 +1,7 @@
 package de.rub.bph.omnineuro.client.core.db.in;
 
+import de.rub.bph.omnineuro.client.core.db.DBConnection;
+import de.rub.bph.omnineuro.client.core.db.OmniNeuroQueryExecutor;
 import de.rub.bph.omnineuro.client.imported.filemanager.FileManager;
 import de.rub.bph.omnineuro.client.imported.log.Log;
 import org.json.JSONObject;
@@ -82,6 +84,18 @@ public class InsertManager {
 		triviaList.add("NaNs in experiments: " + containsNaNList.size() + " out of " + inserters.size());
 		triviaList.add("Errors discovered: " + errors.size());
 		triviaList.add("Total responses inserted: " + insertedResponsesCount);
+
+		DBConnection connection = DBConnection.getDBConnection();
+		OmniNeuroQueryExecutor executor = new OmniNeuroQueryExecutor(connection.getConnection());
+		try {
+			triviaList.add("Total experiments count in the database: " + executor.selectRowCount("experiment", "id", false));
+			triviaList.add("All response values in the database: " + executor.selectRowCount("response", "value", false));
+			triviaList.add("Unique response values in the database: " + executor.selectRowCount("response", "value", true));
+			triviaList.add("Unique concentration values in the database: " + executor.selectRowCount("concentration", "value", true));
+		} catch (Throwable e) {
+			Log.e(e);
+			triviaList.add("Failed to collect import trivia: " + e.getMessage());
+		}
 
 		for (String trivia : triviaList) {
 			Log.i("Insertion trivia: " + trivia);
