@@ -185,7 +185,6 @@ public class JSONInserter extends JSONOperator implements Runnable {
 						try {
 							executor.insertResponse(result, timestamp, endpointID, concentrationID, experimentID, outlierID);
 						} catch (Throwable e) {
-							Log.e(e);
 							addError("Failed to insert response '" + result + "' for endpoint " + endpoint + " at " + timestamp + "h for concentration " + concentration + " into the database. Reason: " + e.getMessage().replace("\n", " "));
 							continue;
 						}

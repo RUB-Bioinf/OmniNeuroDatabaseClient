@@ -1,6 +1,5 @@
-package de.rub.bph.omnineuro.client.core.sheet;
+package de.rub.bph.omnineuro.client.core.sheet.reader;
 
-import de.rub.bph.omnineuro.client.core.sheet.reader.SheetReaderTask;
 import de.rub.bph.omnineuro.client.imported.log.Log;
 import de.rub.bph.omnineuro.client.util.NumberUtils;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -39,8 +38,8 @@ public class MetaDataReaderTask extends SheetReaderTask {
 
 		try {
 			data.put(JSON_METADATA_TYPE_CONTROLS, readRows(41, 44));
-			data.put(JSON_METADATA_TYPE_REAGENTS, readRows(47, 64));
-			data.put(JSON_METADATA_TYPE_OPERATION_PROCEDURES, readRows(68, 75));
+			data.put(JSON_METADATA_TYPE_REAGENTS, readContinuous(47));
+			data.put(JSON_METADATA_TYPE_OPERATION_PROCEDURES, readContinuous(68));
 			data.put(JSON_METADATA_TYPE_COMMENTS, getValueAt("A77"));
 		} catch (Exception e) {
 			Log.e("Failed to generate Control JSON!", e);
@@ -53,11 +52,52 @@ public class MetaDataReaderTask extends SheetReaderTask {
 		return data;
 	}
 
+	public JSONObject readContinuous(int start) throws JSONException {
+		return readContinuous(start, null);
+	}
+
+	public JSONObject readContinuous(int start, JSONObject data) throws JSONException {
+		return readRows(start, getContinuousRowEntries("A", start), data);
+	}
+
+	public int getContinuousRowEntries(String colName, int start) {
+		Log.i("Looking for continuous entries from " + colName + start + " onwards.");
+		int offset = 0;
+
+		while (true) {
+			String cellName = colName + (start + offset);
+			Log.i("Discovering if there exists an entry for: " + cellName);
+
+			String cell;
+			try {
+				cell = getValueAt(cellName, false);
+			} catch (SheetReaderException e) {
+				e.printStackTrace();
+				Log.i("Nope. Nothing found. Stopping at offset: " + offset);
+				break;
+			}
+
+			if (cell == null || cell.trim().equals("")) {
+				break;
+			}
+
+			Log.i("Yup. There was something written there: " + cell.trim());
+			offset++;
+		}
+
+		Log.i("Results: From " + colName + start + " onwards, there were " + offset + " row(s) of data!");
+		return offset;
+	}
+
 	public JSONObject readRows(int start, int end) throws JSONException {
 		return readRows(start, end, new JSONObject());
 	}
 
 	public JSONObject readRows(int start, int end, JSONObject input) throws JSONException {
+		if (input == null) {
+			return readRows(start, end);
+		}
+
 		JSONArray errors;
 		JSONObject data;
 

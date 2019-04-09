@@ -1,6 +1,5 @@
 package de.rub.bph.omnineuro.client.core.sheet.reader;
 
-import de.rub.bph.omnineuro.client.core.sheet.MetaDataReaderTask;
 import de.rub.bph.omnineuro.client.imported.filemanager.FileManager;
 import de.rub.bph.omnineuro.client.imported.log.Log;
 import de.rub.bph.omnineuro.client.util.JSONOperator;
