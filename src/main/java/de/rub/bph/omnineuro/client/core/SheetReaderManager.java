@@ -61,6 +61,7 @@ public class SheetReaderManager {
 		}
 
 		waitForTasks();
+
 		for (SheetReader reader : readers) {
 			if (reader.hasBufferedExperiment()) {
 				experiments.add(reader.getBufferedExperiment());

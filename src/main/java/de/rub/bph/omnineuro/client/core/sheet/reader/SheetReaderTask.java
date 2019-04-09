@@ -27,10 +27,6 @@ public abstract class SheetReaderTask {
 		return sheet;
 	}
 
-	protected void setSheet(Sheet sheet) {
-		this.sheet = sheet;
-	}
-
 	public String getValueAt(String cellName) throws SheetReaderException {
 		return getValueAt(cellName, true);
 	}

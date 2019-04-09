@@ -2,6 +2,7 @@ package de.rub.bph.omnineuro.client.core;
 
 import de.rub.bph.omnineuro.client.imported.filemanager.FileManager;
 import de.rub.bph.omnineuro.client.imported.log.Log;
+import de.rub.bph.omnineuro.client.util.NumberUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -43,11 +44,13 @@ public class ExperimentReaderStatistics {
 		}
 
 		manager.writeFile(new File(outDir, "readExperiments.txt"), builder.toString());
+		//TODO add experiment output for version?
 	}
 
 	public void calculateConcentrationErrors() throws JSONException, IOException {
 		StringBuilder builder = new StringBuilder("Experiment;Endpoint;Replica;Description;\n");
 
+		NumberUtils numberUtils = new NumberUtils();
 		for (JSONObject experiment : experiments) {
 			String name = getExperimentName(experiment);
 
@@ -59,13 +62,13 @@ public class ExperimentReaderStatistics {
 				JSONObject concentrations = endpoints.getJSONObject(key);
 				for (String concentration : keyList(concentrations)) {
 					if (concentration.equals(ERROR_VALUE_NV)) {
-						builder.append(name + ";" + key + ";-;Unknown concentration: '"+concentration+"';\n");
+						builder.append(name + ";" + key + ";-;Unknown concentration: '" + concentration + "';\n");
 					}
 
 					JSONArray replicas = concentrations.getJSONArray(concentration);
 					for (int i = 0; i < replicas.length(); i++) {
 						String s = replicas.get(i).toString();
-						if (!isNumeric(s) || s.equals(ERROR_VALUE_NAN)) {
+						if (!numberUtils.isNumeric(s) || s.equals(ERROR_VALUE_NAN)) {
 							builder.append(name + ";" + key + ";" + i + ";Value is not a number!;\n");
 							continue;
 						}
@@ -113,18 +116,18 @@ public class ExperimentReaderStatistics {
 
 				JSONObject data = categoryData.getJSONObject("Data");
 				Iterator dataIterator = data.keys();
-				while (dataIterator.hasNext()){
+				while (dataIterator.hasNext()) {
 					String dataKey = dataIterator.next().toString();
 					String value = data.getString(dataKey);
 
-					if (value==null||value.equals("")){
-						builder.append(name + ";" + key + ";No entry for key '" +dataKey+ "';\n");
+					if (value == null || value.equals("")) {
+						builder.append(name + ";" + key + ";No entry for key '" + dataKey + "';\n");
 					}
-					if (value==null||value.equals("NaN")){
-						builder.append(name + ";" + key + ";Invalid value for key '" +dataKey+ "';\n");
+					if (value == null || value.equals("NaN")) {
+						builder.append(name + ";" + key + ";Invalid value for key '" + dataKey + "';\n");
 					}
 
-					Log.v("K/V data comparison: '"+dataKey+"' -> '"+value+"'");
+					Log.v("K/V data comparison: '" + dataKey + "' -> '" + value + "'");
 				}
 			}
 		}
@@ -136,15 +139,6 @@ public class ExperimentReaderStatistics {
 	private String getExperimentName(JSONObject experiment) throws JSONException {
 		File f = new File(experiment.getString("SourceFile"));
 		return f.getName();
-	}
-
-	private boolean isNumeric(String parse) {
-		try {
-			Double.parseDouble(parse);
-		} catch (Exception e) {
-			return false;
-		}
-		return true;
 	}
 
 	private ArrayList<String> keyList(JSONObject o) {

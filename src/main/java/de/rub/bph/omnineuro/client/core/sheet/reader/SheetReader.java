@@ -20,11 +20,13 @@ public class SheetReader extends JSONOperator implements Runnable {
 	public static final String JSON_ENTRY_SOURCEFILE = "SourceFile";
 	public static final String EXCEL_SHEET_SUBNAME_METADATA = "exp. protocol";
 	public static final String EXCEL_SHEET_SUBNAME_EXPERIMENT_DATA = "DB import";
+	public static final String EXCEL_SHEET_SUBNAME_SHEET_VERSION = "SheetVersion";
 	private static final String JSON_ENTRY_EXPERIMENTDATA = "ExperimentData";
 
 	private File sourceFile;
 	private File outDir;
 	private JSONObject bufferedExperiment;
+	private MetaDataReaderTask metaDataReader;
 
 	public SheetReader(File sourceFile, File outDir) {
 		this.sourceFile = sourceFile;
@@ -54,7 +56,6 @@ public class SheetReader extends JSONOperator implements Runnable {
 		// META DATA
 
 		Log.i("Starting up meta data instructions!");
-		MetaDataReaderTask metaDataReader = null;
 		FileManager fileManager = new FileManager();
 		try {
 			metaDataReader = new MetaDataReaderTask(workbook, EXCEL_SHEET_SUBNAME_METADATA, sourceFile);
@@ -77,7 +78,8 @@ public class SheetReader extends JSONOperator implements Runnable {
 		try {
 			experiment.put(JSON_ENTRY_METADATA, metaDataReader.readSheet());
 			experiment.put(JSON_ENTRY_EXPERIMENTDATA, experimentDataReader.readSheet());
-			experiment.put(JSON_ENTRY_SOURCEFILE, sourceFile.getAbsolutePath());
+			experiment.put(JSON_ENTRY_SOURCEFILE, getSourceFile().getAbsolutePath());
+			experiment.put(EXCEL_SHEET_SUBNAME_SHEET_VERSION, getSheetVersion());
 		} catch (Exception e) {
 			e.printStackTrace();
 			Log.e("FATAL ERROR! Failed to resolve meta data!", e);
@@ -94,6 +96,13 @@ public class SheetReader extends JSONOperator implements Runnable {
 		Log.v("Experiment data read: " + experiment.toString());
 
 		bufferedExperiment = experiment;
+	}
+
+	public int getSheetVersion() {
+		if (metaDataReader == null) {
+			return -1;
+		}
+		return metaDataReader.getSheetVersion();
 	}
 
 	public JSONObject getBufferedExperiment() {
