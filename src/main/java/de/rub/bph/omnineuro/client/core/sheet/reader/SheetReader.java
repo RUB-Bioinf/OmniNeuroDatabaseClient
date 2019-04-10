@@ -3,6 +3,7 @@ package de.rub.bph.omnineuro.client.core.sheet.reader;
 import de.rub.bph.omnineuro.client.imported.filemanager.FileManager;
 import de.rub.bph.omnineuro.client.imported.log.Log;
 import de.rub.bph.omnineuro.client.util.JSONOperator;
+import de.rub.bph.omnineuro.client.util.NumberUtils;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.json.JSONException;
@@ -25,11 +26,12 @@ public class SheetReader extends JSONOperator implements Runnable {
 	private File sourceFile;
 	private File outDir;
 	private JSONObject bufferedExperiment;
-	private MetaDataReaderTask metaDataReader;
+	private int sheetVersion;
 
 	public SheetReader(File sourceFile, File outDir) {
 		this.sourceFile = sourceFile;
 		this.outDir = outDir;
+		sheetVersion = -1;
 	}
 
 	public File getSourceFile() {
@@ -52,10 +54,20 @@ public class SheetReader extends JSONOperator implements Runnable {
 		}
 		Log.i("Interpretation complete.");
 
+		// SHEET VERSION
+
+		try {
+			sheetVersion = readSheetVersion(workbook);
+		} catch (IOException e) {
+			Log.e("IO Exception during check for sheet version!", e);
+			return;
+		}
+
 		// META DATA
 
 		Log.i("Starting up meta data instructions!");
 		FileManager fileManager = new FileManager();
+		MetaDataReaderTask metaDataReader;
 		try {
 			metaDataReader = new MetaDataReaderTask(workbook, EXCEL_SHEET_SUBNAME_METADATA, sourceFile);
 		} catch (IOException e) {
@@ -98,10 +110,28 @@ public class SheetReader extends JSONOperator implements Runnable {
 	}
 
 	public int getSheetVersion() {
-		if (metaDataReader == null) {
-			return -1;
+		return sheetVersion;
+	}
+
+	public int readSheetVersion(Workbook workbook) throws IOException {
+		MetaDataReaderTask versionReaderTask = new MetaDataReaderTask(workbook, EXCEL_SHEET_SUBNAME_METADATA, sourceFile);
+		int version = 0;
+
+		NumberUtils numberUtils = new NumberUtils();
+		try {
+			String versionKey = versionReaderTask.getValueAt("A1");
+			if (versionKey == null || !versionKey.equals("Version")) {
+				return version;
+			}
+
+			String s = versionReaderTask.getValueAt("B1", true);
+			if (numberUtils.isNumeric(s)) {
+				return Integer.parseInt(s);
+			}
+		} catch (SheetReaderTask.SheetReaderException e) {
+			Log.e(e);
 		}
-		return metaDataReader.getSheetVersion();
+		return version;
 	}
 
 	public JSONObject getBufferedExperiment() {

@@ -1,7 +1,6 @@
 package de.rub.bph.omnineuro.client.core.sheet.reader;
 
 import de.rub.bph.omnineuro.client.imported.log.Log;
-import de.rub.bph.omnineuro.client.util.NumberUtils;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -22,8 +21,6 @@ public class MetaDataReaderTask extends SheetReaderTask {
 	public static final String JSON_EXTRACTION_ENTRY_DATA = "Data";
 	public static final String JSON_EXTRACTION_ENTRY_DATA_COUNT = JSON_EXTRACTION_ENTRY_DATA + "Count";
 
-	private int sheetVersion;
-
 	public MetaDataReaderTask(Workbook workbook, String name, File sourceFile) throws IOException {
 		super(workbook, name, sourceFile);
 		Log.i("Prepared Metadata sheet.");
@@ -31,7 +28,6 @@ public class MetaDataReaderTask extends SheetReaderTask {
 
 	@Override
 	public JSONObject readSheet() throws JSONException, SheetReaderException {
-		sheetVersion = readSheetVersion();
 		JSONObject data = new JSONObject();
 
 		data.put("CompoundCount", getValueAt("B32"));
@@ -128,29 +124,4 @@ public class MetaDataReaderTask extends SheetReaderTask {
 		input.put(JSON_EXTRACTION_ENTRY_ERRORS, errors);
 		return input;
 	}
-
-	public int getSheetVersion() {
-		return sheetVersion;
-	}
-
-	private int readSheetVersion() {
-		int version = 0;
-
-		NumberUtils numberUtils = new NumberUtils();
-		try {
-			String versionKey = getValueAt("A1");
-			if (!versionKey.equals("Version")) {
-				return version;
-			}
-
-			String s = getValueAt("B1", true);
-			if (numberUtils.isNumeric(s)) {
-				return Integer.parseInt(s);
-			}
-		} catch (SheetReaderException e) {
-			Log.e(e);
-		}
-		return version;
-	}
-
 }
