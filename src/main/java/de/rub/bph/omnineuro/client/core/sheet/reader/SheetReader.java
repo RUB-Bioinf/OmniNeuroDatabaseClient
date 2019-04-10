@@ -1,9 +1,9 @@
 package de.rub.bph.omnineuro.client.core.sheet.reader;
 
+import de.rub.bph.omnineuro.client.core.sheet.reader.versions.MetaDataReaderCompat;
 import de.rub.bph.omnineuro.client.imported.filemanager.FileManager;
 import de.rub.bph.omnineuro.client.imported.log.Log;
 import de.rub.bph.omnineuro.client.util.JSONOperator;
-import de.rub.bph.omnineuro.client.util.NumberUtils;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.json.JSONException;
@@ -57,7 +57,7 @@ public class SheetReader extends JSONOperator implements Runnable {
 		// SHEET VERSION
 
 		try {
-			sheetVersion = readSheetVersion(workbook);
+			sheetVersion = new SheetVersionReader(workbook).readVersion();
 		} catch (IOException e) {
 			Log.e("IO Exception during check for sheet version!", e);
 			return;
@@ -68,8 +68,9 @@ public class SheetReader extends JSONOperator implements Runnable {
 		Log.i("Starting up meta data instructions!");
 		FileManager fileManager = new FileManager();
 		MetaDataReaderTask metaDataReader;
+		MetaDataReaderCompat metaDataReaderCompat = new MetaDataReaderCompat(workbook, sourceFile, getSheetVersion());
 		try {
-			metaDataReader = new MetaDataReaderTask(workbook, EXCEL_SHEET_SUBNAME_METADATA, sourceFile);
+			metaDataReader = metaDataReaderCompat.getTask();
 		} catch (IOException e) {
 			Log.e(e);
 			return;
@@ -111,27 +112,6 @@ public class SheetReader extends JSONOperator implements Runnable {
 
 	public int getSheetVersion() {
 		return sheetVersion;
-	}
-
-	public int readSheetVersion(Workbook workbook) throws IOException {
-		MetaDataReaderTask versionReaderTask = new MetaDataReaderTask(workbook, EXCEL_SHEET_SUBNAME_METADATA, sourceFile);
-		int version = 0;
-
-		NumberUtils numberUtils = new NumberUtils();
-		try {
-			String versionKey = versionReaderTask.getValueAt("A1");
-			if (versionKey == null || !versionKey.equals("Version")) {
-				return version;
-			}
-
-			String s = versionReaderTask.getValueAt("B1", true);
-			if (numberUtils.isNumeric(s)) {
-				return Integer.parseInt(s);
-			}
-		} catch (SheetReaderTask.SheetReaderException e) {
-			Log.e(e);
-		}
-		return version;
 	}
 
 	public JSONObject getBufferedExperiment() {

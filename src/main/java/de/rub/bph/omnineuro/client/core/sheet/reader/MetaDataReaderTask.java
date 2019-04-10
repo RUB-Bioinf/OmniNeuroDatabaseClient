@@ -9,7 +9,7 @@ import org.json.JSONObject;
 import java.io.File;
 import java.io.IOException;
 
-public class MetaDataReaderTask extends SheetReaderTask {
+public abstract class MetaDataReaderTask extends SheetReaderTask {
 
 	public static final String JSON_METADATA_TYPE_CONTROLS = "Controls";
 	public static final String JSON_METADATA_TYPE_COMMENTS = "Comments";
@@ -27,23 +27,18 @@ public class MetaDataReaderTask extends SheetReaderTask {
 	}
 
 	@Override
-	public JSONObject readSheet() throws JSONException, SheetReaderException {
+	public JSONObject readSheet() throws JSONException {
 		JSONObject data = new JSONObject();
 
-		data.put("CompoundCount", getValueAt("B32"));
-
 		try {
-			data.put(JSON_METADATA_TYPE_CONTROLS, readRows(41, 44));
-			data.put(JSON_METADATA_TYPE_REAGENTS, readContinuous(47));
-			data.put(JSON_METADATA_TYPE_OPERATION_PROCEDURES, readContinuous(68));
-			data.put(JSON_METADATA_TYPE_COMMENTS, getValueAt("A77"));
+			data.put(JSON_METADATA_TYPE_CONTROLS, readMetaDataControls());
+			data.put(JSON_METADATA_TYPE_REAGENTS, readMetaDataReagents());
+			data.put(JSON_METADATA_TYPE_OPERATION_PROCEDURES, readMetaDataOperationProcedures());
+			data.put(JSON_METADATA_TYPE_COMMENTS, readMetaDataComments());
 		} catch (Exception e) {
-			Log.e("Failed to generate Control JSON!", e);
+			Log.e("Failed to generate secondary metadata JSON!", e);
 		}
-
-		JSONObject metaData = readRows(1, 25);
-		metaData = readRows(27, 31, metaData);
-		data.put("General", metaData);
+		data.put("General", readMetaDataGeneral());
 
 		return data;
 	}
@@ -124,4 +119,15 @@ public class MetaDataReaderTask extends SheetReaderTask {
 		input.put(JSON_EXTRACTION_ENTRY_ERRORS, errors);
 		return input;
 	}
+
+	public abstract JSONObject readMetaDataControls() throws JSONException;
+
+	public abstract JSONObject readMetaDataReagents() throws JSONException;
+
+	public abstract JSONObject readMetaDataOperationProcedures() throws JSONException;
+
+	public abstract String readMetaDataComments() throws SheetReaderException;
+
+	public abstract JSONObject readMetaDataGeneral() throws JSONException;
+
 }
