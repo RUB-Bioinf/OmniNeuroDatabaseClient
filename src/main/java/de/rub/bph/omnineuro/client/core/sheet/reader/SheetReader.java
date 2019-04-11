@@ -1,6 +1,6 @@
 package de.rub.bph.omnineuro.client.core.sheet.reader;
 
-import de.rub.bph.omnineuro.client.core.sheet.reader.versions.MetaDataReaderCompat;
+import de.rub.bph.omnineuro.client.core.sheet.reader.versions.DataReaderCompat;
 import de.rub.bph.omnineuro.client.imported.filemanager.FileManager;
 import de.rub.bph.omnineuro.client.imported.log.Log;
 import de.rub.bph.omnineuro.client.util.JSONOperator;
@@ -40,7 +40,8 @@ public class SheetReader extends JSONOperator implements Runnable {
 
 	@Override
 	public void run() {
-		Workbook workbook = null;
+		Workbook workbook;
+		FileManager fileManager = new FileManager();
 		JSONObject experiment = new JSONObject();
 
 		Log.i("Reading Excel file: " + sourceFile.getAbsolutePath());
@@ -54,7 +55,7 @@ public class SheetReader extends JSONOperator implements Runnable {
 		}
 		Log.i("Interpretation complete.");
 
-		// SHEET VERSION
+		// SHEET VERSION & COMPAT
 
 		try {
 			sheetVersion = new SheetVersionReader(workbook).readVersion();
@@ -62,15 +63,14 @@ public class SheetReader extends JSONOperator implements Runnable {
 			Log.e("IO Exception during check for sheet version!", e);
 			return;
 		}
+		DataReaderCompat dataReaderCompat = new DataReaderCompat(workbook, sourceFile, getSheetVersion());
 
 		// META DATA
 
 		Log.i("Starting up meta data instructions!");
-		FileManager fileManager = new FileManager();
 		MetaDataReaderTask metaDataReader;
-		MetaDataReaderCompat metaDataReaderCompat = new MetaDataReaderCompat(workbook, sourceFile, getSheetVersion());
 		try {
-			metaDataReader = metaDataReaderCompat.getTask();
+			metaDataReader = dataReaderCompat.getMetaDataTask();
 		} catch (IOException e) {
 			Log.e(e);
 			return;
@@ -81,7 +81,7 @@ public class SheetReader extends JSONOperator implements Runnable {
 		Log.i("Starting up experiment data instructions!");
 		ExperimentDataReaderTask experimentDataReader;
 		try {
-			experimentDataReader = new ExperimentDataReaderTask(workbook, EXCEL_SHEET_SUBNAME_EXPERIMENT_DATA, sourceFile, getSheetVersion());
+			experimentDataReader = dataReaderCompat.getExperimentDataTask();
 		} catch (IOException e) {
 			Log.e(e);
 			return;

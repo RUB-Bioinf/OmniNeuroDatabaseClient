@@ -77,6 +77,7 @@ public class ExperimentReaderStatistics {
 							continue;
 						}
 
+						/*
 						double d = Double.parseDouble(s);
 						if (d == 0) {
 							//String w = name + ";" + key + ";" + i + ";Value zero!;\n";
@@ -90,6 +91,7 @@ public class ExperimentReaderStatistics {
 							//Log.w("Warning: " + w);
 							continue;
 						}
+						*/
 					}
 				}
 			}
