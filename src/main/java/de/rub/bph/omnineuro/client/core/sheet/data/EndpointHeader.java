@@ -5,11 +5,21 @@ public class EndpointHeader {
 	private String name;
 	private int columnIndex;
 	private int expectedValues;
+	private int timestamp;
 
-	public EndpointHeader(String name, int columnIndex, int expectedValues) {
+	public EndpointHeader(String name, int columnIndex, int expectedValues, int timestamp) {
 		this.name = name;
 		this.columnIndex = columnIndex;
 		this.expectedValues = expectedValues;
+		this.timestamp = timestamp;
+	}
+
+	public int getTimestamp() {
+		return timestamp;
+	}
+
+	public void setTimestamp(int timestamp) {
+		this.timestamp = timestamp;
 	}
 
 	public String getName() {
@@ -34,14 +44,5 @@ public class EndpointHeader {
 
 	public void setExpectedValues(int expectedValues) {
 		this.expectedValues = expectedValues;
-	}
-
-	@Override
-	public String toString() {
-		return "EndpointHeader{" +
-				"name='" + name + '\'' +
-				", columnIndex=" + columnIndex +
-				", expectedValues=" + expectedValues +
-				'}';
 	}
 }

@@ -14,27 +14,31 @@ import java.util.ArrayList;
 public class ExperimentDataReaderTask extends SheetReaderTask {
 
 	public static final String CELL_VALUE_ZERO = "0.0";
-	private JSONObject concentrations;
+	private int sheetVersion;
 
-	public ExperimentDataReaderTask(Workbook workbook, String sheetName, JSONObject concentrations, File sourceFile) throws IOException {
+	public ExperimentDataReaderTask(Workbook workbook, String sheetName, File sourceFile, int sheetVersion) throws IOException {
 		super(workbook, sheetName, sourceFile);
-		this.concentrations = concentrations;
-		Log.i("Finished setting up experiment Data reader.");
+		this.sheetVersion = sheetVersion;
+		Log.i("Finished setting up experiment Data reader. Version: " + getSheetVersion());
 	}
 
 	@Override
 	public JSONObject readSheet() throws JSONException, SheetReaderException {
 		JSONObject data = new JSONObject();
 
-		ArrayList<EndpointHeader> endpointHeaders = readEndpoints();
+		ArrayList<EndpointHeader> endpointHeaders = readEndpointsHeader();
 		Log.i("Endpoint count: " + endpointHeaders.size());
 		Log.i("Endpoints: " + endpointHeaders);
 
 		JSONObject endpoints = new JSONObject();
 		for (EndpointHeader header : endpointHeaders) {
 			String name = header.getName();
-			JSONObject values = readEndpointValues(header);
-			endpoints.put(name, values);
+
+			JSONObject endpoint = new JSONObject();
+			endpoint.put("timestamp", header.getTimestamp());
+			endpoint.put("responses", readEndpointValues(header));
+
+			endpoints.put(name, endpoint);
 		}
 
 		data.put("Endpoints", endpoints);
@@ -108,7 +112,7 @@ public class ExperimentDataReaderTask extends SheetReaderTask {
 		return data;
 	}
 
-	public ArrayList<EndpointHeader> readEndpoints() throws SheetReaderException, NumberFormatException {
+	public ArrayList<EndpointHeader> readEndpointsHeader() throws SheetReaderException, NumberFormatException {
 		Log.i("Reading endpoints.");
 		ArrayList<EndpointHeader> headers = new ArrayList<>();
 
@@ -133,7 +137,7 @@ public class ExperimentDataReaderTask extends SheetReaderTask {
 			cellName = getExcelColumn(i) + 2;
 			int expectedValues = (int) Double.parseDouble(getValueAt(cellName));
 
-			EndpointHeader header = new EndpointHeader(endpointName, i, expectedValues);
+			EndpointHeader header = new EndpointHeader(endpointName, i, expectedValues, 24);
 			Log.i("Header added: " + header);
 			headers.add(header);
 		}
@@ -141,4 +145,7 @@ public class ExperimentDataReaderTask extends SheetReaderTask {
 		return headers;
 	}
 
+	public int getSheetVersion() {
+		return sheetVersion;
+	}
 }

@@ -48,7 +48,7 @@ public class ExperimentReaderStatistics {
 	}
 
 	public void calculateConcentrationErrors() throws JSONException, IOException {
-		StringBuilder builder = new StringBuilder("Experiment;Endpoint;Replica;Description;\n");
+		StringBuilder builder = new StringBuilder("Experiment;Endpoint;Timestamp;Replica;Description;\n");
 
 		NumberUtils numberUtils = new NumberUtils();
 		for (JSONObject experiment : experiments) {
@@ -59,17 +59,21 @@ public class ExperimentReaderStatistics {
 			while (ep.hasNext()) {
 				String key = ep.next().toString();
 
-				JSONObject concentrations = endpoints.getJSONObject(key);
-				for (String concentration : keyList(concentrations)) {
+				JSONObject endpoint = endpoints.getJSONObject(key);
+				int timestamp = endpoint.getInt("timestamp");
+				JSONObject responses = endpoint.getJSONObject("responses");
+
+				for (String concentration : keyList(responses)) {
 					if (concentration.equals(ERROR_VALUE_NV)) {
-						builder.append(name + ";" + key + ";-;Unknown concentration: '" + concentration + "';\n");
+						builder.append(name + ";" + key + ";" + timestamp + ";-;Unknown concentration: '" + concentration + "';\n");
+						continue;
 					}
 
-					JSONArray replicas = concentrations.getJSONArray(concentration);
+					JSONArray replicas = responses.getJSONArray(concentration);
 					for (int i = 0; i < replicas.length(); i++) {
 						String s = replicas.get(i).toString();
 						if (!numberUtils.isNumeric(s) || s.equals(ERROR_VALUE_NAN)) {
-							builder.append(name + ";" + key + ";" + i + ";Value is not a number!;\n");
+							builder.append(name + ";" + key + ";" + timestamp + ";" + i + ";Value is not a number!;\n");
 							continue;
 						}
 

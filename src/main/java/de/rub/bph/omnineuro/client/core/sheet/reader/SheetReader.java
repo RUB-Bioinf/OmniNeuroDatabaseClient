@@ -79,9 +79,9 @@ public class SheetReader extends JSONOperator implements Runnable {
 		// EXPERIMENT DATA
 
 		Log.i("Starting up experiment data instructions!");
-		ExperimentDataReaderTask experimentDataReader = null;
+		ExperimentDataReaderTask experimentDataReader;
 		try {
-			experimentDataReader = new ExperimentDataReaderTask(workbook, EXCEL_SHEET_SUBNAME_EXPERIMENT_DATA, new JSONObject(), sourceFile);
+			experimentDataReader = new ExperimentDataReaderTask(workbook, EXCEL_SHEET_SUBNAME_EXPERIMENT_DATA, sourceFile, getSheetVersion());
 		} catch (IOException e) {
 			Log.e(e);
 			return;

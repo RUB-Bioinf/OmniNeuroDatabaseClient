@@ -127,7 +127,9 @@ public class JSONInserter extends JSONOperator implements Runnable {
 
 			long outlierID = executor.getIDViaName("outlier_type", "Unchecked");
 			for (String endpoint : getKeys(experimentData)) {
-				JSONObject concentrations = experimentData.getJSONObject(endpoint);
+				JSONObject endpointData = experimentData.getJSONObject(endpoint);
+				int timestamp = endpointData.getInt("timestamp");
+				JSONObject responses = endpointData.getJSONObject("responses");
 
 				long endpointID;
 				try {
@@ -138,10 +140,7 @@ public class JSONInserter extends JSONOperator implements Runnable {
 					continue;
 				}
 
-				int timestamp = 24;
-				addError("Timestamp for endpoint '" + endpoint + "' has been defaulted to " + timestamp + "h. For now.");
-
-				for (String concentration : getKeys(concentrations)) {
+				for (String concentration : getKeys(responses)) {
 					boolean control = !numberUtils.isNumeric(concentration);
 
 					long controlID;
@@ -161,7 +160,7 @@ public class JSONInserter extends JSONOperator implements Runnable {
 						concentrationID = executor.insertConcentration(d);
 					}
 
-					JSONArray results = concentrations.getJSONArray(concentration);
+					JSONArray results = responses.getJSONArray(concentration);
 					Log.i(endpoint + " -> " + concentration + " [ID: " + concentrationID + "] (Control: " + control + " [ID: " + controlID + "]) -> Responses: " + results);
 
 					for (int i = 0; i < results.length(); i++) {
