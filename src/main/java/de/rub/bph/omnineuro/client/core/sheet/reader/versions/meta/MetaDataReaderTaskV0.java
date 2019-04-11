@@ -1,4 +1,4 @@
-package de.rub.bph.omnineuro.client.core.sheet.reader.versions;
+package de.rub.bph.omnineuro.client.core.sheet.reader.versions.meta;
 
 import de.rub.bph.omnineuro.client.core.sheet.reader.MetaDataReaderTask;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -36,7 +36,17 @@ public class MetaDataReaderTaskV0 extends MetaDataReaderTask {
 
 	@Override
 	public JSONObject readMetaDataGeneral() throws JSONException {
-		return readRows(27, 31, readRows(1, 25));
+		JSONObject general = readRows(27, 31, readRows(1, 25));
+
+		JSONObject data = general.getJSONObject("Data");
+		data.put("Institution","IUF – Leibniz Research Institute for Environmental Medicine");
+		data.put("Department","Modern risk assessment and sphere biology");
+		data.put("Workgroup","Modern risk assessment and sphere biology");
+		data.put("Group leader","Ellen Fritsche");
+		data.put("Project","EFSA DNT2");
+		data.put("Sex","undefined");
+
+		return general;
 	}
 
 

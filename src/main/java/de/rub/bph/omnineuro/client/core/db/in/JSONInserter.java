@@ -74,6 +74,8 @@ public class JSONInserter extends JSONOperator implements Runnable {
 			String cellType = metaDataGeneral.getString("Cell type");
 			String species = metaDataGeneral.getString("Species");
 			String plateFormat = metaDataGeneral.getString("Plateformat");
+			String sex = metaDataGeneral.getString("Sex");
+			String workgroup = metaDataGeneral.getString("Department"); //Workgroup under department? Yep. This is intentional.
 
 			Date date = new Date(0);
 			String platingDate = metaDataGeneral.getString("Plating date (ddMONjj)");
@@ -84,18 +86,6 @@ public class JSONInserter extends JSONOperator implements Runnable {
 				Log.e("Failed to interpret plating date!", e);
 				addError("Unable to interpret plating date: '" + platingDate + "'! Are you sure this is the right format?");
 			}
-
-			String department = "IUF";
-			//TODO add department to sheet
-			addError("Department for " + getName() + " has been defaulted to '" + department + "'");
-
-			String workgroup = "AG Fritsche";
-			//TODO add workgroup to sheet
-			addError("Workgroup for " + getName() + " has been defaulted to '" + workgroup + "'");
-
-			String sex = "undefined";
-			//TODO Add SEX to sheet
-			addError("Sex for " + getName() + " has been defaulted to '" + sex + "'");
 
 			if (compound.equals("NaN")) {
 				addError("Compound is unknown!");
@@ -109,7 +99,6 @@ public class JSONInserter extends JSONOperator implements Runnable {
 			long cellTypeID = executor.getIDViaName("cell_type", cellType);
 			long projectID = executor.getIDViaName("project", projectName);
 			long plateformatID = executor.getIDViaName("plate_format", plateFormat);
-			long departmentID = executor.getIDViaName("department", department);
 			long workgroupID = executor.getIDViaName("workgroup", workgroup);
 
 			long individualID = getIndividualID(individual, sex, species);

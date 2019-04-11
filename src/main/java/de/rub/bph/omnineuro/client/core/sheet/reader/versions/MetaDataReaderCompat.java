@@ -1,6 +1,7 @@
 package de.rub.bph.omnineuro.client.core.sheet.reader.versions;
 
 import de.rub.bph.omnineuro.client.core.sheet.reader.MetaDataReaderTask;
+import de.rub.bph.omnineuro.client.core.sheet.reader.versions.meta.MetaDataReaderTaskV0;
 import de.rub.bph.omnineuro.client.imported.log.Log;
 import org.apache.poi.ss.usermodel.Workbook;
 
