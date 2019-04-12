@@ -26,7 +26,8 @@ public class SheetVersionReader extends MetaDataReaderTask {
 
 			String s = getValueAt("B1", true);
 			if (numberUtils.isNumeric(s)) {
-				return Integer.parseInt(s);
+				double d = Double.parseDouble(s);
+				return (int) d;
 			}
 
 			return 0;

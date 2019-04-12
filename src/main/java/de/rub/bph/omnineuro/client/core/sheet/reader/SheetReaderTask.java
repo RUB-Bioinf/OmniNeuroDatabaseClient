@@ -12,11 +12,18 @@ public abstract class SheetReaderTask {
 
 	protected Sheet sheet;
 	protected File sourceFile;
+	protected Workbook workbook;
 
 	public SheetReaderTask(Workbook workbook, String sheetName, File sourceFile) throws IOException {
 		this.sourceFile = sourceFile;
+		this.workbook = workbook;
+
 		sheet = workbook.getSheet(sheetName);
 		workbook.close();
+	}
+
+	public String getFileName() {
+		return getSourceFile().getName();
 	}
 
 	public File getSourceFile() {

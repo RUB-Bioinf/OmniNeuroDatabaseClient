@@ -48,7 +48,7 @@ public abstract class Log {
 	}
 
 	public static void e(Throwable throwable) {
-		e("An Exception occurred: " + throwable.getClass().getName() + ": '" + throwable.getMessage() + "'.", throwable);
+		e("An Exception occurred: " + throwable.getClass().getSimpleName() + ": '" + throwable.getMessage() + "'.", throwable);
 	}
 
 	public static void e(String text) {
@@ -131,7 +131,7 @@ public abstract class Log {
 	public static File getLogFile() {
 		File dir = new FileManager().getLogDir();
 		String dateTag = new SimpleDateFormat("MM-dd").format(new Date());
-		return new File(dir, dateTag+"-log.txt");
+		return new File(dir, dateTag + "-log.txt");
 	}
 
 	public enum LogLevel {

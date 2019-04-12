@@ -128,11 +128,7 @@ public class FileManager {
 	public boolean createDirectory(File f) {
 		boolean works;
 		if (!f.exists()) {
-			if (!f.mkdirs()) {
-				works = false;
-			} else {
-				works = true;
-			}
+			works = f.mkdirs();
 		} else {
 			works = true;
 		}

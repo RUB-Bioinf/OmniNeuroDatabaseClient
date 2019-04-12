@@ -116,7 +116,7 @@ public class JSONInserter extends JSONOperator implements Runnable {
 			long experimentID;
 			synchronized (executor) {
 				experimentID = executor.getNextSequenceTableVal("experiment");
-				executor.insertExperiment(experimentID, date.getTime(), name, projectID, workgroupID, individualID, compoundID, cellTypeID, assayID, plateformatID);
+				executor.insertExperiment(experimentID, date.getTime(), experimentName, projectID, workgroupID, individualID, compoundID, cellTypeID, assayID, plateformatID);
 			}
 
 			executor.insertComment(comment, experimentID);
@@ -150,7 +150,7 @@ public class JSONInserter extends JSONOperator implements Runnable {
 							controlID = executor.getIDViaName("control", concentration);
 						} catch (Throwable e) {
 							Log.e(e);
-							addError("I think this concentration is actually a control. But I can't find a control in the database with this name: '" + concentration + "'.");
+							addError("Unknown concentration entry found. I think this concentration is actually a control. But I can't find a control in the database with this name: '" + concentration + "'.");
 							continue;
 						}
 						concentrationID = executor.insertConcentration(0, controlID);

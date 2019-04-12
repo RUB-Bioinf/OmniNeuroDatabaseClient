@@ -3,7 +3,9 @@ package de.rub.bph.omnineuro.client.core.sheet.reader.versions;
 import de.rub.bph.omnineuro.client.core.sheet.reader.ExperimentDataReaderTask;
 import de.rub.bph.omnineuro.client.core.sheet.reader.MetaDataReaderTask;
 import de.rub.bph.omnineuro.client.core.sheet.reader.versions.experiment.ExperimentDataReaderTaskV0;
+import de.rub.bph.omnineuro.client.core.sheet.reader.versions.experiment.ExperimentDataReaderTaskV1;
 import de.rub.bph.omnineuro.client.core.sheet.reader.versions.meta.MetaDataReaderTaskV0;
+import de.rub.bph.omnineuro.client.core.sheet.reader.versions.meta.MetaDataReaderTaskV1;
 import de.rub.bph.omnineuro.client.imported.log.Log;
 import org.apache.poi.ss.usermodel.Workbook;
 
@@ -23,6 +25,8 @@ public class DataReaderCompat {
 		this.workbook = workbook;
 		this.sourceFile = sourceFile;
 		this.version = version;
+
+		Log.i("Setting up a sheet reader compat: Version " + version);
 	}
 
 	public MetaDataReaderTask getMetaDataTask() throws IOException {
@@ -33,8 +37,10 @@ public class DataReaderCompat {
 				return null;
 			case 0:
 				return new MetaDataReaderTaskV0(workbook, EXCEL_SHEET_SUBNAME_METADATA, sourceFile);
+			case 1:
+				return new MetaDataReaderTaskV1(workbook, EXCEL_SHEET_SUBNAME_METADATA, sourceFile);
 			default:
-				Log.w("Sheet version read as " + getVersion() + ", but don't know how to handle it.");
+				Log.e("Sheet version read as " + getVersion() + ", but don't know how to handle it for meta compat reader.");
 				return null;
 		}
 	}
@@ -43,12 +49,14 @@ public class DataReaderCompat {
 		Log.i("Requesting a compat experiment data task. Version: " + version);
 		switch (version) {
 			case -1:
-				Log.e("Fatal error while reading the sheet version. ");
+				Log.e("Fatal error while reading the sheet version.");
 				return null;
 			case 0:
 				return new ExperimentDataReaderTaskV0(workbook, EXCEL_SHEET_SUBNAME_EXPERIMENT_DATA, sourceFile);
+			case 1:
+				return new ExperimentDataReaderTaskV1(workbook, EXCEL_SHEET_SUBNAME_EXPERIMENT_DATA, sourceFile);
 			default:
-				Log.w("Sheet version read as " + getVersion() + ", but don't know how to handle it.");
+				Log.e("Sheet version read as " + getVersion() + ", but don't know how to handle it for experiment compat reader.");
 				return null;
 		}
 	}

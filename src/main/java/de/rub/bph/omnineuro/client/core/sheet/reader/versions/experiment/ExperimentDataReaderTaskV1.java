@@ -1,9 +1,7 @@
 package de.rub.bph.omnineuro.client.core.sheet.reader.versions.experiment;
 
-
 import de.rub.bph.omnineuro.client.core.sheet.data.EndpointHeader;
 import de.rub.bph.omnineuro.client.core.sheet.reader.ExperimentDataReaderTask;
-import de.rub.bph.omnineuro.client.core.sheet.reader.versions.DataReaderCompat;
 import de.rub.bph.omnineuro.client.imported.log.Log;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.json.JSONException;
@@ -13,10 +11,10 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 
-public class ExperimentDataReaderTaskV0 extends ExperimentDataReaderTask {
+public class ExperimentDataReaderTaskV1 extends ExperimentDataReaderTask {
 
-	public ExperimentDataReaderTaskV0(Workbook workbook, String sheetName, File sourceFile) throws IOException {
-		super(workbook, sheetName, sourceFile, 0);
+	public ExperimentDataReaderTaskV1(Workbook workbook, String sheetName, File sourceFile) throws IOException {
+		super(workbook, sheetName, sourceFile, 1);
 	}
 
 	@Override
@@ -26,36 +24,15 @@ public class ExperimentDataReaderTaskV0 extends ExperimentDataReaderTask {
 
 	@Override
 	public ArrayList<EndpointHeader> readEndpointsHeaders() throws SheetReaderException, NumberFormatException {
-		boolean amalgam;
-		//Hint: Sometimes version 0 sheets may have the structure from version 1.
-		//Indicator for this: These sheets have a timestamp entry in A2
-
-		try {
-			String v1Indicator = getValueAt("A2", false);
-			amalgam = v1Indicator.equals("Timepoint");
-		} catch (Throwable e) {
-			amalgam = false;
-		}
-
-		if (amalgam) {
-			Log.i(getFileName() + " is a version 0 and version 1 amalgam! Calculating amalgam headers.");
-			try {
-				return new DataReaderCompat(workbook, sourceFile, 1).getExperimentDataTask().readEndpointsHeaders();
-			} catch (IOException e) {
-				Log.e("Failed to generate header amalgam info for experiment: " + getFileName(), e);
-			}
-		}
-
-
-		Log.i("Reading endpoints.");
+		Log.i("Reading endpoint headers.");
 		ArrayList<EndpointHeader> headers = new ArrayList<>();
 
 		int i = 0;
 		while (true) {
 			i++;
 			String cellName = getExcelColumn(i) + "1";
-
 			String endpointName;
+
 			try {
 				endpointName = getValueAt(cellName, false);
 			} catch (SheetReaderException e) {
@@ -68,10 +45,13 @@ public class ExperimentDataReaderTaskV0 extends ExperimentDataReaderTask {
 				break;
 			}
 
-			cellName = getExcelColumn(i) + 2;
+			cellName = getExcelColumn(i) + 3;
 			int expectedValues = (int) Double.parseDouble(getValueAt(cellName));
 
-			EndpointHeader header = new EndpointHeader(endpointName, i, expectedValues, 24,3);
+			cellName = getExcelColumn(i) + 2;
+			int timestamp = (int) Double.parseDouble(getValueAt(cellName));
+
+			EndpointHeader header = new EndpointHeader(endpointName, i, expectedValues, timestamp, 4);
 			Log.i("Header added: " + header);
 			headers.add(header);
 		}

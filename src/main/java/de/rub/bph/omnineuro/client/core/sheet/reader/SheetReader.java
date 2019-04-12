@@ -53,12 +53,13 @@ public class SheetReader extends JSONOperator implements Runnable {
 			Log.e(e);
 			return;
 		}
-		Log.i("Interpretation complete.");
+		Log.i("Interpretation complete. Sheet name: '" + workbook.getSheetName(workbook.getActiveSheetIndex()) + "'");
 
 		// SHEET VERSION & COMPAT
 
 		try {
-			sheetVersion = new SheetVersionReader(workbook).readVersion();
+			SheetVersionReader reader = new SheetVersionReader(workbook);
+			sheetVersion = reader.readVersion();
 		} catch (IOException e) {
 			Log.e("IO Exception during check for sheet version!", e);
 			return;
@@ -71,8 +72,8 @@ public class SheetReader extends JSONOperator implements Runnable {
 		MetaDataReaderTask metaDataReader;
 		try {
 			metaDataReader = dataReaderCompat.getMetaDataTask();
-		} catch (IOException e) {
-			Log.e(e);
+		} catch (Throwable e) {
+			Log.e("Failed to generate a meta data reader task for this experiment: "+getSourceFile().getName()+". Version: "+sheetVersion,e);
 			return;
 		}
 
@@ -82,8 +83,8 @@ public class SheetReader extends JSONOperator implements Runnable {
 		ExperimentDataReaderTask experimentDataReader;
 		try {
 			experimentDataReader = dataReaderCompat.getExperimentDataTask();
-		} catch (IOException e) {
-			Log.e(e);
+		} catch (Throwable e) {
+			Log.e("Failed to generate an experiment data reader task for this experiment: "+getSourceFile().getName()+". Version: "+sheetVersion,e);
 			return;
 		}
 

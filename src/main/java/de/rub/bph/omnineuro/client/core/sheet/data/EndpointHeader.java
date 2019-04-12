@@ -6,12 +6,22 @@ public class EndpointHeader {
 	private int columnIndex;
 	private int expectedValues;
 	private int timestamp;
+	private int rowIndex;
 
-	public EndpointHeader(String name, int columnIndex, int expectedValues, int timestamp) {
+	public EndpointHeader(String name, int columnIndex, int expectedValues, int timestamp, int rowIndex) {
 		this.name = name;
 		this.columnIndex = columnIndex;
 		this.expectedValues = expectedValues;
 		this.timestamp = timestamp;
+		this.rowIndex = rowIndex;
+	}
+
+	public int getRowIndex() {
+		return rowIndex;
+	}
+
+	public void setRowIndex(int rowIndex) {
+		this.rowIndex = rowIndex;
 	}
 
 	public int getTimestamp() {
