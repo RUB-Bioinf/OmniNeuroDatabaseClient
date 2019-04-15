@@ -5,6 +5,7 @@ import de.rub.bph.omnineuro.client.core.sheet.data.EndpointHeader;
 import de.rub.bph.omnineuro.client.core.sheet.reader.ExperimentDataReaderTask;
 import de.rub.bph.omnineuro.client.core.sheet.reader.versions.DataReaderCompat;
 import de.rub.bph.omnineuro.client.imported.log.Log;
+import de.rub.bph.omnineuro.client.util.TimestampLookupManager;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -49,6 +50,7 @@ public class ExperimentDataReaderTaskV0 extends ExperimentDataReaderTask {
 
 		Log.i("Reading endpoints.");
 		ArrayList<EndpointHeader> headers = new ArrayList<>();
+		TimestampLookupManager timestampLookupManager = TimestampLookupManager.getInstance();
 
 		int i = 0;
 		while (true) {
@@ -71,7 +73,11 @@ public class ExperimentDataReaderTaskV0 extends ExperimentDataReaderTask {
 			cellName = getExcelColumn(i) + 2;
 			int expectedValues = (int) Double.parseDouble(getValueAt(cellName));
 
-			EndpointHeader header = new EndpointHeader(endpointName, i, expectedValues, 24,3);
+			if (!timestampLookupManager.hasEndpoint(endpointName)) {
+				throw new SheetReaderException("Endpoint lookup error! The lookup table [Expected location: " + timestampLookupManager.getDataFile().getAbsolutePath() + "] does not contain information for endpoint '" + endpointName + "' in sheet " + getFileName() + "!");
+			}
+
+			EndpointHeader header = new EndpointHeader(timestampLookupManager.getName(endpointName), i, expectedValues, timestampLookupManager.getTimestamp(endpointName), 3);
 			Log.i("Header added: " + header);
 			headers.add(header);
 		}

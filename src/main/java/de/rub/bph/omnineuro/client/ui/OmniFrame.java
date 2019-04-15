@@ -7,6 +7,7 @@ import de.rub.bph.omnineuro.client.core.db.DBConnection;
 import de.rub.bph.omnineuro.client.core.db.OmniNeuroQueryExecutor;
 import de.rub.bph.omnineuro.client.core.db.in.InsertManager;
 import de.rub.bph.omnineuro.client.imported.log.Log;
+import de.rub.bph.omnineuro.client.util.TimestampLookupManager;
 import org.json.JSONObject;
 
 import javax.swing.*;
@@ -66,6 +67,7 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 		int cores = (int) threadsSP.getValue();
 		long startTime = new Date().getTime();
 		File dir = new File(importDirChooserPanel1.getText());
+		TimestampLookupManager.reset();
 
 		ArrayList<JSONObject> readExperiments = new ArrayList<>();
 

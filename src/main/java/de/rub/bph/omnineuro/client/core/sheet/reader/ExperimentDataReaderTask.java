@@ -51,7 +51,7 @@ public abstract class ExperimentDataReaderTask extends SheetReaderTask {
 		String column = getExcelColumn(header.getColumnIndex());
 		int expectedValues = header.getExpectedValues();
 		int rowIndex = header.getRowIndex();
-		Log.i("Reading endpoint data for header: '" + header.getName() + "' in cell: " + column + rowIndex + "onwards. Sheet version: " + getSheetVersion());
+		Log.i("Reading endpoint data for header: '" + header.getName() + "' [" + header.getTimestamp() + "] in cell: " + column + rowIndex + " onwards. Sheet version: " + getSheetVersion());
 
 		int replicate = 0;
 		String lastConcentration = "";
