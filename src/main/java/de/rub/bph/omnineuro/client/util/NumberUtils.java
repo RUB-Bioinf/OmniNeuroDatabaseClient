@@ -25,4 +25,8 @@ public class NumberUtils {
 		return b;
 	}
 
+	public static String convertSecondsToHMmSs(long ms) {
+		return String.format("%1$tM:%1$tS.%1$tL", ms);
+	}
+
 }

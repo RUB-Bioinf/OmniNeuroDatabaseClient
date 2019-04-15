@@ -3,6 +3,7 @@ package de.rub.bph.omnineuro.client.core.sheet.reader.versions.experiment;
 import de.rub.bph.omnineuro.client.core.sheet.data.EndpointHeader;
 import de.rub.bph.omnineuro.client.core.sheet.reader.ExperimentDataReaderTask;
 import de.rub.bph.omnineuro.client.imported.log.Log;
+import de.rub.bph.omnineuro.client.util.TimestampLookupManager;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -26,6 +27,7 @@ public class ExperimentDataReaderTaskV1 extends ExperimentDataReaderTask {
 	public ArrayList<EndpointHeader> readEndpointsHeaders() throws SheetReaderException, NumberFormatException {
 		Log.i("Reading endpoint headers.");
 		ArrayList<EndpointHeader> headers = new ArrayList<>();
+		TimestampLookupManager lookupManager = TimestampLookupManager.getInstance();
 
 		int i = 0;
 		while (true) {
@@ -38,6 +40,12 @@ public class ExperimentDataReaderTaskV1 extends ExperimentDataReaderTask {
 			} catch (SheetReaderException e) {
 				Log.e("Failed to retrieve value in cell: " + cellName);
 				continue;
+			}
+
+			if (lookupManager.hasEndpoint(endpointName)) {
+				String lookupHeaderName = lookupManager.getName(endpointName);
+				Log.i("Amalgam sheet endpoint name detected. Interpreting '" + endpointName + "' as: " + lookupHeaderName + ". Timestamp: " + lookupManager.getTimestamp(endpointName));
+				endpointName = lookupHeaderName;
 			}
 
 			if (endpointName.equals("") || endpointName.equals("NaN")) {

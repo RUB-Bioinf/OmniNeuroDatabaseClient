@@ -19,6 +19,7 @@ public class InsertManager {
 	private ArrayList<JSONObject> experiments;
 	private ArrayList<String> errors;
 	private File outDir;
+	private ArrayList<String> triviaList;
 
 	public InsertManager(File outDir, int threads, ArrayList<JSONObject> experiments) {
 		this.threads = threads;
@@ -57,7 +58,7 @@ public class InsertManager {
 		ArrayList<String> containsErrorList = new ArrayList<>();
 		ArrayList<String> containsNaNList = new ArrayList<>();
 		ArrayList<String> insertedResponsesList = new ArrayList<>();
-		ArrayList<String> triviaList = new ArrayList<>();
+		triviaList = new ArrayList<>();
 
 		int errorNaNCount = 0;
 		int insertedResponsesCount = 0;
@@ -111,6 +112,10 @@ public class InsertManager {
 		} catch (IOException e) {
 			Log.e("Failed to create insertion information file at: " + outDir.getAbsolutePath());
 		}
+	}
+
+	public ArrayList<String> getTrivia() {
+		return new ArrayList<>(triviaList);
 	}
 
 	public ArrayList<String> getErrors() {

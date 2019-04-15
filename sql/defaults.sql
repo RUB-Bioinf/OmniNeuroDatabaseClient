@@ -64,6 +64,34 @@ INSERT INTO public.compound (id, name, cas_no) VALUES (4, 'Domoic acid', '14277-
 INSERT INTO public.compound (id, name, cas_no) VALUES (5, '1-Methyl-4-phenylpyridinium iodide', '36913-39-0');
 INSERT INTO public.compound (id, name, cas_no) VALUES (1, 'Triethyltin bromide', '2767-54-6');
 INSERT INTO public.compound (id, name, cas_no) VALUES (7, 'Terbutaline hemisulfate', '23031-32-5');
+INSERT INTO public.compound (id, name, cas_no) VALUES (8, 'Parathion-methyl', '298-00-0');
+INSERT INTO public.compound (id, name, cas_no) VALUES (9, '(-)-Nicotine', '54-11-5');
+INSERT INTO public.compound (id, name, cas_no) VALUES (10, 'Chlorpyrifos-oxon', '5598-15-2');
+INSERT INTO public.compound (id, name, cas_no) VALUES (11, 'Pymetrozine', '123312-89-0');
+INSERT INTO public.compound (id, name, cas_no) VALUES (15, 'beta-Cyfluthrin', '68359-37-5');
+INSERT INTO public.compound (id, name, cas_no) VALUES (16, 'Trichlorfon', '52-68-6');
+INSERT INTO public.compound (id, name, cas_no) VALUES (17, 'Thiamezhoxam', '153719-23-4');
+INSERT INTO public.compound (id, name, cas_no) VALUES (18, 'Tri-o-tolyl phosphate', '78-30-8');
+INSERT INTO public.compound (id, name, cas_no) VALUES (19, 'Acetamiprid', '160430-64-8');
+INSERT INTO public.compound (id, name, cas_no) VALUES (20, 'Imidacloprid', '138261-41-3');
+INSERT INTO public.compound (id, name, cas_no) VALUES (21, 'Flufenacet', '142459-58-3');
+INSERT INTO public.compound (id, name, cas_no) VALUES (22, 'Dimethoate', '60-51-5');
+INSERT INTO public.compound (id, name, cas_no) VALUES (23, 'Clothianidin', '210880-92-5');
+INSERT INTO public.compound (id, name, cas_no) VALUES (24, 'Tris(2-Chloroisopropyl)phosphate', '13674-84-5');
+INSERT INTO public.compound (id, name, cas_no) VALUES (25, 'Tris(1,3-dichloro-2-propyl) phosphate', '13674-87-8');
+INSERT INTO public.compound (id, name, cas_no) VALUES (26, 'Manganese(II) chloride', '7773-01-5');
+INSERT INTO public.compound (id, name, cas_no) VALUES (27, 'Lead(II) acetate trihydrate', '6080-56-4');
+INSERT INTO public.compound (id, name, cas_no) VALUES (28, 'PBDE 99', '60348-60-9');
+INSERT INTO public.compound (id, name, cas_no) VALUES (30, 'Diazinon', '333-41-5');
+INSERT INTO public.compound (id, name, cas_no) VALUES (31, 'Methimazole', '60-56-0');
+INSERT INTO public.compound (id, name, cas_no) VALUES (32, 'Carbaryl', '63-25-2');
+INSERT INTO public.compound (id, name, cas_no) VALUES (33, 'Deltamethrin', '52918-63-5');
+INSERT INTO public.compound (id, name, cas_no) VALUES (34, 'Acrylamide', '79-06-1');
+INSERT INTO public.compound (id, name, cas_no) VALUES (35, 'Dinotefuran', '165252-70-0');
+INSERT INTO public.compound (id, name, cas_no) VALUES (36, 'Aldicarb', '116-06-3');
+INSERT INTO public.compound (id, name, cas_no) VALUES (37, 'Heptadecafluorooctanesulfonic acid potassium salt', '2795-39-3');
+INSERT INTO public.compound (id, name, cas_no) VALUES (38, 'Chlorpyrifos-methyl', '5598-13-0');
+
 create table concentration
 (
     id         serial            not null

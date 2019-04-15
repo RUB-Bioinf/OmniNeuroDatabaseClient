@@ -7,6 +7,7 @@ import de.rub.bph.omnineuro.client.core.db.DBConnection;
 import de.rub.bph.omnineuro.client.core.db.OmniNeuroQueryExecutor;
 import de.rub.bph.omnineuro.client.core.db.in.InsertManager;
 import de.rub.bph.omnineuro.client.imported.log.Log;
+import de.rub.bph.omnineuro.client.util.NumberUtils;
 import de.rub.bph.omnineuro.client.util.TimestampLookupManager;
 import org.json.JSONObject;
 
@@ -87,7 +88,13 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 		insertManager.insert();
 
 		long timeTaken = new Date().getTime() - startTime;
-		Client.showInfoMessage("Job done. Execution time: " + timeTaken + " ms.", this);
+		StringBuilder msgBuilder = new StringBuilder("Job done. Execution time: " + NumberUtils.convertSecondsToHMmSs(timeTaken) + ".");
+		msgBuilder.append("\n\nExperiment statistics:");
+		for (String s : insertManager.getTrivia()) {
+			msgBuilder.append("\n").append(s);
+		}
+
+		Client.showInfoMessage(msgBuilder.toString().trim(), this);
 	}
 
 	public ArrayList<JSONObject> readExcelSheets(File sourceDir, int cores) {
