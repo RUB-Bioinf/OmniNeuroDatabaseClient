@@ -21,7 +21,7 @@ public class JSONInserter extends JSONOperator implements Runnable {
 
 	private static OmniNeuroQueryExecutor executor;
 
-	private ArrayList<String> errors;
+	private ArrayList<String> errors, errorsWoNaN;
 	private JSONObject data;
 	private String name;
 	private int insertedResponses;
@@ -31,6 +31,7 @@ public class JSONInserter extends JSONOperator implements Runnable {
 		this.data = data;
 		Connection connection = DBConnection.getDBConnection().getConnection();
 		errors = new ArrayList<>();
+		errorsWoNaN = new ArrayList<>(errors);
 		insertedResponses = 0;
 		NaNCounts = 0;
 
@@ -88,7 +89,7 @@ public class JSONInserter extends JSONOperator implements Runnable {
 			}
 
 			if (compound.equals("NaN")) {
-				addError("Compound is unknown!");
+				addError("Compound is unknown!", true);
 			}
 
 			//Next: Insert it into the database
@@ -166,14 +167,15 @@ public class JSONInserter extends JSONOperator implements Runnable {
 					for (int i = 0; i < results.length(); i++) {
 						double result = results.getDouble(i);
 
-						if (Double.isNaN(result)) {
+						boolean nan = Double.isNaN(result);
+						if (nan) {
 							NaNCounts++;
 						}
 
 						try {
 							executor.insertResponse(result, timestamp, endpointID, concentrationID, experimentID, outlierID);
 						} catch (Throwable e) {
-							addError("Failed to insert response '" + result + "' for endpoint " + endpoint + " at " + timestamp + "h for concentration " + concentration + " into the database. Reason: " + e.getMessage().replace("\n", " "));
+							addError("Failed to insert response '" + result + "' for endpoint " + endpoint + " at " + timestamp + "h for concentration " + concentration + " into the database. Reason: " + e.getMessage().replace("\n", " "), nan);
 							continue;
 						}
 
@@ -218,9 +220,17 @@ public class JSONInserter extends JSONOperator implements Runnable {
 	}
 
 	private void addError(String text) {
+		addError(text, false);
+	}
+
+	private void addError(String text, boolean isNaN) {
 		String s = getName() + ": " + text;
 		Log.w("Inserter error: " + s);
 		errors.add(s);
+
+		if (!isNaN) {
+			errorsWoNaN.add(s);
+		}
 	}
 
 	public boolean hasError() {
@@ -233,5 +243,9 @@ public class JSONInserter extends JSONOperator implements Runnable {
 
 	public ArrayList<String> getErrors() {
 		return new ArrayList<>(errors);
+	}
+
+	public ArrayList<String> getErrorsWithoutNaN() {
+		return new ArrayList<>(errorsWoNaN);
 	}
 }

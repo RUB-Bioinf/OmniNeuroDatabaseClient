@@ -17,7 +17,7 @@ public class InsertManager {
 	private int threads;
 	private ExecutorService service;
 	private ArrayList<JSONObject> experiments;
-	private ArrayList<String> errors;
+	private ArrayList<String> errors, errorsWoNaN;
 	private File outDir;
 	private ArrayList<String> triviaList;
 
@@ -28,6 +28,7 @@ public class InsertManager {
 
 		service = Executors.newFixedThreadPool(threads);
 		errors = new ArrayList<>();
+		errorsWoNaN = new ArrayList<>(errors);
 	}
 
 	public void insert() {
@@ -70,6 +71,7 @@ public class InsertManager {
 
 			if (inserter.hasError()) {
 				errors.addAll(inserter.getErrors());
+				errorsWoNaN.addAll(inserter.getErrorsWithoutNaN());
 				containsErrorList.add(name + ";" + inserter.getErrors().size());
 			}
 
@@ -80,10 +82,11 @@ public class InsertManager {
 		}
 
 		triviaList.add("Total errors discovered: " + errors.size());
-		triviaList.add("Errors in experiments: " + containsErrorList.size() + " out of " + inserters.size());
+		triviaList.add("Experiment files read: " + inserters.size());
+		triviaList.add("Errors in experiments: " + getValueRatio(containsErrorList.size(), inserters.size()));
+		triviaList.add("Errors in experiments (without NaNs): " + getValueRatio(errorsWoNaN.size(), inserters.size()));
 		triviaList.add("Total NaNs discovered: " + errorNaNCount);
-		triviaList.add("NaNs in experiments: " + containsNaNList.size() + " out of " + inserters.size());
-		triviaList.add("Errors discovered: " + errors.size());
+		triviaList.add("NaNs in experiments: " + getValueRatio(containsNaNList.size(), inserters.size()));
 		triviaList.add("Total responses inserted: " + insertedResponsesCount);
 
 		DBConnection connection = DBConnection.getDBConnection();
@@ -95,7 +98,7 @@ public class InsertManager {
 			triviaList.add("Unique concentration values in the database: " + executor.selectRowCount("concentration", "value", true));
 		} catch (Throwable e) {
 			Log.e(e);
-			triviaList.add("Failed to collect import trivia: " + e.getMessage());
+			triviaList.add("Failed to collect import database dependant trivia. Error Code: " + e.getMessage());
 		}
 
 		for (String trivia : triviaList) {
@@ -105,6 +108,7 @@ public class InsertManager {
 		Log.i("Saving additional infos to: " + outDir.getAbsolutePath());
 		try {
 			manager.saveListFile(errors, new File(outDir, "errors.txt"), false);
+			manager.saveListFile(errorsWoNaN, new File(outDir, "errors_woNaN.txt"), false);
 			manager.saveListFile(containsErrorList, new File(outDir, "contains_errors.csv"), false);
 			manager.saveListFile(containsNaNList, new File(outDir, "contains_nan.csv"), false);
 			manager.saveListFile(insertedResponsesList, new File(outDir, "inserted_responses.csv"), false);
@@ -112,6 +116,12 @@ public class InsertManager {
 		} catch (IOException e) {
 			Log.e("Failed to create insertion information file at: " + outDir.getAbsolutePath());
 		}
+	}
+
+	private String getValueRatio(int a, int b) {
+		double p = ((double) a / (double) b);
+		int ratio = (int) (p * 100);
+		return a + " out of " + b + " [" + ratio + "%]";
 	}
 
 	public ArrayList<String> getTrivia() {
