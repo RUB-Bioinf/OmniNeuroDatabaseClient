@@ -84,7 +84,6 @@ public class NFrame extends JFrame {
 		return yes;
 	}
 
-
 	private String cropString(String text) {
 		String s = text.replace("\n", " ");
 		while (s.contains("  ")) {

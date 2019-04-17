@@ -11,20 +11,36 @@ import java.util.ArrayList;
 public class QueryExecutor {
 
 	private Connection connection;
+	private boolean logEnabled;
 
 	public QueryExecutor(Connection connection) {
 		this.connection = connection;
+		setLogEnabled(true);
+	}
+
+	public boolean isLogEnabled() {
+		return logEnabled;
+	}
+
+	public void setLogEnabled(boolean logEnabled) {
+		this.logEnabled = logEnabled;
 	}
 
 	public synchronized ResultSet executeQuery(String query) throws SQLException {
 		Statement stmt = connection.createStatement();
-		Log.i("Executing query: '" + query.replace("\n", " ").replace("  ", " ") + "'");
+
+		if (isLogEnabled()) {
+			Log.i("Executing query: '" + query.replace("\n", " ").replace("  ", " ") + "'");
+		}
 		return stmt.executeQuery(query);
 	}
 
 	public synchronized boolean execute(String query) throws SQLException {
 		Statement stmt = connection.createStatement();
-		Log.i("Executing query: '" + query.replace("\n", " ".replace("  ", " ")) + "'");
+
+		if (isLogEnabled()) {
+			Log.i("Executing query: '" + query.replace("\n", " ".replace("  ", " ")) + "'");
+		}
 		return stmt.execute(query);
 	}
 
@@ -41,24 +57,18 @@ public class QueryExecutor {
 
 	public synchronized ArrayList<String> getColumn(String tableName, String columnName) throws SQLException {
 		ResultSet set = executeQuery("SELECT " + columnName + " FROM " + tableName + ";");
-		return extractFeature(set, columnName);
+		return extractStringFeature(set, columnName);
 	}
 
 	public synchronized ArrayList<Long> extractIDs(ResultSet set) throws SQLException {
-		ArrayList<Long> res = new ArrayList<>();
-
-		for (String s : extractFeature(set, "id")) {
-			res.add(Long.parseLong(s));
-		}
-
-		return res;
+		return extractLongFeature(set, "id");
 	}
 
 	public synchronized long getIDViaName(String tableName, String feature) throws SQLException, IllegalStateException {
 		return getIDViaFeature(tableName, "name", feature);
 	}
 
-	public synchronized long getIDViaFeature(String tableName, String columnName, String feature) throws SQLException, IllegalStateException {
+	public synchronized ArrayList<Long> getIDsViaFeature(String tableName, String columnName, String feature) throws SQLException, IllegalStateException {
 		ArrayList<Long> res = new ArrayList<>();
 		ResultSet set = executeQuery("SELECT id FROM " + tableName + " WHERE " + columnName + " = '" + feature + "';");
 
@@ -66,21 +76,76 @@ public class QueryExecutor {
 			res.add(set.getLong("id"));
 		}
 
+		return res;
+	}
+
+	public synchronized long getIDViaFeature(String tableName, String columnName, String feature) throws SQLException, IllegalStateException {
+		ArrayList<Long> res = getIDsViaFeature(tableName, columnName, feature);
+		if (res.size() == 1) {
+			return res.get(0);
+		}
+
 		if (res.isEmpty()) {
 			throw new IllegalStateException("Table '" + tableName + "' does not contain an entry '" + feature + "' in column '" + columnName + "'!");
 		}
 
-		if (res.size() == 1) {
-			return res.get(0);
-		}
 		throw new IllegalStateException("Table '" + tableName + "' has multiple IDs [" + res + "] for entry '" + feature + " in column " + columnName + "!");
 	}
 
-	public synchronized ArrayList<String> extractFeature(ResultSet set, String feature) throws SQLException {
+	public synchronized String getFeatureViaID(String tableName, String columnName, long id) throws SQLException, IllegalStateException {
+		ArrayList<String> res = new ArrayList<>();
+		ResultSet set = executeQuery("SELECT " + columnName + " FROM " + tableName + " WHERE id = " + id + ";");
+
+		if (set.next()) {
+			return set.getString(columnName);
+		}
+
+		throw new IllegalStateException("Table '" + tableName + "' does not contain id " + id + "!");
+	}
+
+	public synchronized String getNameViaID(String tableName, long id) throws SQLException, IllegalStateException {
+		return getFeatureViaID(tableName, "name", id);
+	}
+
+	public synchronized ResultSet getFeaturesViaID(String tableName, long id) throws SQLException {
+		return executeQuery("SELECT * FROM " + tableName + " where id = " + id);
+	}
+
+	public synchronized ArrayList<String> extractStringFeature(ResultSet set, String feature) throws SQLException {
 		ArrayList<String> res = new ArrayList<>();
 
 		while (set.next()) {
 			res.add(set.getObject(feature).toString());
+		}
+
+		return res;
+	}
+
+	public synchronized ArrayList<Double> extractDoubleFeature(ResultSet set, String feature) throws SQLException, NumberFormatException {
+		ArrayList<Double> res = new ArrayList<>();
+
+		while (set.next()) {
+			res.add(Double.parseDouble(set.getObject(feature).toString()));
+		}
+
+		return res;
+	}
+
+	public synchronized ArrayList<Integer> extractIntegerFeature(ResultSet set, String feature) throws SQLException, NumberFormatException {
+		ArrayList<Integer> res = new ArrayList<>();
+
+		while (set.next()) {
+			res.add(Integer.parseInt(set.getObject(feature).toString()));
+		}
+
+		return res;
+	}
+
+	public synchronized ArrayList<Long> extractLongFeature(ResultSet set, String feature) throws SQLException, NumberFormatException {
+		ArrayList<Long> res = new ArrayList<>();
+
+		while (set.next()) {
+			res.add(Long.parseLong(set.getObject(feature).toString()));
 		}
 
 		return res;

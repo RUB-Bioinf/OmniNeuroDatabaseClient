@@ -6,6 +6,7 @@ import de.rub.bph.omnineuro.client.core.SheetReaderManager;
 import de.rub.bph.omnineuro.client.core.db.DBConnection;
 import de.rub.bph.omnineuro.client.core.db.OmniNeuroQueryExecutor;
 import de.rub.bph.omnineuro.client.core.db.in.InsertManager;
+import de.rub.bph.omnineuro.client.core.db.out.SheetExporterCompatManager;
 import de.rub.bph.omnineuro.client.imported.log.Log;
 import de.rub.bph.omnineuro.client.util.NumberUtils;
 import de.rub.bph.omnineuro.client.util.TimestampLookupManager;
@@ -155,9 +156,32 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 			return;
 		}
 
+		/*
 		ExportDialog dialog = new ExportDialog();
 		dialog.setLocationRelativeTo(this);
 		dialog.setVisible(true);
+		 */
+
+		int threads = (int) threadsSP.getValue();
+		File dir = new File(exportDirChooserPanel.getText());
+		if (dir.isFile()) {
+			dir = dir.getParentFile();
+		}
+
+		if (!dir.exists()) {
+			dir.mkdirs();
+		}
+
+		//TODO preselect experiments somwhere else
+		ArrayList<Long> experimentIDs = new ArrayList<>();
+		try {
+			experimentIDs = new OmniNeuroQueryExecutor(DBConnection.getDBConnection().getConnection()).getIDs("experiment");
+		} catch (SQLException e) {
+			Log.e(e);
+		}
+
+		SheetExporterCompatManager compatManager = new SheetExporterCompatManager(threads, dir, experimentIDs);
+		compatManager.export();
 	}
 
 	public void resetDatabase() {

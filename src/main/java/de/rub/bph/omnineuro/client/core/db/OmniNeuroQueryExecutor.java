@@ -1,7 +1,11 @@
 package de.rub.bph.omnineuro.client.core.db;
 
 import java.sql.Connection;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 
 /**
  * A helper class to build project specific queries
@@ -12,20 +16,20 @@ public class OmniNeuroQueryExecutor extends QueryExecutor {
 		super(connection);
 	}
 
-	public boolean insertIndividual(long id, String name, long sexID, long speciesID) throws SQLException {
+	public synchronized boolean insertIndividual(long id, String name, long sexID, long speciesID) throws SQLException {
 		return execute("INSERT INTO individual VALUES (" + id + ",'" + name + "'," + sexID + "," + speciesID + ");");
 	}
 
-	public boolean insertComment(String text, long experimentID) throws SQLException {
+	public synchronized boolean insertComment(String text, long experimentID) throws SQLException {
 		return execute("INSERT INTO comment VALUES (DEFAULT, '" + text + "'," + experimentID + ");");
 	}
 
-	public boolean insertExperiment(long id, long timestamp, String name, long projectID, long labID, long individualID, long compoundID, long cellTypeID, long assayID, long plateFormatID) throws SQLException {
+	public synchronized boolean insertExperiment(long id, long timestamp, String name, long projectID, long labID, long individualID, long compoundID, long cellTypeID, long assayID, long plateFormatID) throws SQLException {
 		return execute("INSERT INTO experiment VALUES (" + id + "," + timestamp + ",'" + name + "'," + projectID +
 				"," + labID + "," + individualID + "," + compoundID + "," + cellTypeID + "," + assayID + "," + plateFormatID + ");");
 	}
 
-	public boolean resetDatabase() throws SQLException {
+	public synchronized boolean resetDatabase() throws SQLException {
 		boolean b = true;
 		b &= deleteTable("comment", true);
 		b &= deleteTable("response", true);
@@ -35,24 +39,38 @@ public class OmniNeuroQueryExecutor extends QueryExecutor {
 		return b;
 	}
 
-	public boolean insertResponse(double value, int timestamp, long endpointID, long concentrationID, long experimentID) throws SQLException {
+	public synchronized boolean insertResponse(double value, int timestamp, long endpointID, long concentrationID, long experimentID) throws SQLException {
 		long outlierTypeID = getIDViaName("outlier_type", "Unchecked");
 		return insertResponse(value, timestamp, endpointID, concentrationID, experimentID, outlierTypeID);
 	}
 
-	public boolean insertResponse(double value, int timestamp, long endpointID, long concentrationID, long experimentID, long outlierTypeID) throws SQLException {
+	public synchronized boolean insertResponse(double value, int timestamp, long endpointID, long concentrationID, long experimentID, long outlierTypeID) throws SQLException {
 		return execute("INSERT INTO response VALUES (DEFAULT, " + value + "," + timestamp + "," + endpointID + "," + concentrationID + "," + experimentID + "," + outlierTypeID + ");");
 	}
 
-	public long insertConcentration(double value) throws SQLException {
+	public synchronized long insertConcentration(double value) throws SQLException {
 		long controlID = getIDViaName("control", "No control");
 		return insertConcentration(value, controlID);
 	}
 
-	public long insertConcentration(double value, long controlID) throws SQLException {
+	public synchronized long insertConcentration(double value, long controlID) throws SQLException {
 		long id = getNextSequenceTableVal("concentration");
 		execute("INSERT INTO concentration values (" + id + "," + value + "," + controlID + ");");
 		return id;
+	}
+
+	public synchronized ArrayList<Integer> getTimestampsForEndpoint(long endpointID) throws SQLException {
+		String query = "SELECT DISTINCT response.timestamp FROM response WHERE endpoint_id = " + endpointID + ";";
+		ResultSet res = executeQuery(query);
+		return extractIntegerFeature(res, "timestamp");
+	}
+
+	public synchronized HashMap<Long, ArrayList<Integer>> getTimestampsForEndpoints(List<Long> endpointIDs) throws SQLException, NumberFormatException {
+		HashMap<Long, ArrayList<Integer>> map = new HashMap<>();
+		for (Long l : endpointIDs) {
+			map.put(l, getTimestampsForEndpoint(l));
+		}
+		return map;
 	}
 
 	/*

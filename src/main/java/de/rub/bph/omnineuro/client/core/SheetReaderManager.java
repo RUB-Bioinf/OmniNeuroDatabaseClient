@@ -2,28 +2,25 @@ package de.rub.bph.omnineuro.client.core;
 
 import de.rub.bph.omnineuro.client.core.sheet.reader.SheetReader;
 import de.rub.bph.omnineuro.client.imported.log.Log;
+import de.rub.bph.omnineuro.client.util.concurrent.ConcurrentExecutionManager;
 import org.json.JSONObject;
 
 import javax.swing.filechooser.FileNameExtensionFilter;
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Date;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
-public class SheetReaderManager {
+public class SheetReaderManager extends ConcurrentExecutionManager {
 
 	public static final String EXCEL_FILE_EXTENSION = "xlsx";
 	public static final String JSON_FILE_OUTDIRNAME = "json";
 	public static final String[] DEFAULT_ALLOWED_EXTENSIONS = new String[]{EXCEL_FILE_EXTENSION};
 
 	private File sourceDir;
-	private ExecutorService service;
 	private FileNameExtensionFilter filter;
 
 	public SheetReaderManager(File sourceDir, int threads) {
+		super(threads);
 		this.sourceDir = sourceDir;
-		service = Executors.newFixedThreadPool(threads);
 		setFilter(new FileNameExtensionFilter("Excel Sheets", DEFAULT_ALLOWED_EXTENSIONS));
 	}
 
@@ -69,22 +66,6 @@ public class SheetReaderManager {
 		}
 		Log.i("Files read: " + readers.size() + ". Experiments extracted: " + experiments.size());
 		return experiments;
-	}
-
-	private void waitForTasks() {
-		Log.i("Waiting for tasks to finish!");
-		long start = new Date().getTime();
-		service.shutdown();
-		while (!service.isTerminated()) {
-			try {
-				Thread.sleep(1000);
-			} catch (InterruptedException e) {
-				Log.e(e);
-			}
-			Log.i("Still waiting...");
-		}
-		long diff = new Date().getTime() - start;
-		Log.i("Finished waiting! Execution time: " + diff + "ms [" + (int) (diff * .001) + "s].");
 	}
 
 	public ArrayList<File> discoverFiles(File currentDir) {

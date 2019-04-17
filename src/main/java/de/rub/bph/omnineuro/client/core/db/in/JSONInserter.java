@@ -72,6 +72,7 @@ public class JSONInserter extends JSONOperator implements Runnable {
 			String individual = metaDataGeneral.getString("Individual");
 			String compound = metaDataGeneral.getString("Compound");
 			String casNR = metaDataGeneral.getString("CAS No.");
+			String compuntAbbreviation = metaDataGeneral.getString("Compound abbreviation");
 			String cellType = metaDataGeneral.getString("Cell type");
 			String species = metaDataGeneral.getString("Species");
 			String plateFormat = metaDataGeneral.getString("Plateformat");
@@ -108,7 +109,7 @@ public class JSONInserter extends JSONOperator implements Runnable {
 			try {
 				compoundID = executor.getIDViaName("compound", compound);
 			} catch (Throwable e) {
-				addError("Failed to resolve compound name: '" + compound + "'. That's okay, if a valid Cas Nr. is provided instead: '" + casNR + "'.");
+				addError("Failed to resolve compound name: '" + compound + "' [" + compuntAbbreviation + "]. That's okay, if a valid Cas Nr. is provided instead: '" + casNR + "'.");
 
 				compoundID = executor.getIDViaFeature("compound", "cas_no", casNR);
 				addError("\t\t\tBut that CAS Nr. existed in the DB and the compound was resolved.");
