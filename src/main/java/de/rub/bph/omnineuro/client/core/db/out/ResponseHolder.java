@@ -5,6 +5,8 @@ import de.rub.bph.omnineuro.client.core.db.OmniNeuroQueryExecutor;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class ResponseHolder {
 	private int timestamp;
@@ -39,6 +41,38 @@ public class ResponseHolder {
 		}
 	}
 
+	public static ArrayList<Long> getUniqueEndpoints(List<ResponseHolder> holders) {
+		ArrayList<Long> list = new ArrayList<>();
+		for (ResponseHolder h : holders) {
+			long l = h.endpointID;
+			if (!list.contains(l)) list.add(l);
+		}
+		return list;
+	}
+
+	public static ArrayList<Integer> getUniqueTimestamps(List<ResponseHolder> holders) {
+		ArrayList<Integer> list = new ArrayList<>();
+		for (ResponseHolder h : holders) {
+			int i = h.getTimestamp();
+			if (!list.contains(i)) list.add(i);
+		}
+		return list;
+	}
+
+	public static ArrayList<String> getUniqueConcentrations(List<ResponseHolder> holders) {
+		ArrayList<String> list = new ArrayList<>();
+		for (ResponseHolder h : holders) {
+			String s = h.getConcentrationDescription();
+			if (!list.contains(s)) list.add(s);
+		}
+		return list;
+	}
+
+	@Override
+	public String toString() {
+		return "Response handler for " + getConcentrationDescription() + ", endpointID: " + getEndpointID() + " at " + getTimestamp() + "h.";
+	}
+
 	public boolean isControl() {
 		return control;
 	}
@@ -62,4 +96,5 @@ public class ResponseHolder {
 	public double getResponse() {
 		return response;
 	}
+
 }
