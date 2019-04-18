@@ -4,11 +4,15 @@ import de.rub.bph.omnineuro.client.core.db.DBConnection;
 import de.rub.bph.omnineuro.client.core.db.OmniNeuroQueryExecutor;
 import de.rub.bph.omnineuro.client.core.db.out.ResponseHolder;
 import de.rub.bph.omnineuro.client.core.db.out.SheetExporter;
+import de.rub.bph.omnineuro.client.imported.filemanager.FileManager;
 import de.rub.bph.omnineuro.client.imported.log.Log;
 
 import java.io.File;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
 
 public class CompoundSheetExporter extends SheetExporter {
 
@@ -42,16 +46,94 @@ public class CompoundSheetExporter extends SheetExporter {
 			}
 			Log.i("Compound " + getCompoundAbbreviation() + " has " + responseIDs.size() + " responses in the database.");
 
-			ArrayList<ResponseHolder> responseHolders;
+			ArrayList<ResponseHolder> responseHolders = new ArrayList<>();
 			for (long id : responseIDs) {
 				ResponseHolder holder = new ResponseHolder(id, queryExecutor);
-				Log.i("I have a holder. Control: " + holder.isControl() + ". Concentration: " + holder.getConcentrationDescription());
+				Log.i("I have a holder: " + holder);
+				responseHolders.add(holder);
 			}
+			Log.i("Holders created for " + getCompoundAbbreviation() + ": " + responseHolders.size());
+
+			ArrayList<String> uniqueConcentrations = ResponseHolder.getUniqueConcentrations(responseHolders);
+			Log.i("Unique concentrations: " + uniqueConcentrations);
+
+			StringBuilder fileContents = buildCSV(responseHolders);
+			FileManager fileManager = new FileManager();
+			fileManager.writeFile(outFile, fileContents.toString());
 
 			successfull = true;
 		} catch (Throwable e) {
 			Log.e("Failed to create " + getCompoundAbbreviation() + " ['" + getCompoundName() + "'] export file because of an " + e.getClass().getSimpleName() + "-Error!", e);
 		}
+	}
+
+	/**
+	 * Data structure: Concentration -> Endpoint name -> Timestamp -> List of Responses
+	 */
+	public HashMap<String, HashMap<String, HashMap<Integer, ArrayList<Double>>>> remapResponseHolders(List<ResponseHolder> holders) {
+		HashMap<String, HashMap<String, HashMap<Integer, ArrayList<Double>>>> data = new HashMap<>();
+
+		for (ResponseHolder holder : holders) {
+			String concentration = holder.getConcentrationDescription();
+			String endpoint = holder.getEndpointName();
+			int timestamp = holder.getTimestamp();
+			double response = holder.getResponse();
+
+			if (!data.containsKey(concentration)) data.put(concentration, new HashMap<>());
+			HashMap<String, HashMap<Integer, ArrayList<Double>>> concentrationMap = data.get(concentration);
+
+			if (!concentrationMap.containsKey(endpoint)) concentrationMap.put(endpoint, new HashMap<>());
+			HashMap<Integer, ArrayList<Double>> timestampMap = concentrationMap.get(endpoint);
+
+			if (!timestampMap.containsKey(timestamp)) timestampMap.put(timestamp, new ArrayList<>());
+			ArrayList<Double> responses = timestampMap.get(timestamp);
+			responses.add(response);
+		}
+		return data;
+	}
+
+	public StringBuilder buildCSV(ArrayList<ResponseHolder> responseHolders) {
+		StringBuilder builder = new StringBuilder();
+		builder.append(getCompoundName()).append(";");
+
+		ArrayList<String> allConcentrations = ResponseHolder.getUniqueConcentrations(responseHolders);
+		ArrayList<String> allEndpoints = ResponseHolder.getUniqueEndpointNamess(responseHolders);
+		ArrayList<Integer> allTimestamps = ResponseHolder.getUniqueTimestamps(responseHolders);
+		Collections.sort(allConcentrations);
+		Collections.sort(allEndpoints);
+		Collections.sort(allTimestamps);
+
+		for (String e : allEndpoints) {
+			for (int t : allTimestamps) {
+				builder.append(e).append(" [").append(t).append("h];");
+			}
+		}
+		builder.append("\n");
+
+		HashMap<String, HashMap<String, HashMap<Integer, ArrayList<Double>>>> holderMap = remapResponseHolders(responseHolders);
+		Log.i("Remapped data: " + remapResponseHolders(responseHolders));
+
+		int concentrationIndex = 0;
+		while (concentrationIndex < allConcentrations.size()) {
+			String concentration = allConcentrations.get(concentrationIndex);
+			builder.append(concentration).append(";");
+
+			for (String endpoind : allEndpoints) {
+				for (int timestamp : allTimestamps) {
+					ArrayList<Double> d = holderMap.get(concentration).get(endpoind).get(timestamp);
+
+					//TODO Hashmaps aufdröseln und nullchecks und dann alles in den stringwriter packen
+
+					Log.i(d+"");
+					builder.append(d.get(0));
+				}
+			}
+
+			builder.append("\n");
+			concentrationIndex++;
+		}
+
+		return builder;
 	}
 
 	public long getCompoundID() {

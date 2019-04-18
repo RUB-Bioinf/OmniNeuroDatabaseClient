@@ -11,6 +11,7 @@ import java.util.List;
 public class ResponseHolder {
 	private int timestamp;
 	private long endpointID;
+	private String endpointName;
 	private double concentration;
 	private String concentrationDescription;
 	private double response;
@@ -29,6 +30,7 @@ public class ResponseHolder {
 
 		long concentrationID = resultSet.getLong("concentration_id");
 		concentration = Double.parseDouble(queryExecutor.getFeatureViaID("concentration", "value", concentrationID));
+		endpointName = queryExecutor.getNameViaID("endpoint", endpointID);
 
 		control = concentration == 0;
 		if (control) {
@@ -41,11 +43,20 @@ public class ResponseHolder {
 		}
 	}
 
-	public static ArrayList<Long> getUniqueEndpoints(List<ResponseHolder> holders) {
+	public static ArrayList<Long> getUniqueEndpointIDs(List<ResponseHolder> holders) {
 		ArrayList<Long> list = new ArrayList<>();
 		for (ResponseHolder h : holders) {
-			long l = h.endpointID;
+			long l = h.getEndpointID();
 			if (!list.contains(l)) list.add(l);
+		}
+		return list;
+	}
+
+	public static ArrayList<String> getUniqueEndpointNamess(List<ResponseHolder> holders) {
+		ArrayList<String> list = new ArrayList<>();
+		for (ResponseHolder h : holders) {
+			String s = h.getEndpointName();
+			if (!list.contains(s)) list.add(s);
 		}
 		return list;
 	}
@@ -70,7 +81,11 @@ public class ResponseHolder {
 
 	@Override
 	public String toString() {
-		return "Response handler for " + getConcentrationDescription() + ", endpointID: " + getEndpointID() + " at " + getTimestamp() + "h.";
+		return "Response handler for " + getConcentrationDescription() + " [Control status: " + isControl() + "], endpoint: " + getEndpointName() + " at " + getTimestamp() + "h. Response value: " + getResponse();
+	}
+
+	public String getEndpointName() {
+		return endpointName;
 	}
 
 	public boolean isControl() {
