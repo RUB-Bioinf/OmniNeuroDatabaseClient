@@ -4,10 +4,10 @@
 .git
 
 # Project ignores
-ExperimentExporter.iml
-db_credentials.xml
-endpoint_overview.csv
-ee_exports_*
+/ExperimentExporter.iml
+/db_credentials.xml
+/endpoint_overview.csv
+/ee_exports_*
 .~lock.*
 
 /sheets/
