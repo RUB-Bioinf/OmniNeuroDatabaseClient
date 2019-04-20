@@ -178,6 +178,7 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 			experimentIDs = new OmniNeuroQueryExecutor(DBConnection.getDBConnection().getConnection()).getIDs("experiment");
 		} catch (SQLException e) {
 			Log.e(e);
+			//TODO display error
 		}
 
 		SheetExporterCompatManager compatManager = new SheetExporterCompatManager(threads, dir, experimentIDs);

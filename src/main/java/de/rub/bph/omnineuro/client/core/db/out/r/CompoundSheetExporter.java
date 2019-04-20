@@ -37,6 +37,10 @@ public class CompoundSheetExporter extends SheetExporter {
 		Log.i("Compound " + getCompoundAbbreviation() + " has " + experimentIDs.size() + " experiments in the DB.");
 	}
 
+	public String getCompoundAbbreviation() {
+		return compoundAbbreviation;
+	}
+
 	@Override
 	public void run() {
 		try {
@@ -67,6 +71,79 @@ public class CompoundSheetExporter extends SheetExporter {
 		}
 	}
 
+	public StringBuilder buildCSV(ArrayList<ResponseHolder> responseHolders) {
+		StringBuilder builder = new StringBuilder();
+		builder.append(getCompoundName()).append(";");
+
+		ArrayList<String> allConcentrations = ResponseHolder.getUniqueConcentrations(responseHolders);
+		ArrayList<String> allEndpoints = ResponseHolder.getUniqueEndpointNamess(responseHolders);
+		ArrayList<Integer> allTimestamps = ResponseHolder.getUniqueTimestamps(responseHolders);
+		Collections.sort(allConcentrations);
+		Collections.sort(allEndpoints);
+		Collections.sort(allTimestamps);
+
+		for (String e : allEndpoints) {
+			for (int t : allTimestamps) {
+				builder.append(e).append(" [").append(t).append("h];");
+			}
+		}
+		builder.append("\n");
+
+		HashMap<String, HashMap<String, HashMap<Integer, ArrayList<Double>>>> holderMap = remapResponseHolders(responseHolders);
+		Log.i("Remapped data: " + remapResponseHolders(responseHolders));
+
+		int concentrationIndex = 0;
+		while (concentrationIndex < allConcentrations.size()) {
+			String concentration = allConcentrations.get(concentrationIndex);
+			StringBuilder rowBuilder = new StringBuilder();
+			rowBuilder.append(concentration).append(";");
+
+			boolean nextReplicant = true;
+			for (String endpoint : allEndpoints) {
+				for (int timestamp : allTimestamps) {
+					if (holderMap.containsKey(concentration)) {
+						HashMap<String, HashMap<Integer, ArrayList<Double>>> concentrationMap = holderMap.get(concentration);
+						if (concentrationMap.containsKey(endpoint)) {
+							HashMap<Integer, ArrayList<Double>> endpointMap = concentrationMap.get(endpoint);
+							if (endpointMap.containsKey(timestamp)) {
+								ArrayList<Double> responses = endpointMap.get(timestamp);
+								if (responses.isEmpty()) {
+									endpointMap.remove(timestamp);
+								} else {
+									Double d = responses.get(0);
+									responses.remove(d);
+									rowBuilder.append(d);
+									nextReplicant = false;
+								}
+							}
+						}
+					}
+
+					rowBuilder.append(";");
+					//ArrayList<Double> d = holderMap.get(concentration).get(endpoint).get(timestamp);
+					//
+					////TODO Hashmaps aufdröseln und nullchecks und dann alles in den stringwriter packen
+					//
+					//Log.i(d + "");
+					//builder.append(d.get(0));
+				}
+			}
+
+			rowBuilder.append("\n");
+			if (nextReplicant) {
+				concentrationIndex++;
+			} else {
+				builder.append(rowBuilder.toString());
+			}
+		}
+
+		return builder;
+	}
+
+	public String getCompoundName() {
+		return compoundName;
+	}
+
 	/**
 	 * Data structure: Concentration -> Endpoint name -> Timestamp -> List of Responses
 	 */
@@ -92,64 +169,12 @@ public class CompoundSheetExporter extends SheetExporter {
 		return data;
 	}
 
-	public StringBuilder buildCSV(ArrayList<ResponseHolder> responseHolders) {
-		StringBuilder builder = new StringBuilder();
-		builder.append(getCompoundName()).append(";");
-
-		ArrayList<String> allConcentrations = ResponseHolder.getUniqueConcentrations(responseHolders);
-		ArrayList<String> allEndpoints = ResponseHolder.getUniqueEndpointNamess(responseHolders);
-		ArrayList<Integer> allTimestamps = ResponseHolder.getUniqueTimestamps(responseHolders);
-		Collections.sort(allConcentrations);
-		Collections.sort(allEndpoints);
-		Collections.sort(allTimestamps);
-
-		for (String e : allEndpoints) {
-			for (int t : allTimestamps) {
-				builder.append(e).append(" [").append(t).append("h];");
-			}
-		}
-		builder.append("\n");
-
-		HashMap<String, HashMap<String, HashMap<Integer, ArrayList<Double>>>> holderMap = remapResponseHolders(responseHolders);
-		Log.i("Remapped data: " + remapResponseHolders(responseHolders));
-
-		int concentrationIndex = 0;
-		while (concentrationIndex < allConcentrations.size()) {
-			String concentration = allConcentrations.get(concentrationIndex);
-			builder.append(concentration).append(";");
-
-			for (String endpoind : allEndpoints) {
-				for (int timestamp : allTimestamps) {
-					ArrayList<Double> d = holderMap.get(concentration).get(endpoind).get(timestamp);
-
-					//TODO Hashmaps aufdröseln und nullchecks und dann alles in den stringwriter packen
-
-					Log.i(d+"");
-					builder.append(d.get(0));
-				}
-			}
-
-			builder.append("\n");
-			concentrationIndex++;
-		}
-
-		return builder;
-	}
-
 	public long getCompoundID() {
 		return compoundID;
 	}
 
 	public boolean isSuccessfull() {
 		return successfull;
-	}
-
-	public String getCompoundName() {
-		return compoundName;
-	}
-
-	public String getCompoundAbbreviation() {
-		return compoundAbbreviation;
 	}
 
 	public File getOutFile() {
