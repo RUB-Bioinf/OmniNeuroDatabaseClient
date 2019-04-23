@@ -34,6 +34,7 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 	private JSpinner threadsSP;
 	private JButton startExportButton;
 	private JButton resetDatabaseButton;
+	private JCheckBox includeControlsCheckBox;
 
 	public OmniFrame() {
 		add(rootPanel);
@@ -149,7 +150,8 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 	}
 
 	public void requestExport() {
-		Log.i("User requested Export");
+		boolean includeControls = includeControlsCheckBox.isSelected();
+		Log.i("User requested Export. Including controls: " + includeControls);
 
 		if (!testDBConnection()) {
 			Log.i("Connection to the database failed. Can't export if there's no connection available.");
@@ -181,7 +183,7 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 			//TODO display error
 		}
 
-		SheetExporterCompatManager compatManager = new SheetExporterCompatManager(threads, dir, experimentIDs);
+		SheetExporterCompatManager compatManager = new SheetExporterCompatManager(threads, dir, experimentIDs,includeControls);
 		compatManager.export();
 	}
 

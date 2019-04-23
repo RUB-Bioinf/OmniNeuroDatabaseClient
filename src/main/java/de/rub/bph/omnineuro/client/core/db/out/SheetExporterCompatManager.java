@@ -21,15 +21,18 @@ public class SheetExporterCompatManager extends ConcurrentExecutionManager {
 	private OmniNeuroQueryExecutor queryExecutor;
 	private DBConnection connection;
 	private ArrayList<Long> experimentIDs;
+	private boolean includeControls;
 
-	public SheetExporterCompatManager(int threads, File sourceDir, ArrayList<Long> experimentIDs) {
+	public SheetExporterCompatManager(int threads, File sourceDir, ArrayList<Long> experimentIDs, boolean includeControls) {
 		super(threads);
 		if (!sourceDir.getName().equals(ROOT_FILENAME)) {
 			sourceDir = new File(sourceDir, ROOT_FILENAME);
 			sourceDir.mkdirs();
 		}
+
 		this.sourceDir = sourceDir;
 		this.experimentIDs = experimentIDs;
+		this.includeControls = includeControls;
 		Log.i("There are " + experimentIDs.size() + " experiments in the database, matching the user's criteria.");
 
 		service = Executors.newFixedThreadPool(threads);
@@ -73,7 +76,7 @@ public class SheetExporterCompatManager extends ConcurrentExecutionManager {
 
 		for (Long id : compoundIDs) {
 			Log.i("I am working with this compound id " + id + ". Name: " + queryExecutor.getNameViaID("compound", id));
-			service.submit(new CompoundSheetExporter(targetDir, connection, id, compoundExperimentMap.get(id)));
+			service.submit(new CompoundSheetExporter(targetDir, connection, id, compoundExperimentMap.get(id), includeControls));
 		}
 	}
 

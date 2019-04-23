@@ -16,18 +16,15 @@ public class Client {
 	public static final String TITLE = "OmniNeuro Databasse client";
 
 	public static void main(String[] args) {
-		SwingUtilities.invokeLater(new Runnable() {
-			@Override
-			public void run() {
-				try {
-					UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-				} catch (ClassNotFoundException | InstantiationException | UnsupportedLookAndFeelException
-						| IllegalAccessException e) {
-					e.printStackTrace();
-				}
-				Log.i("Initialling Client Frame");
-				new OmniFrame();
+		SwingUtilities.invokeLater(() -> {
+			try {
+				UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+			} catch (ClassNotFoundException | InstantiationException | UnsupportedLookAndFeelException
+					| IllegalAccessException e) {
+				e.printStackTrace();
 			}
+			Log.i("Initialling Client Frame");
+			new OmniFrame();
 		});
 	}
 

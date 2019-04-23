@@ -22,8 +22,8 @@ public class CompoundSheetExporter extends SheetExporter {
 	private File outFile;
 	private boolean successfull;
 
-	public CompoundSheetExporter(File targetDir, DBConnection connection, long compoundID, ArrayList<Long> experimentIDs) throws SQLException {
-		super(targetDir, connection, experimentIDs);
+	public CompoundSheetExporter(File targetDir, DBConnection connection, long compoundID, ArrayList<Long> experimentIDs, boolean includeControls) throws SQLException {
+		super(targetDir, connection, experimentIDs, includeControls);
 		this.compoundID = compoundID;
 		successfull = false;
 
@@ -54,7 +54,14 @@ public class CompoundSheetExporter extends SheetExporter {
 			for (long id : responseIDs) {
 				ResponseHolder holder = new ResponseHolder(id, queryExecutor);
 				Log.i("I have a holder: " + holder);
-				responseHolders.add(holder);
+
+				if (holder.isControl()) {
+					if (includeControls) {
+						responseHolders.add(holder);
+					}
+				} else {
+					responseHolders.add(holder);
+				}
 			}
 			Log.i("Holders created for " + getCompoundAbbreviation() + ": " + responseHolders.size());
 
