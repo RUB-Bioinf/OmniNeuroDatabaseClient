@@ -20,12 +20,12 @@ public class CompoundSheetExporter extends SheetExporter {
 	private String compoundName, compoundAbbreviation;
 	private OmniNeuroQueryExecutor queryExecutor;
 	private File outFile;
-	private boolean successfull;
+	private boolean successful;
 
 	public CompoundSheetExporter(File targetDir, DBConnection connection, long compoundID, ArrayList<Long> experimentIDs, boolean includeControls) throws SQLException {
 		super(targetDir, connection, experimentIDs, includeControls);
 		this.compoundID = compoundID;
-		successfull = false;
+		successful = false;
 
 		queryExecutor = new OmniNeuroQueryExecutor(connection.getConnection());
 		queryExecutor.setLogEnabled(false);
@@ -72,7 +72,7 @@ public class CompoundSheetExporter extends SheetExporter {
 			FileManager fileManager = new FileManager();
 			fileManager.writeFile(outFile, fileContents.toString());
 
-			successfull = true;
+			successful = true;
 		} catch (Throwable e) {
 			Log.e("Failed to create " + getCompoundAbbreviation() + " ['" + getCompoundName() + "'] export file because of an " + e.getClass().getSimpleName() + "-Error!", e);
 		}
@@ -180,8 +180,8 @@ public class CompoundSheetExporter extends SheetExporter {
 		return compoundID;
 	}
 
-	public boolean isSuccessfull() {
-		return successfull;
+	public boolean isSuccessful() {
+		return successful;
 	}
 
 	public File getOutFile() {
