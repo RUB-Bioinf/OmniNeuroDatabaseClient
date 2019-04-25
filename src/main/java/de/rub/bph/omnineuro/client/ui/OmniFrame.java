@@ -185,6 +185,8 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 
 		SheetExporterCompatManager compatManager = new SheetExporterCompatManager(threads, dir, experimentIDs,includeControls);
 		compatManager.export();
+
+		Client.showInfoMessage("Job done.\n\nDetailed export reports will be shown here, but only in a later version.", this);
 	}
 
 	public void resetDatabase() {
@@ -198,6 +200,7 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 			Log.e(e);
 		}
 		Log.i("Finished DB reset. Did it work?");
+		Client.showInfoMessage("All experiments and responses have been deleted from the database. Certain project specific meta data is untouched.", this);
 	}
 
 	@Override
