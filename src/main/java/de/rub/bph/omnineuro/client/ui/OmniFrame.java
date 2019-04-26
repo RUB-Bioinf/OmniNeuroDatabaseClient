@@ -229,7 +229,7 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 		if (newConfig == null) {
 			configurationStatusLB.setText("No configuration loaded.");
 		} else {
-			configurationStatusLB.setText("Configuration loaded. Code: " + newConfig.hashCode());
+			configurationStatusLB.setText("Configuration loaded. Code: " + newConfig.toString().hashCode());
 		}
 	}
 
