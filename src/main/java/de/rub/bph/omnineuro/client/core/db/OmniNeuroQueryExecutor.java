@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
@@ -29,12 +30,17 @@ public class OmniNeuroQueryExecutor extends QueryExecutor {
 				"," + labID + "," + individualID + "," + compoundID + "," + cellTypeID + "," + assayID + "," + plateFormatID + ");");
 	}
 
+	public synchronized boolean insertCompound(String name, String casNR, String abbreviation, boolean blinded) throws SQLException {
+		return execute("INSERT INTO compound VALUES (DEFAULT, '" + name + "','" + casNR + "','" + abbreviation + "'," + String.valueOf(blinded) + ");");
+	}
+
 	public synchronized boolean resetDatabase() throws SQLException {
 		boolean b = true;
 		b &= deleteTable("comment", true);
 		b &= deleteTable("response", true);
 		b &= deleteTable("concentration", true);
 		b &= deleteTable("experiment", true);
+		b &= deleteBlindedCompounds();
 
 		return b;
 	}
@@ -71,6 +77,17 @@ public class OmniNeuroQueryExecutor extends QueryExecutor {
 			map.put(l, getTimestampsForEndpoint(l));
 		}
 		return map;
+	}
+
+	public synchronized boolean deleteBlindedCompounds() throws SQLException {
+		boolean success = execute("DELETE FROM compound WHERE blinded = true;");
+		ArrayList<Long> ids = getIDs("compound");
+		Collections.sort(ids);
+
+		long largestID = ids.get(ids.size() - 1);
+		success &= restartSequence("compound_id_seq", largestID + 1);
+
+		return success;
 	}
 
 	/*

@@ -15,7 +15,7 @@ import java.util.concurrent.Executors;
 public class SheetExporterCompatManager extends ConcurrentExecutionManager {
 
 	public static final String ROOT_FILENAME = "exports";
-	public static final String EXPORT_DIRNAME_COMPOUNDS = "exports";
+	public static final String EXPORT_DIRNAME_COMPOUNDS = "compounds";
 
 	private File sourceDir;
 	private OmniNeuroQueryExecutor queryExecutor;

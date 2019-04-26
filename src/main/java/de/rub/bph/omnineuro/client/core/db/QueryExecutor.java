@@ -193,6 +193,14 @@ public class QueryExecutor {
 		return execute("ALTER SEQUENCE " + name + " RESTART;");
 	}
 
+	public boolean restartSequence(String name, long startValue) throws SQLException {
+		if (startValue == 0) {
+			restartSequence(name);
+		}
+
+		return execute("ALTER SEQUENCE " + name + " RESTART WITH " + startValue + ";");
+	}
+
 	public boolean restartTableSequence(String tableName) throws SQLException {
 		return restartSequence(tableName + "_id_seq");
 	}

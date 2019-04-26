@@ -36,6 +36,13 @@ public class MetaDataReaderTaskV1 extends MetaDataReaderTask {
 
 	@Override
 	public JSONObject readMetaDataGeneral() throws JSONException {
-		return readRows(1, 27);
+		JSONObject general = readRows(1, 27);
+
+		JSONObject data = general.getJSONObject("Data");
+		if (!data.has("Sex")) {
+			data.put("Sex", "undefined");
+		}
+
+		return general;
 	}
 }

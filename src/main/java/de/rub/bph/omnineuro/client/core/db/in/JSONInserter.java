@@ -109,10 +109,24 @@ public class JSONInserter extends JSONOperator implements Runnable {
 			try {
 				compoundID = executor.getIDViaName("compound", compound);
 			} catch (Throwable e) {
-				addError("Failed to resolve compound name: '" + compound + "' [" + compuntAbbreviation + "]. That's okay, if a valid Cas Nr. is provided instead: '" + casNR + "'.");
+				if (compound.equals("?")) {
+					Log.i("It is assumed that '" + casNR + "' is a blinded compound. It's not yet present in the database. Fetching it!");
 
-				compoundID = executor.getIDViaFeature("compound", "cas_no", casNR);
-				addError("\t\t\tBut that CAS Nr. existed in the DB and the compound was resolved.");
+					synchronized (executor) {
+						try {
+							compoundID = executor.getIDViaFeature("compound", "cas_no", casNR);
+							Log.i("The blinded compound '" + casNR + "' was already in the DB. All good.");
+						} catch (Throwable e2) {
+							Log.i("Failed to fetch blinded compound '" + casNR + "' from the DB. Inserting it instead!");
+							executor.insertCompound(casNR, casNR, casNR, true);
+							compoundID = executor.getIDViaName("compound", casNR);
+						}
+					}
+				} else {
+					addError("Failed to resolve compound name: '" + compound + "' [" + compuntAbbreviation + "]. That's okay, if a valid Cas Nr. is provided instead: '" + casNR + "'.");
+					compoundID = executor.getIDViaFeature("compound", "cas_no", casNR);
+					addError("\t\t\tBut that CAS Nr. existed in the DB and the compound was resolved.");
+				}
 			}
 
 			long experimentID;
