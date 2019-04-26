@@ -1,6 +1,7 @@
 package de.rub.bph.omnineuro.client.ui;
 
 import de.rub.bph.omnineuro.client.Client;
+import de.rub.bph.omnineuro.client.config.ExportConfigManager;
 import de.rub.bph.omnineuro.client.core.ExperimentReaderStatistics;
 import de.rub.bph.omnineuro.client.core.SheetReaderManager;
 import de.rub.bph.omnineuro.client.core.db.DBConnection;
@@ -21,7 +22,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Date;
 
-public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListener, DBCredentialsPanel.DBCredentialsActionListener, WindowListener {
+public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListener, DBCredentialsPanel.DBCredentialsActionListener, WindowListener, ExportConfigManager.ExportConfigManagerListener {
 
 	public static final String OUT_DIR_NAME_STATISTICS = "statistics";
 	public static final String OUT_DIR_NAME_INSERTER = "inserts";
@@ -35,6 +36,8 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 	private JButton startExportButton;
 	private JButton resetDatabaseButton;
 	private JCheckBox includeControlsCheckBox;
+	private JLabel configurationStatusLB;
+	private JButton configurationEditorButton;
 
 	public OmniFrame() {
 		add(rootPanel);
@@ -54,9 +57,16 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 		pack();
 		setMinimumSize(getMinimumSize());
 		setLocationRelativeTo(null);
-		setVisible(true);
+
 		startExportButton.addActionListener(actionEvent -> requestExport());
 		resetDatabaseButton.addActionListener(actionEvent -> resetDatabase());
+		configurationEditorButton.addActionListener(actionEvent -> actionOpenConfigWindow());
+
+		ExportConfigManager configManager = ExportConfigManager.getInstance();
+		configManager.addListener(this);
+		configManager.refreshCache();
+
+		setVisible(true);
 	}
 
 	public void startImport() {
@@ -149,6 +159,16 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 		}
 	}
 
+	public void actionOpenConfigWindow() {
+		if (!testDBConnection(true)) {
+			Client.showErrorMessage("Failed to connect to the database. Without the connection, a configuration can't be made.", this);
+			return;
+		}
+
+		Connection connection = DBConnection.getDBConnection().getConnection();
+		new ExportConfigFrame(this, new OmniNeuroQueryExecutor(connection));
+	}
+
 	public void requestExport() {
 		boolean includeControls = includeControlsCheckBox.isSelected();
 		Log.i("User requested Export. Including controls: " + includeControls);
@@ -183,7 +203,7 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 			//TODO display error
 		}
 
-		SheetExporterCompatManager compatManager = new SheetExporterCompatManager(threads, dir, experimentIDs,includeControls);
+		SheetExporterCompatManager compatManager = new SheetExporterCompatManager(threads, dir, experimentIDs, includeControls);
 		compatManager.export();
 
 		Client.showInfoMessage("Job done.\n\nDetailed export reports will be shown here, but only in a later version.", this);
@@ -201,6 +221,16 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 		}
 		Log.i("Finished DB reset. Did it work?");
 		Client.showInfoMessage("All experiments and responses have been deleted from the database. Certain project specific meta data is untouched.", this);
+	}
+
+	public void updateConfigListenerText(JSONObject newConfig) {
+		Log.i("Export config has been updated!");
+
+		if (newConfig == null) {
+			configurationStatusLB.setText("No configuration loaded.");
+		} else {
+			configurationStatusLB.setText("Configuration loaded. Code: " + newConfig.hashCode());
+		}
 	}
 
 	@Override
@@ -266,5 +296,10 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 	@Override
 	public void windowDeactivated(WindowEvent windowEvent) {
 
+	}
+
+	@Override
+	public void onConfigChange(JSONObject newConfig) {
+		updateConfigListenerText(newConfig);
 	}
 }
