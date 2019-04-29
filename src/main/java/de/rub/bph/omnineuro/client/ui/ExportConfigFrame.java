@@ -25,6 +25,7 @@ public class ExportConfigFrame extends JFrame implements ListSelectionListener {
 	private JButton saveAndExportButton;
 	private JButton importButton;
 	private JList<String> metaDataList;
+	private JPanel configDetailPL;
 
 	private JSONObject myConfiguration;
 
@@ -97,6 +98,7 @@ public class ExportConfigFrame extends JFrame implements ListSelectionListener {
 		String selection = metaDataList.getSelectedValue();
 		if (selection == null) {
 			Log.w("Nothing has been selected.");
+			setComponentToDetailPL(new JLabel("Nothing has been selected."));
 			return;
 		}
 
@@ -117,18 +119,34 @@ public class ExportConfigFrame extends JFrame implements ListSelectionListener {
 	}
 
 	private Runnable getActionDefault() {
-		return new Runnable() {
-			@Override
-			public void run() {
-				Log.i("Haha! :D");
+		return () -> {
+			Log.i("Haha! :D");
 
-				try {
-					myConfiguration.put(new Date().toString(), "Boii");
-				} catch (JSONException e) {
-					e.printStackTrace();
-				}
+			try {
+				myConfiguration.put(new Date().toString(), "Boii");
+			} catch (JSONException e) {
+				e.printStackTrace();
 			}
 		};
+	}
+
+	public void setComponentToDetailPL(Component component) {
+		Log.i("Setting a new component to the detail pane.");
+		configDetailPL.removeAll();
+
+		if (component == null) {
+			Log.e("The component is null. Nothing to display.");
+			return;
+		}
+
+		GridBagConstraints gbc = new GridBagConstraints();
+		component.setBackground(Color.RED);
+		component.setForeground(Color.BLACK);
+		gbc.gridx = 0;
+		gbc.fill = GridBagConstraints.BOTH;
+
+		Log.i("Applying component: " + component.getClass().getSimpleName()+" -> '"+component.getName()+"'");
+		configDetailPL.add(component, gbc);
 	}
 
 	@Override
