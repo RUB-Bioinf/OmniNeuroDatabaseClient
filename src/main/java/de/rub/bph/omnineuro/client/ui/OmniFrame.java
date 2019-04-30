@@ -9,6 +9,7 @@ import de.rub.bph.omnineuro.client.core.db.OmniNeuroQueryExecutor;
 import de.rub.bph.omnineuro.client.core.db.in.InsertManager;
 import de.rub.bph.omnineuro.client.core.db.out.SheetExporterCompatManager;
 import de.rub.bph.omnineuro.client.imported.log.Log;
+import de.rub.bph.omnineuro.client.util.CodeHasher;
 import de.rub.bph.omnineuro.client.util.NumberUtils;
 import de.rub.bph.omnineuro.client.util.TimestampLookupManager;
 import org.json.JSONObject;
@@ -26,7 +27,7 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 
 	public static final String OUT_DIR_NAME_STATISTICS = "statistics";
 	public static final String OUT_DIR_NAME_INSERTER = "inserts";
-
+	public static final int DEFAULT_LIMITER_HASH_LENGTH = 6;
 	private JPanel rootPanel;
 	private DBCredentialsPanel DBCredentialsPanel;
 	private JButton button1;
@@ -229,7 +230,7 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 		if (newConfig == null) {
 			configurationStatusLB.setText("No configuration loaded.");
 		} else {
-			configurationStatusLB.setText("Configuration loaded. Code: " + newConfig.toString().hashCode());
+			configurationStatusLB.setText("Configuration loaded. Code: " + new CodeHasher(newConfig.toString()).getCodeHash(DEFAULT_LIMITER_HASH_LENGTH));
 		}
 	}
 

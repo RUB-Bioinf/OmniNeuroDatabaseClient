@@ -1,8 +1,10 @@
 package de.rub.bph.omnineuro.client.ui;
 
+import de.rub.bph.omnineuro.client.Client;
 import de.rub.bph.omnineuro.client.config.ExportConfigManager;
 import de.rub.bph.omnineuro.client.core.db.OmniNeuroQueryExecutor;
 import de.rub.bph.omnineuro.client.imported.log.Log;
+import de.rub.bph.omnineuro.client.ui.component.ExportConfigDetailPanel;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -12,11 +14,11 @@ import javax.swing.event.ListSelectionListener;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 
 public class ExportConfigFrame extends JFrame implements ListSelectionListener {
 
+	public static final String JSON_TAG_LIMITERS = "limiters";
 	private OmniNeuroQueryExecutor queryExecutor;
 	private ArrayList<String> metadataCategories;
 	private HashMap<String, Runnable> panelActionMap;
@@ -26,20 +28,28 @@ public class ExportConfigFrame extends JFrame implements ListSelectionListener {
 	private JButton importButton;
 	private JList<String> metaDataList;
 	private JPanel configDetailPL;
-
-	private JSONObject myConfiguration;
+	private JSONObject configuration;
 
 	public ExportConfigFrame(Component parent, OmniNeuroQueryExecutor queryExecutor) {
 		this(parent, queryExecutor, new JSONObject());
 	}
 
 	public ExportConfigFrame(Component parent, OmniNeuroQueryExecutor queryExecutor, JSONObject configuration) {
-		this.myConfiguration = configuration;
 		this.queryExecutor = queryExecutor;
 		add(rootPanel);
 		setTitle("Experiment configuration editor");
 		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 
+		if (!configuration.has(JSON_TAG_LIMITERS)) {
+			try {
+				configuration.put(JSON_TAG_LIMITERS, new JSONObject());
+			} catch (JSONException e) {
+				Log.e(e);
+				Client.showErrorMessage("Failed to prepare limiter configuration!", this, e);
+				return;
+			}
+		}
+		this.configuration = configuration;
 
 		fillList();
 
@@ -60,31 +70,31 @@ public class ExportConfigFrame extends JFrame implements ListSelectionListener {
 
 		category = "Project";
 		metadataCategories.add(category);
-		panelActionMap.put(category, getActionDefault());
+		panelActionMap.put(category, getActionConfigFrameName("project"));
 
 		category = "Experiment Plating Date";
 		metadataCategories.add(category);
-		panelActionMap.put(category, getActionDefault());
+		panelActionMap.put(category, getActionConfigFrame("experiment", "timestamp", "timestamp", true));
 
 		category = "Experiment Name";
 		metadataCategories.add(category);
-		panelActionMap.put(category, getActionDefault());
+		panelActionMap.put(category, getActionConfigFrame("experiment", "name", "experiment_id", false));
 
 		category = "Endpoint";
 		metadataCategories.add(category);
-		panelActionMap.put(category, getActionDefault());
+		panelActionMap.put(category, getActionConfigFrameName("endpoint"));
 
 		category = "Department";
 		metadataCategories.add(category);
-		panelActionMap.put(category, getActionDefault());
+		panelActionMap.put(category, getActionConfigFrameName("department"));
 
 		category = "Species";
 		metadataCategories.add(category);
-		panelActionMap.put(category, getActionDefault());
+		panelActionMap.put(category, getActionConfigFrameName("species"));
 
 		category = "Sex";
 		metadataCategories.add(category);
-		panelActionMap.put(category, getActionDefault());
+		panelActionMap.put(category, getActionConfigFrame("sex", "label", "sex", false));
 
 		Collections.sort(metadataCategories);
 		DefaultListModel<String> listModel = new DefaultListModel<String>();
@@ -112,22 +122,33 @@ public class ExportConfigFrame extends JFrame implements ListSelectionListener {
 	}
 
 	private void save() {
-		Log.i("Saving cached config: " + myConfiguration.toString());
+		Log.i("Saving cached config: " + configuration.toString());
 
 		ExportConfigManager configManager = ExportConfigManager.getInstance();
-		configManager.setCurrentConfig(myConfiguration);
+		configManager.setCurrentConfig(configuration);
 	}
 
-	private Runnable getActionDefault() {
-		return () -> {
-			Log.i("Haha! :D");
+	private Runnable getActionConfigFrameName(String tableName) {
+		return getActionConfigFrame(tableName, "name", tableName, false);
+	}
 
+	private Runnable getActionConfigFrame(String tableName, String featureName, String limiterName, boolean allowRange) {
+		return () -> {
+			JSONObject limiters = null;
 			try {
-				myConfiguration.put(new Date().toString(), "Boii");
+				limiters = getConfiguration().getJSONObject(JSON_TAG_LIMITERS);
 			} catch (JSONException e) {
-				e.printStackTrace();
+				Log.e(e);
+				Client.showErrorMessage("Failed to build internal limiters data.", rootPane, e);
+				return;
 			}
+
+			setComponentToDetailPL(new ExportConfigDetailPanel(queryExecutor, tableName, featureName, limiterName, limiters, allowRange).getHolderPL());
 		};
+	}
+
+	public JSONObject getConfiguration() {
+		return configuration;
 	}
 
 	public void setComponentToDetailPL(Component component) {
@@ -136,17 +157,18 @@ public class ExportConfigFrame extends JFrame implements ListSelectionListener {
 
 		if (component == null) {
 			Log.e("The component is null. Nothing to display.");
+			revalidate();
 			return;
 		}
 
 		GridBagConstraints gbc = new GridBagConstraints();
-		component.setBackground(Color.RED);
-		component.setForeground(Color.BLACK);
-		gbc.gridx = 0;
+		gbc.weightx = gbc.weighty = 1.0;
 		gbc.fill = GridBagConstraints.BOTH;
+		gbc.gridwidth = gbc.gridheight = GridBagConstraints.REMAINDER;
 
-		Log.i("Applying component: " + component.getClass().getSimpleName()+" -> '"+component.getName()+"'");
+		Log.i("Applying component: " + component.getClass().getSimpleName());
 		configDetailPL.add(component, gbc);
+		revalidate();
 	}
 
 	@Override
