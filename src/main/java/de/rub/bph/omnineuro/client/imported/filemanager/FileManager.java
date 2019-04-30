@@ -62,6 +62,7 @@ public class FileManager {
 		BufferedWriter bw = new BufferedWriter(fw);
 		PrintWriter out = new PrintWriter(bw);
 		out.println(text);
+		bw.close();
 	}
 
 	public File getGenericExternalDir(String name) {

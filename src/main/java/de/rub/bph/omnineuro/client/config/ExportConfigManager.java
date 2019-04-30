@@ -66,7 +66,7 @@ public class ExportConfigManager {
 		return new File(CACHE_FILENAME);
 	}
 
-	private JSONObject getCurrentConfig() {
+	public JSONObject getCurrentConfig() {
 		return currentConfig;
 	}
 

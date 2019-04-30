@@ -16,9 +16,12 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import javax.swing.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.io.File;
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -40,6 +43,7 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 	private JCheckBox includeControlsCheckBox;
 	private JLabel configurationStatusLB;
 	private JButton configurationEditorButton;
+	private JButton searchForHashButton;
 
 	public OmniFrame() {
 		add(rootPanel);
@@ -69,6 +73,17 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 		configManager.refreshCache();
 
 		setVisible(true);
+		searchForHashButton.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent actionEvent) {
+				ExportConfigManager configManager = ExportConfigManager.getInstance();
+				try {
+					CodeHasher.searchHash(4387870,DEFAULT_LIMITER_HASH_LENGTH, configManager.getCurrentConfig().toString(), "NILS", 500);
+				} catch (IOException e) {
+					Log.e(e);
+				}
+			}
+		});
 	}
 
 	public void startImport() {

@@ -81,11 +81,15 @@ public class ExportConfigFrame extends JFrame implements ListSelectionListener {
 
 		category = "Experiment Plating Date";
 		metadataCategories.add(category);
-		panelActionMap.put(category, getActionConfigFrame("experiment", "timestamp", "timestamp", true));
+		panelActionMap.put(category, getActionConfigFrame("experiment", "timestamp", "timestamp_experiment", true));
 
 		category = "Experiment Name";
 		metadataCategories.add(category);
 		panelActionMap.put(category, getActionConfigFrame("experiment", "name", "experiment_id", false));
+
+		category = "Response timestamp";
+		metadataCategories.add(category);
+		panelActionMap.put(category, getActionConfigFrame("response", "timestamp", "timestamp_response", false));
 
 		category = "Endpoint";
 		metadataCategories.add(category);
