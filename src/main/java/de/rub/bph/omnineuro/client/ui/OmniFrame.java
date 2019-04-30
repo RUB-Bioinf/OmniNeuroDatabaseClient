@@ -12,6 +12,7 @@ import de.rub.bph.omnineuro.client.imported.log.Log;
 import de.rub.bph.omnineuro.client.util.CodeHasher;
 import de.rub.bph.omnineuro.client.util.NumberUtils;
 import de.rub.bph.omnineuro.client.util.TimestampLookupManager;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import javax.swing.*;
@@ -167,7 +168,12 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 		}
 
 		Connection connection = DBConnection.getDBConnection().getConnection();
-		new ExportConfigFrame(this, new OmniNeuroQueryExecutor(connection));
+		try {
+			new ExportConfigFrame(this, new OmniNeuroQueryExecutor(connection));
+		} catch (JSONException e) {
+			Log.e(e);
+			Client.showErrorMessage("Failed to prepare limiter configuration!", this, e);
+		}
 	}
 
 	public void requestExport() {

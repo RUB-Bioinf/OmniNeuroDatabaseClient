@@ -19,6 +19,8 @@ import java.util.HashMap;
 public class ExportConfigFrame extends JFrame implements ListSelectionListener {
 
 	public static final String JSON_TAG_LIMITERS = "limiters";
+	public static final String JSON_TAG_VERSION = "version";
+
 	private OmniNeuroQueryExecutor queryExecutor;
 	private ArrayList<String> metadataCategories;
 	private HashMap<String, Runnable> panelActionMap;
@@ -30,25 +32,23 @@ public class ExportConfigFrame extends JFrame implements ListSelectionListener {
 	private JPanel configDetailPL;
 	private JSONObject configuration;
 
-	public ExportConfigFrame(Component parent, OmniNeuroQueryExecutor queryExecutor) {
-		this(parent, queryExecutor, new JSONObject());
+	public ExportConfigFrame(Component parent, OmniNeuroQueryExecutor queryExecutor) throws JSONException {
+		this(parent, queryExecutor, getEmptyConfiguration());
 	}
 
-	public ExportConfigFrame(Component parent, OmniNeuroQueryExecutor queryExecutor, JSONObject configuration) {
+	public ExportConfigFrame(Component parent, OmniNeuroQueryExecutor queryExecutor, JSONObject configuration) throws JSONException {
 		this.queryExecutor = queryExecutor;
 		add(rootPanel);
 		setTitle("Experiment configuration editor");
 		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 
 		if (!configuration.has(JSON_TAG_LIMITERS)) {
-			try {
-				configuration.put(JSON_TAG_LIMITERS, new JSONObject());
-			} catch (JSONException e) {
-				Log.e(e);
-				Client.showErrorMessage("Failed to prepare limiter configuration!", this, e);
-				return;
-			}
+			configuration.put(JSON_TAG_LIMITERS, new JSONObject());
 		}
+		if (!configuration.has(JSON_TAG_VERSION)) {
+			configuration.put(JSON_TAG_VERSION, Client.VERSION);
+		}
+
 		this.configuration = configuration;
 
 		fillList();
@@ -61,6 +61,13 @@ public class ExportConfigFrame extends JFrame implements ListSelectionListener {
 		setLocationRelativeTo(parent);
 		setVisible(true);
 		updateSelectionPanel();
+	}
+
+	public static JSONObject getEmptyConfiguration() throws JSONException {
+		JSONObject empty = new JSONObject();
+		empty.put(JSON_TAG_VERSION, Client.VERSION);
+		empty.put(JSON_TAG_LIMITERS, new JSONObject());
+		return empty;
 	}
 
 	private void fillList() {
@@ -91,6 +98,46 @@ public class ExportConfigFrame extends JFrame implements ListSelectionListener {
 		category = "Species";
 		metadataCategories.add(category);
 		panelActionMap.put(category, getActionConfigFrameName("species"));
+
+		category = "Cell Type";
+		metadataCategories.add(category);
+		panelActionMap.put(category, getActionConfigFrameName("cell_type"));
+
+		category = "Compound";
+		metadataCategories.add(category);
+		panelActionMap.put(category, getActionConfigFrameName("compound"));
+
+		category = "Initiator";
+		metadataCategories.add(category);
+		panelActionMap.put(category, getActionConfigFrameName("initiator"));
+
+		category = "Workgroup";
+		metadataCategories.add(category);
+		panelActionMap.put(category, getActionConfigFrameName("workgroup"));
+
+		category = "Country";
+		metadataCategories.add(category);
+		panelActionMap.put(category, getActionConfigFrameName("country"));
+
+		category = "Leader";
+		metadataCategories.add(category);
+		panelActionMap.put(category, getActionConfigFrameName("leader"));
+
+		category = "Plate format";
+		metadataCategories.add(category);
+		panelActionMap.put(category, getActionConfigFrameName("plate_format"));
+
+		category = "Assay";
+		metadataCategories.add(category);
+		panelActionMap.put(category, getActionConfigFrameName("assay"));
+
+		category = "Outlier status";
+		metadataCategories.add(category);
+		panelActionMap.put(category, getActionConfigFrameName("outlier_type"));
+
+		category = "Individual";
+		metadataCategories.add(category);
+		panelActionMap.put(category, getActionConfigFrameName("individual"));
 
 		category = "Sex";
 		metadataCategories.add(category);

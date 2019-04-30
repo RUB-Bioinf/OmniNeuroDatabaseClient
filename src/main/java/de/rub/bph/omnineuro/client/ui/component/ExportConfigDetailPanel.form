@@ -51,9 +51,8 @@
           <font/>
         </border>
         <children>
-          <component id="dc3a7" class="javax.swing.JList" binding="entriesSelectionList">
+          <component id="dfa17" class="de.rub.bph.omnineuro.client.ui.component.MemorizedList" binding="entriesSelectionList" custom-create="true">
             <constraints/>
-            <properties/>
           </component>
         </children>
       </scrollpane>

@@ -9,15 +9,16 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import javax.swing.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Collections;
 
 import static de.rub.bph.omnineuro.client.ui.OmniFrame.DEFAULT_LIMITER_HASH_LENGTH;
 
-public class ExportConfigDetailPanel {
+public class ExportConfigDetailPanel implements MemorizedList.MarkedSelectionListener {
 
+	public static final String JSON_ARG_VERSION = "version";
 	public static final String JSON_ARG_LIMITER_TYPE = "type";
 	public static final String JSON_ARG_LIMITER_DATA = "data";
 	public static final String JSON_ARG_LIMITER_TYPE_SPECIFIC = "list";
@@ -27,7 +28,7 @@ public class ExportConfigDetailPanel {
 	private JRadioButton useEverythingRadioButton;
 	private JRadioButton useSpecificEntriesRadioButton;
 	private JRadioButton useRangeRadioButton;
-	private JList<String> entriesSelectionList;
+	private MemorizedList entriesSelectionList;
 	private JScrollPane specificPL;
 	private JPanel rangePL;
 	private OmniNeuroQueryExecutor queryExecutor;
@@ -48,53 +49,36 @@ public class ExportConfigDetailPanel {
 		Log.i("Preparing ConfigDetailPanel for table: '" + tableName + "' on '" + featureName + "' as: '" + limiterName + "'.");
 		Log.i("Data as given on create: " + data);
 
-		try {
-			readDatabase();
-		} catch (SQLException e) {
-			Log.e(e);
-			Client.showSQLErrorMessage("Failed to retrieve data for selected limiter: " + limiterName + " [" + tableName + "].", e, holderPL);
-			return;
-		}
-
-		useEverythingRadioButton.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent actionEvent) {
-				onTypeChangeAll();
-				updateTypePLs();
-			}
+		useEverythingRadioButton.addActionListener(actionEvent -> {
+			onTypeChangeAll();
+			updateTypePLs();
 		});
-		useSpecificEntriesRadioButton.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent actionEvent) {
-				onTypeChangeSpecific();
-				updateTypePLs();
-			}
+		useSpecificEntriesRadioButton.addActionListener(actionEvent -> {
+			onTypeChangeSpecific();
+			updateTypePLs();
 		});
-		useRangeRadioButton.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent actionEvent) {
-				onTypeChangeRanged();
-				updateTypePLs();
-			}
+		useRangeRadioButton.addActionListener(actionEvent -> {
+			onTypeChangeRange();
+			updateTypePLs();
 		});
 
 		try {
 			readDataObject();
 		} catch (JSONException e) {
 			e.printStackTrace();
-			Client.showErrorMessage("Heavy error occured in the internal data structure!", holderPL, e);
+			Client.showErrorMessage("Heavy error occurred in the internal data structure!", holderPL, e);
 		}
 	}
 
-	private void readDatabase() throws SQLException {
+	private ArrayList<String> readDatabase() throws SQLException {
 		String query = "SELECT DISTINCT " + featureName + " FROM " + tableName + " ORDER BY " + featureName + ";";
 		ResultSet set = queryExecutor.executeQuery(query);
 
-		DefaultListModel<String> model = new DefaultListModel<String>();
+		ArrayList<String> entries = new ArrayList<>();
 		while (set.next()) {
-			model.addElement(set.getString(featureName));
+			entries.add(set.getString(featureName));
 		}
-		entriesSelectionList.setModel(model);
+		return entries;
 	}
 
 	private void readDataObject() throws JSONException {
@@ -105,6 +89,14 @@ public class ExportConfigDetailPanel {
 
 			if (type.equals(JSON_ARG_LIMITER_TYPE_SPECIFIC)) {
 				useSpecificEntriesRadioButton.setSelected(true);
+				JSONArray entries = limiter.getJSONArray(JSON_ARG_LIMITER_DATA);
+				ArrayList<String> entryList = new ArrayList<>();
+				for (int i = 0; i < entries.length(); i++) {
+					String s = entries.getString(i);
+					entryList.add(s);
+				}
+				Log.i("These would have been selected: " + entryList);
+				entriesSelectionList.setMarked(true, (entryList));
 			}
 			if (type.equals(JSON_ARG_LIMITER_TYPE_RANGE)) {
 				useRangeRadioButton.setSelected(true);
@@ -114,7 +106,6 @@ public class ExportConfigDetailPanel {
 		}
 		updateTypePLs();
 	}
-
 
 	private void updateTypePLs() {
 		Log.i("Updating type panels. First: Everything vanishes!");
@@ -150,7 +141,7 @@ public class ExportConfigDetailPanel {
 		}
 	}
 
-	public void onTypeChangeRanged() {
+	public void onTypeChangeRange() {
 		//TODO implement
 	}
 
@@ -168,5 +159,33 @@ public class ExportConfigDetailPanel {
 
 	public JPanel getHolderPL() {
 		return holderPL;
+	}
+
+	private void createUIComponents() {
+		ArrayList<String> entries = new ArrayList<>();
+		try {
+			entries = readDatabase();
+		} catch (SQLException e) {
+			Log.e(e);
+			Client.showSQLErrorMessage("Failed to retrieve data for selected limiter: " + limiterName + " [" + tableName + "].", e, holderPL);
+		}
+
+		Collections.sort(entries);
+		entriesSelectionList = new MemorizedList(entries);
+		entriesSelectionList.addMarkingListener(this);
+	}
+
+	@Override
+	public void onMarkingChange(MemorizedList source) {
+		ArrayList<String> markedItems = source.getMarkedEntries();
+		Log.i("The marking of a list has changed! Currently " + markedItems.size() + " selected entries: " + markedItems);
+
+		JSONArray markings = new JSONArray(markedItems);
+		try {
+			data.getJSONObject(limiterName).put(JSON_ARG_LIMITER_DATA, markings);
+		} catch (JSONException e) {
+			Log.e(e);
+			Client.showErrorMessage("Internal data failure! Please try again!", holderPL, e);
+		}
 	}
 }
