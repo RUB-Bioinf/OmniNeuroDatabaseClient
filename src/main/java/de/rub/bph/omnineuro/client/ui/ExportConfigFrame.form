@@ -21,7 +21,7 @@
               <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
-              <text value="Save"/>
+              <text value="Apply"/>
             </properties>
           </component>
           <hspacer id="8f3a4">
@@ -29,20 +29,20 @@
               <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
             </constraints>
           </hspacer>
-          <component id="285be" class="javax.swing.JButton" binding="saveAndExportButton" default-binding="true">
+          <component id="285be" class="javax.swing.JButton" binding="applyAndSaveButton" default-binding="true">
             <constraints>
               <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
-              <text value="Save and Export"/>
+              <text value="Apply and Save"/>
             </properties>
           </component>
-          <component id="de986" class="javax.swing.JButton" binding="importButton" default-binding="true">
+          <component id="de986" class="javax.swing.JButton" binding="loadButton" default-binding="true">
             <constraints>
               <grid row="0" column="3" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
-              <text value="Import"/>
+              <text value="Load"/>
             </properties>
           </component>
         </children>

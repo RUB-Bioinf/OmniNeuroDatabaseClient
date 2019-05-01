@@ -3,6 +3,7 @@ package de.rub.bph.omnineuro.client.ui;
 import de.rub.bph.omnineuro.client.Client;
 import de.rub.bph.omnineuro.client.config.ExportConfigManager;
 import de.rub.bph.omnineuro.client.core.db.OmniNeuroQueryExecutor;
+import de.rub.bph.omnineuro.client.imported.filemanager.FileManager;
 import de.rub.bph.omnineuro.client.imported.log.Log;
 import de.rub.bph.omnineuro.client.ui.component.ExportConfigDetailPanel;
 import org.json.JSONException;
@@ -11,7 +12,10 @@ import org.json.JSONObject;
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -26,11 +30,12 @@ public class ExportConfigFrame extends JFrame implements ListSelectionListener {
 	private HashMap<String, Runnable> panelActionMap;
 	private JPanel rootPanel;
 	private JButton saveButton;
-	private JButton saveAndExportButton;
-	private JButton importButton;
+	private JButton applyAndSaveButton;
+	private JButton loadButton;
 	private JList<String> metaDataList;
 	private JPanel configDetailPL;
 	private JSONObject configuration;
+	private JFileChooser fileChooser;
 
 	public ExportConfigFrame(Component parent, OmniNeuroQueryExecutor queryExecutor) throws JSONException {
 		this(parent, queryExecutor, getEmptyConfiguration());
@@ -41,6 +46,11 @@ public class ExportConfigFrame extends JFrame implements ListSelectionListener {
 		add(rootPanel);
 		setTitle("Experiment configuration editor");
 		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+
+		//TODO read filepath
+		FileNameExtensionFilter filter = new FileNameExtensionFilter("JSON", "json");
+		fileChooser = new JFileChooser();
+		fileChooser.addChoosableFileFilter(filter);
 
 		if (!configuration.has(JSON_TAG_LIMITERS)) {
 			configuration.put(JSON_TAG_LIMITERS, new JSONObject());
@@ -54,20 +64,17 @@ public class ExportConfigFrame extends JFrame implements ListSelectionListener {
 		fillList();
 
 		metaDataList.addListSelectionListener(this);
-		saveButton.addActionListener(actionEvent -> save());
+		saveButton.addActionListener(actionEvent -> apply());
+		applyAndSaveButton.addActionListener(e -> {
+			apply();
+			save();
+		});
 
 		pack();
 		setMinimumSize(getSize());
 		setLocationRelativeTo(parent);
 		setVisible(true);
 		updateSelectionPanel();
-	}
-
-	public static JSONObject getEmptyConfiguration() throws JSONException {
-		JSONObject empty = new JSONObject();
-		empty.put(JSON_TAG_VERSION, Client.VERSION);
-		empty.put(JSON_TAG_LIMITERS, new JSONObject());
-		return empty;
 	}
 
 	private void fillList() {
@@ -155,28 +162,30 @@ public class ExportConfigFrame extends JFrame implements ListSelectionListener {
 		metaDataList.setModel(listModel);
 	}
 
-	private void updateSelectionPanel() {
-		String selection = metaDataList.getSelectedValue();
-		if (selection == null) {
-			Log.w("Nothing has been selected.");
-			setComponentToDetailPL(new JLabel("Nothing has been selected."));
-			return;
-		}
-
-		if (!panelActionMap.containsKey(selection)) {
-			Log.w("Selection '" + selection + "' does not exist in the lookup map!");
-			return;
-		}
-
-		Runnable r = panelActionMap.get(selection);
-		r.run();
-	}
-
-	private void save() {
+	private void apply() {
 		Log.i("Saving cached config: " + configuration.toString());
 
 		ExportConfigManager configManager = ExportConfigManager.getInstance();
 		configManager.setCurrentConfig(configuration);
+	}
+
+	private void save() {
+		Log.i("User wants to save the current configuration.");
+		int state = fileChooser.showSaveDialog(this);
+		if (state == JFileChooser.APPROVE_OPTION) {
+			File file = fileChooser.getSelectedFile();
+			FileManager manager = new FileManager();
+			try {
+				manager.writeFile(file, configuration.toString(4));
+				Log.i("Done. Saved file: "+file.getAbsolutePath()+" ["+file.length()+"B]");
+				//TODO implement confirm overwrite dialog
+			} catch (IOException | JSONException e) {
+				Log.e(e);
+				Client.showErrorMessage("Failed to save the configuration!", this, e);
+			}
+		} else {
+			Log.i("Saving file canceled.");
+		}
 	}
 
 	private Runnable getActionConfigFrameName(String tableName) {
@@ -198,8 +207,29 @@ public class ExportConfigFrame extends JFrame implements ListSelectionListener {
 		};
 	}
 
-	public JSONObject getConfiguration() {
-		return configuration;
+	@Override
+	public void valueChanged(ListSelectionEvent listSelectionEvent) {
+		Log.v("The value has changed: " + listSelectionEvent);
+		if (!listSelectionEvent.getValueIsAdjusting()) {
+			updateSelectionPanel();
+		}
+	}
+
+	private void updateSelectionPanel() {
+		String selection = metaDataList.getSelectedValue();
+		if (selection == null) {
+			Log.w("Nothing has been selected.");
+			setComponentToDetailPL(new JLabel("Nothing has been selected."));
+			return;
+		}
+
+		if (!panelActionMap.containsKey(selection)) {
+			Log.w("Selection '" + selection + "' does not exist in the lookup map!");
+			return;
+		}
+
+		Runnable r = panelActionMap.get(selection);
+		r.run();
 	}
 
 	public void setComponentToDetailPL(Component component) {
@@ -222,11 +252,14 @@ public class ExportConfigFrame extends JFrame implements ListSelectionListener {
 		revalidate();
 	}
 
-	@Override
-	public void valueChanged(ListSelectionEvent listSelectionEvent) {
-		Log.v("The value has changed: " + listSelectionEvent);
-		if (!listSelectionEvent.getValueIsAdjusting()) {
-			updateSelectionPanel();
-		}
+	public static JSONObject getEmptyConfiguration() throws JSONException {
+		JSONObject empty = new JSONObject();
+		empty.put(JSON_TAG_VERSION, Client.VERSION);
+		empty.put(JSON_TAG_LIMITERS, new JSONObject());
+		return empty;
+	}
+
+	public JSONObject getConfiguration() {
+		return configuration;
 	}
 }
