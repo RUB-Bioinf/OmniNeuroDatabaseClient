@@ -7,6 +7,7 @@ import de.rub.bph.omnineuro.client.imported.filemanager.FileManager;
 import de.rub.bph.omnineuro.client.imported.log.Log;
 import de.rub.bph.omnineuro.client.ui.component.ExportConfigDetailPanel;
 import de.rub.bph.omnineuro.client.util.CodeHasher;
+import de.rub.bph.omnineuro.client.util.ConfigurationFileDrop;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -61,8 +62,8 @@ public class ExportConfigFrame extends JFrame implements ListSelectionListener {
 		}
 		setTitle("Experiment configuration editor [" + configTitle + "]");
 
-		//TODO read filepath
-		FileNameExtensionFilter filter = new FileNameExtensionFilter("JSON", "json");
+		//TODO cache filepath
+		FileNameExtensionFilter filter = new FileNameExtensionFilter("JSON", JSON_SAFE_FILE_EXTENSION);
 		fileChooser = new JFileChooser();
 		fileChooser.addChoosableFileFilter(filter);
 
@@ -76,6 +77,7 @@ public class ExportConfigFrame extends JFrame implements ListSelectionListener {
 		this.configuration = configuration;
 
 		fillList();
+		new ConfigurationFileDrop(queryExecutor).register(this, true);
 
 		metaDataList.addListSelectionListener(this);
 		saveButton.addActionListener(actionEvent -> apply());
@@ -89,6 +91,7 @@ public class ExportConfigFrame extends JFrame implements ListSelectionListener {
 		setMinimumSize(getSize());
 		setSize((int) (getWidth() * 2.5), (int) (getHeight() * 1.5));
 		setLocationRelativeTo(parent);
+		setJMenuBar(createMenu());
 		setVisible(true);
 		updateSelectionPanel();
 	}
@@ -98,6 +101,50 @@ public class ExportConfigFrame extends JFrame implements ListSelectionListener {
 		empty.put(JSON_TAG_VERSION, Client.VERSION);
 		empty.put(JSON_TAG_LIMITERS, new JSONObject());
 		return empty;
+	}
+
+	public JMenuBar createMenu() {
+		JMenuBar menuBar = new JMenuBar();
+
+		JMenu menu = new JMenu("File");
+		JMenuItem item = new JMenuItem("New");
+		item.addActionListener(actionEvent -> {
+			try {
+				new ExportConfigFrame(rootPanel, queryExecutor);
+			} catch (JSONException e) {
+				Log.e(e);
+				Client.showErrorMessage("Failed to parse default data.", rootPanel, e);
+			}
+		});
+		setMenuItemShortcut(item, 'N');
+		menu.add(item);
+
+		item = new JMenuItem("Duplicate");
+		item.addActionListener(actionEvent -> {
+			try {
+				new ExportConfigFrame(rootPanel, queryExecutor, configuration);
+			} catch (JSONException e) {
+				Log.e(e);
+				Client.showErrorMessage("Failed to parse current data.", rootPanel, e);
+			}
+		});
+		setMenuItemShortcut(item, 'D');
+		menu.add(item);
+
+		item = new JMenuItem("Close");
+		item.addActionListener(actionEvent -> {
+			dispose();
+		});
+		setMenuItemShortcut(item, 'W');
+		menu.add(item);
+
+		menuBar.add(menu);
+
+		return menuBar;
+	}
+
+	private void setMenuItemShortcut(JMenuItem menuItem, char key) {
+		menuItem.setAccelerator(KeyStroke.getKeyStroke(key, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
 	}
 
 	private void fillList() {
@@ -323,5 +370,4 @@ public class ExportConfigFrame extends JFrame implements ListSelectionListener {
 	public String hashData() {
 		return new CodeHasher(configuration).getCodeHash(DEFAULT_LIMITER_HASH_LENGTH);
 	}
-
 }

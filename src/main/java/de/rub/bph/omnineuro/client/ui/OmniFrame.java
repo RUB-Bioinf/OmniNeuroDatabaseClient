@@ -11,6 +11,7 @@ import de.rub.bph.omnineuro.client.core.db.out.SheetExporterCompatManager;
 import de.rub.bph.omnineuro.client.imported.filemanager.FileManager;
 import de.rub.bph.omnineuro.client.imported.log.Log;
 import de.rub.bph.omnineuro.client.util.CodeHasher;
+import de.rub.bph.omnineuro.client.util.ConfigurationFileDrop;
 import de.rub.bph.omnineuro.client.util.NumberUtils;
 import de.rub.bph.omnineuro.client.util.TimestampLookupManager;
 import org.json.JSONException;
@@ -43,6 +44,7 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 	private JLabel configurationStatusLB;
 	private JButton configurationEditorButton;
 	private JButton searchForHashButton;
+	private JPanel configurationDDPL;
 
 	public OmniFrame() {
 		add(rootPanel);
@@ -66,13 +68,6 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 		startExportButton.addActionListener(actionEvent -> requestExport());
 		resetDatabaseButton.addActionListener(actionEvent -> resetDatabase());
 		configurationEditorButton.addActionListener(actionEvent -> actionOpenConfigWindow());
-
-		ExportConfigManager configManager = ExportConfigManager.getInstance();
-		configManager.addListener(this);
-		configManager.refreshCache();
-		loadConfigCache();
-
-		setVisible(true);
 		searchForHashButton.addActionListener(actionEvent -> {
 			ExportConfigManager configManager1 = ExportConfigManager.getInstance();
 			try {
@@ -81,7 +76,15 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 				Log.e(e);
 			}
 		});
+
+		ExportConfigManager configManager = ExportConfigManager.getInstance();
+		configManager.addListener(this);
+		configManager.refreshCache();
+		loadConfigCache();
+		new ConfigurationFileDrop().register(configurationDDPL, true);
+
 		searchForHashButton.setVisible(false);
+		setVisible(true);
 	}
 
 	public void startImport() {
