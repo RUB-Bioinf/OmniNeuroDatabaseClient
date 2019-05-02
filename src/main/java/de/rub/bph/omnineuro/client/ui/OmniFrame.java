@@ -8,6 +8,7 @@ import de.rub.bph.omnineuro.client.core.db.DBConnection;
 import de.rub.bph.omnineuro.client.core.db.OmniNeuroQueryExecutor;
 import de.rub.bph.omnineuro.client.core.db.in.InsertManager;
 import de.rub.bph.omnineuro.client.core.db.out.SheetExporterCompatManager;
+import de.rub.bph.omnineuro.client.imported.filemanager.FileManager;
 import de.rub.bph.omnineuro.client.imported.log.Log;
 import de.rub.bph.omnineuro.client.util.CodeHasher;
 import de.rub.bph.omnineuro.client.util.NumberUtils;
@@ -16,8 +17,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import javax.swing.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.io.File;
@@ -71,19 +70,18 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 		ExportConfigManager configManager = ExportConfigManager.getInstance();
 		configManager.addListener(this);
 		configManager.refreshCache();
+		loadConfigCache();
 
 		setVisible(true);
-		searchForHashButton.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent actionEvent) {
-				ExportConfigManager configManager = ExportConfigManager.getInstance();
-				try {
-					CodeHasher.searchHash(4387870,DEFAULT_LIMITER_HASH_LENGTH, configManager.getCurrentConfig().toString(), "NILS", 500);
-				} catch (IOException e) {
-					Log.e(e);
-				}
+		searchForHashButton.addActionListener(actionEvent -> {
+			ExportConfigManager configManager1 = ExportConfigManager.getInstance();
+			try {
+				CodeHasher.searchHash(4387870, DEFAULT_LIMITER_HASH_LENGTH, configManager1.getCurrentConfig().toString(), "NILS", 500);
+			} catch (IOException e) {
+				Log.e(e);
 			}
 		});
+		searchForHashButton.setVisible(false);
 	}
 
 	public void startImport() {
@@ -183,8 +181,10 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 		}
 
 		Connection connection = DBConnection.getDBConnection().getConnection();
+		ExportConfigManager configManager = ExportConfigManager.getInstance();
+
 		try {
-			new ExportConfigFrame(this, new OmniNeuroQueryExecutor(connection));
+			new ExportConfigFrame(this, new OmniNeuroQueryExecutor(connection), configManager.getCurrentConfig());
 		} catch (JSONException e) {
 			Log.e(e);
 			Client.showErrorMessage("Failed to prepare limiter configuration!", this, e);
@@ -252,6 +252,46 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 			configurationStatusLB.setText("No configuration loaded.");
 		} else {
 			configurationStatusLB.setText("Configuration loaded. Code: " + new CodeHasher(newConfig.toString()).getCodeHash(DEFAULT_LIMITER_HASH_LENGTH));
+		}
+	}
+
+	private void saveConfigCache() {
+		Log.i("Saving config cache.");
+		ExportConfigManager configManager = ExportConfigManager.getInstance();
+		FileManager fileManager = new FileManager();
+		File file = configManager.getCacheFile();
+		JSONObject config = configManager.getCurrentConfig();
+
+		if (config == null) {
+			Log.i("No config in use, so nothing will be saved.");
+			return;
+		}
+
+		try {
+			fileManager.writeFile(file, config.toString(4));
+		} catch (Throwable e) {
+			Log.e("Failed to cache config to: '" + file.getAbsolutePath() + "'. Config: " + config.toString(), e);
+			return;
+		}
+		Log.i("Saved config cache to: " + file.getAbsolutePath());
+	}
+
+	private void loadConfigCache() {
+		ExportConfigManager configManager = ExportConfigManager.getInstance();
+		FileManager fileManager = new FileManager();
+		File file = configManager.getCacheFile();
+
+		if (!file.exists()) {
+			Log.i("Wanted to load config cache. But the file was not found: " + file.getAbsolutePath());
+			return;
+		}
+
+		String text = null;
+		try {
+			text = fileManager.readFile(file);
+			configManager.setCurrentConfig(new JSONObject(text));
+		} catch (IOException | JSONException e) {
+			Log.e(e);
 		}
 	}
 
@@ -323,5 +363,6 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 	@Override
 	public void onConfigChange(JSONObject newConfig) {
 		updateConfigListenerText(newConfig);
+		saveConfigCache();
 	}
 }

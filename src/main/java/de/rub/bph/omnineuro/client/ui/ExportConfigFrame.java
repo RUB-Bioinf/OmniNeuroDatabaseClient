@@ -6,6 +6,7 @@ import de.rub.bph.omnineuro.client.core.db.OmniNeuroQueryExecutor;
 import de.rub.bph.omnineuro.client.imported.filemanager.FileManager;
 import de.rub.bph.omnineuro.client.imported.log.Log;
 import de.rub.bph.omnineuro.client.ui.component.ExportConfigDetailPanel;
+import de.rub.bph.omnineuro.client.util.CodeHasher;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -20,11 +21,16 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 
+import static de.rub.bph.omnineuro.client.ui.OmniFrame.DEFAULT_LIMITER_HASH_LENGTH;
+import static javax.swing.JFileChooser.APPROVE_OPTION;
+
 public class ExportConfigFrame extends JFrame implements ListSelectionListener {
 
 	public static final String JSON_TAG_LIMITERS = "limiters";
 	public static final String JSON_TAG_VERSION = "version";
 
+	public static final String JSON_SAFE_FILE_EXTENSION = "json";
+	public static final String NEW_CONFIG_DEFAULT_TITLE = "New Configuration";
 	private OmniNeuroQueryExecutor queryExecutor;
 	private ArrayList<String> metadataCategories;
 	private HashMap<String, Runnable> panelActionMap;
@@ -38,14 +44,22 @@ public class ExportConfigFrame extends JFrame implements ListSelectionListener {
 	private JFileChooser fileChooser;
 
 	public ExportConfigFrame(Component parent, OmniNeuroQueryExecutor queryExecutor) throws JSONException {
-		this(parent, queryExecutor, getEmptyConfiguration());
+		this(parent, queryExecutor, getEmptyConfiguration(), NEW_CONFIG_DEFAULT_TITLE);
 	}
 
 	public ExportConfigFrame(Component parent, OmniNeuroQueryExecutor queryExecutor, JSONObject configuration) throws JSONException {
+		this(parent, queryExecutor, configuration, new CodeHasher(configuration.toString()).getCodeHash(DEFAULT_LIMITER_HASH_LENGTH));
+	}
+
+	public ExportConfigFrame(Component parent, OmniNeuroQueryExecutor queryExecutor, JSONObject configuration, String configTitle) throws JSONException {
 		this.queryExecutor = queryExecutor;
 		add(rootPanel);
-		setTitle("Experiment configuration editor");
 		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+
+		if (configTitle == null || configTitle.trim().equals("")) {
+			configTitle = NEW_CONFIG_DEFAULT_TITLE;
+		}
+		setTitle("Experiment configuration editor [" + configTitle + "]");
 
 		//TODO read filepath
 		FileNameExtensionFilter filter = new FileNameExtensionFilter("JSON", "json");
@@ -69,12 +83,21 @@ public class ExportConfigFrame extends JFrame implements ListSelectionListener {
 			apply();
 			save();
 		});
+		loadButton.addActionListener(actionEvent -> load());
 
 		pack();
 		setMinimumSize(getSize());
+		setSize((int) (getWidth() * 2.5), (int) (getHeight() * 1.5));
 		setLocationRelativeTo(parent);
 		setVisible(true);
 		updateSelectionPanel();
+	}
+
+	public static JSONObject getEmptyConfiguration() throws JSONException {
+		JSONObject empty = new JSONObject();
+		empty.put(JSON_TAG_VERSION, Client.VERSION);
+		empty.put(JSON_TAG_LIMITERS, new JSONObject());
+		return empty;
 	}
 
 	private void fillList() {
@@ -172,12 +195,27 @@ public class ExportConfigFrame extends JFrame implements ListSelectionListener {
 	private void save() {
 		Log.i("User wants to save the current configuration.");
 		int state = fileChooser.showSaveDialog(this);
-		if (state == JFileChooser.APPROVE_OPTION) {
+		if (state == APPROVE_OPTION) {
 			File file = fileChooser.getSelectedFile();
+			String filename = file.getAbsolutePath();
+			String extension = "." + JSON_SAFE_FILE_EXTENSION;
+			if (!filename.toLowerCase().endsWith(extension)) {
+				filename = filename + extension;
+				file = new File(filename);
+			}
+			if (file.exists()) {
+				boolean overwrite = Client.showConfirmDialog("The file '" + file.getName() + "' already exists.\nDo you want to overwrite it?", this);
+				if (!overwrite) {
+					fileChooser.setCurrentDirectory(file.getParentFile());
+					save();
+					return;
+				}
+			}
+
 			FileManager manager = new FileManager();
 			try {
 				manager.writeFile(file, configuration.toString(4));
-				Log.i("Done. Saved file: "+file.getAbsolutePath()+" ["+file.length()+"B]");
+				Log.i("Done. Saved file: " + file.getAbsolutePath() + " [" + file.length() + "B]");
 				//TODO implement confirm overwrite dialog
 			} catch (IOException | JSONException e) {
 				Log.e(e);
@@ -185,6 +223,32 @@ public class ExportConfigFrame extends JFrame implements ListSelectionListener {
 			}
 		} else {
 			Log.i("Saving file canceled.");
+		}
+	}
+
+	public void load() {
+		int state = fileChooser.showOpenDialog(this);
+		if (state == APPROVE_OPTION) {
+			FileManager manager = new FileManager();
+			File file = fileChooser.getSelectedFile();
+
+			String text;
+			try {
+				text = manager.readFile(fileChooser.getSelectedFile());
+			} catch (IOException e) {
+				Log.e(e);
+				Client.showErrorMessage("Failed to read file: " + file.getAbsolutePath(), this, e);
+				return;
+			}
+
+			JSONObject loadedData;
+			try {
+				loadedData = new JSONObject(text);
+				new ExportConfigFrame(this, queryExecutor, loadedData, file.getName());
+			} catch (JSONException e) {
+				Log.e(e);
+				Client.showErrorMessage("The file you selected does not contain valid configuration data.", this, e);
+			}
 		}
 	}
 
@@ -219,7 +283,7 @@ public class ExportConfigFrame extends JFrame implements ListSelectionListener {
 		String selection = metaDataList.getSelectedValue();
 		if (selection == null) {
 			Log.w("Nothing has been selected.");
-			setComponentToDetailPL(new JLabel("Nothing has been selected."));
+			setComponentToDetailPL(new JLabel("Nothing has been selected. Select a limiter from the list to edit it."));
 			return;
 		}
 
@@ -252,14 +316,12 @@ public class ExportConfigFrame extends JFrame implements ListSelectionListener {
 		revalidate();
 	}
 
-	public static JSONObject getEmptyConfiguration() throws JSONException {
-		JSONObject empty = new JSONObject();
-		empty.put(JSON_TAG_VERSION, Client.VERSION);
-		empty.put(JSON_TAG_LIMITERS, new JSONObject());
-		return empty;
-	}
-
 	public JSONObject getConfiguration() {
 		return configuration;
 	}
+
+	public String hashData() {
+		return new CodeHasher(configuration).getCodeHash(DEFAULT_LIMITER_HASH_LENGTH);
+	}
+
 }

@@ -14,7 +14,7 @@
 /log/
 /cache/
 /json/
-/data/hashTarget.csv
+/data/hash/
 
 \sheets\*
 

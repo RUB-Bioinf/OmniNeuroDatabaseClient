@@ -69,8 +69,8 @@ public class Client {
 			exception.printStackTrace();
 			showErrorMessage(
 					"An internal Exception occurred.\n" + s + "\n\n" + exception.getClass().getName() + "\n'"
-							+ exception.getMessage()
-							+ "'\n\nIf this message keeps occurring check your network connection and / or consult your system admin.",
+							+ exception.getMessage(),
+							//+ "'\n\nIf this message keeps occurring check your network connection and / or consult your system admin.",
 					parent);
 		}
 	}

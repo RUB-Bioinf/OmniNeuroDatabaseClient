@@ -29,7 +29,7 @@ public class ExportConfigManager {
 	}
 
 	public void refreshCache() {
-		String s = null;
+		String s;
 		JSONObject config = null;
 
 		if (existsCache()) {

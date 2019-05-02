@@ -28,12 +28,12 @@ public class CodeHasher {
 		FileManager manager = new FileManager();
 		int finds = 0;
 		int salt = startSalt;
-		File f = new File("data");
+		File f = new File(new File("data"),"hash");
 		f.mkdirs();
 		f = new File(f, "hashTarget.csv");
 
-		manager.appendFile(f, "Starting new search in '" + data + "'. Searching for hash: '" + hashTarget+"'");
-		manager.appendFile(f, "timestamp;salt;result");
+		manager.appendFile(f, "Starting new search in '" + data + "'. Searching for hash: '" + hashTarget + "'");
+		manager.appendFile(f, "index;timestamp;salt;result");
 
 		while (finds < findingCount) {
 			CodeHasher hasher = new CodeHasher(data);
@@ -45,7 +45,7 @@ public class CodeHasher {
 				finds++;
 				Log.i("Found! " + salt + ": " + s);
 				String timestamp = new SimpleDateFormat("dd.MM-hh:mm:ss").format(new Date());
-				manager.appendFile(f, timestamp+";"+salt + ";" + s);
+				manager.appendFile(f, finds + ";" + timestamp + ";" + salt + ";" + s);
 			}
 			salt++;
 		}
