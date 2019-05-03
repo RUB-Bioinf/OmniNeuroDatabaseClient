@@ -4,8 +4,11 @@ import de.rub.bph.omnineuro.client.Client;
 import de.rub.bph.omnineuro.client.imported.log.Log;
 
 import javax.swing.*;
-import java.awt.event.*;
+import java.awt.event.KeyEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 
+@Deprecated
 public class ExportDialog extends JDialog {
 	private JPanel contentPane;
 	private JButton buttonOK;
@@ -16,7 +19,7 @@ public class ExportDialog extends JDialog {
 		setContentPane(contentPane);
 		setModal(true);
 		getRootPane().setDefaultButton(buttonOK);
-		setTitle(Client.TITLE+": Export");
+		setTitle(Client.TITLE + ": Export");
 
 		buttonOK.addActionListener(e -> onOK());
 
@@ -37,6 +40,13 @@ public class ExportDialog extends JDialog {
 		setMinimumSize(getSize());
 	}
 
+	public static void main(String[] args) {
+		ExportDialog dialog = new ExportDialog();
+		dialog.pack();
+		dialog.setVisible(true);
+		System.exit(0);
+	}
+
 	private void onOK() {
 		Log.i("User pressed 'OK'!");
 		// add your code here
@@ -47,12 +57,5 @@ public class ExportDialog extends JDialog {
 		Log.i("User canceled everything!");
 		// add your code here if necessary
 		dispose();
-	}
-
-	public static void main(String[] args) {
-		ExportDialog dialog = new ExportDialog();
-		dialog.pack();
-		dialog.setVisible(true);
-		System.exit(0);
 	}
 }

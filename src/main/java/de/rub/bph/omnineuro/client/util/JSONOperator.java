@@ -7,7 +7,7 @@ import java.util.Iterator;
 
 public class JSONOperator {
 
-	protected ArrayList<String> getKeys(JSONObject data) {
+	public static ArrayList<String> getKeys(JSONObject data) {
 		ArrayList<String> list = new ArrayList<>();
 
 		Iterator experimentKeys = data.keys();

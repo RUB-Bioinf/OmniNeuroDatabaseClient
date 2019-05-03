@@ -7,6 +7,7 @@ import de.rub.bph.omnineuro.client.core.SheetReaderManager;
 import de.rub.bph.omnineuro.client.core.db.DBConnection;
 import de.rub.bph.omnineuro.client.core.db.OmniNeuroQueryExecutor;
 import de.rub.bph.omnineuro.client.core.db.in.InsertManager;
+import de.rub.bph.omnineuro.client.core.db.out.ExperimentIDLimiter;
 import de.rub.bph.omnineuro.client.core.db.out.SheetExporterCompatManager;
 import de.rub.bph.omnineuro.client.imported.filemanager.FileManager;
 import de.rub.bph.omnineuro.client.imported.log.Log;
@@ -203,12 +204,6 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 			return;
 		}
 
-		/*
-		ExportDialog dialog = new ExportDialog();
-		dialog.setLocationRelativeTo(this);
-		dialog.setVisible(true);
-		 */
-
 		int threads = (int) threadsSP.getValue();
 		File dir = new File(exportDirChooserPanel.getText());
 		if (dir.isFile()) {
@@ -219,17 +214,30 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 			dir.mkdirs();
 		}
 
-		//TODO preselect experiments somwhere else
+		//TODO preselect experiments somewhere else
 		ArrayList<Long> experimentIDs = new ArrayList<>();
 		try {
 			experimentIDs = new OmniNeuroQueryExecutor(DBConnection.getDBConnection().getConnection()).getIDs("experiment");
 		} catch (SQLException e) {
 			Log.e(e);
-			//TODO display error
+			Client.showSQLErrorMessage("Failed to receive experiment data from the database.", e, this);
+			return;
 		}
 
-		SheetExporterCompatManager compatManager = new SheetExporterCompatManager(threads, dir, experimentIDs, includeControls);
-		compatManager.export();
+		ExportConfigManager configManager = ExportConfigManager.getInstance();
+		ArrayList<Long> limitedExperimentIDs;
+		try {
+			ExperimentIDLimiter limiter = new ExperimentIDLimiter(experimentIDs, configManager.getCurrentConfig());
+			limitedExperimentIDs = limiter.applyAllLimiters();
+		} catch (Throwable e) {
+			Log.e(e);
+			Client.showErrorMessage("Failed to apply limiters and configuration to the database!", this, e);
+			return;
+		}
+		Log.i("After running the limiters, " + experimentIDs.size() + " has been reduced to " + limitedExperimentIDs.size() + ".");
+
+		SheetExporterCompatManager compatManager = new SheetExporterCompatManager(threads, dir, limitedExperimentIDs, includeControls);
+		compatManager.export(); //TODO Actual export has been disabled for test purposes. Enable export again.
 
 		Client.showInfoMessage("Job done.\n\nDetailed export reports will be shown here, but only in a later version.", this);
 	}
