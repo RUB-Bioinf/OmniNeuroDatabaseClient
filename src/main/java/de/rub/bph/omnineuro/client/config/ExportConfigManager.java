@@ -10,28 +10,22 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 public class ExportConfigManager {
-
+	
 	public static final String CACHE_FILENAME = "exportCfg.cache";
 	private static ExportConfigManager configManager;
-
+	
 	private JSONObject currentConfig;
 	private ArrayList<ExportConfigManagerListener> listeners;
-
+	
 	private ExportConfigManager() {
 		listeners = new ArrayList<>();
 		refreshCache();
 	}
-
-	public static ExportConfigManager getInstance() {
-		if (configManager == null) configManager = new ExportConfigManager();
-
-		return configManager;
-	}
-
+	
 	public void refreshCache() {
 		String s;
 		JSONObject config = null;
-
+		
 		if (existsCache()) {
 			try {
 				s = readCacheFile();
@@ -44,46 +38,56 @@ public class ExportConfigManager {
 		}
 		setCurrentConfig(config);
 	}
-
+	
 	private String readCacheFile() throws IOException {
 		if (!existsCache()) {
 			return null;
 		}
-
+		
 		FileManager manager = new FileManager();
 		return manager.readFile(getCacheFile());
 	}
-
+	
+	public boolean hasConfig() {
+		return getCurrentConfig() != null;
+	}
+	
 	public boolean existsCache() {
 		return getCacheFile().exists();
 	}
-
+	
 	public void addListener(ExportConfigManagerListener... listener) {
 		listeners.addAll(Arrays.asList(listener));
 	}
-
+	
+	public void clear() {
+		setCurrentConfig(null);
+	}
+	
 	public File getCacheFile() {
 		return new File(CACHE_FILENAME);
 	}
-
+	
 	public JSONObject getCurrentConfig() {
 		return currentConfig;
 	}
-
+	
 	public void setCurrentConfig(JSONObject currentConfig) {
 		this.currentConfig = currentConfig;
 		for (ExportConfigManagerListener listener : listeners) {
 			listener.onConfigChange(getCurrentConfig());
 		}
 	}
-
-	public void clear() {
-		setCurrentConfig(null);
+	
+	public static ExportConfigManager getInstance() {
+		if (configManager == null) configManager = new ExportConfigManager();
+		
+		return configManager;
 	}
-
+	
 	public interface ExportConfigManagerListener {
-
+		
 		public void onConfigChange(JSONObject newConfig);
-
+		
 	}
 }

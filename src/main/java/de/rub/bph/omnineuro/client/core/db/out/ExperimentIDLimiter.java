@@ -31,6 +31,10 @@ public class ExperimentIDLimiter {
 		this.originalExperimentIDs = originalExperimentIDs;
 		this.queryExecutor = queryExecutor;
 		
+		if (limiterConfigs == null) {
+			throw new IllegalArgumentException("No limiters have been set");
+		}
+		
 		if (limiterConfigs.has(JSON_TAG_LIMITERS)) {
 			limiterConfigs = limiterConfigs.getJSONObject(JSON_TAG_LIMITERS);
 		}
