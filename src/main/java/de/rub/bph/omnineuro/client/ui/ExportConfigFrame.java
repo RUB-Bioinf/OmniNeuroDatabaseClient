@@ -200,6 +200,10 @@ public class ExportConfigFrame extends JFrame implements ListSelectionListener {
 		metadataCategories.add(category);
 		panelActionMap.put(category, getActionConfigFrameName("plate_format"));
 		
+		category = "Controls";
+		metadataCategories.add(category);
+		panelActionMap.put(category, getActionConfigFrameName("control"));
+		
 		category = "Assay";
 		metadataCategories.add(category);
 		panelActionMap.put(category, getActionConfigFrameName("assay"));

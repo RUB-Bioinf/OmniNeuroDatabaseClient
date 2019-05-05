@@ -1,5 +1,6 @@
 package de.rub.bph.omnineuro.client.core.db.out;
 
+import de.rub.bph.omnineuro.client.Client;
 import de.rub.bph.omnineuro.client.config.ExportConfigManager;
 import de.rub.bph.omnineuro.client.core.db.DBConnection;
 import de.rub.bph.omnineuro.client.core.db.OmniNeuroQueryExecutor;
@@ -7,9 +8,11 @@ import de.rub.bph.omnineuro.client.core.db.out.r.CompoundSheetExporter;
 import de.rub.bph.omnineuro.client.imported.log.Log;
 import de.rub.bph.omnineuro.client.util.CodeHasher;
 import de.rub.bph.omnineuro.client.util.concurrent.ConcurrentExecutionManager;
+import org.apache.commons.collections4.ListUtils;
 import org.json.JSONObject;
 
 import java.io.File;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -24,11 +27,10 @@ public class SheetExporterCompatManager extends ConcurrentExecutionManager {
 	private File sourceDir;
 	private OmniNeuroQueryExecutor queryExecutor;
 	private DBConnection connection;
-	private ArrayList<Long> experimentIDs;
-	private boolean includeControls;
+	private ArrayList<Long> responseIDs;
 	private JSONObject config;
 	
-	public SheetExporterCompatManager(int threads, File sourceDir, ArrayList<Long> experimentIDs, boolean includeControls) {
+	public SheetExporterCompatManager(int threads, File sourceDir, ArrayList<Long> responseIDs) {
 		super(threads);
 		
 		config = ExportConfigManager.getInstance().getCurrentConfig();
@@ -45,9 +47,7 @@ public class SheetExporterCompatManager extends ConcurrentExecutionManager {
 		}
 		
 		this.sourceDir = sourceDir;
-		this.experimentIDs = experimentIDs;
-		this.includeControls = includeControls;
-		Log.i("There are " + experimentIDs.size() + " experiments in the database, matching the user's criteria.");
+		this.responseIDs = responseIDs;
 		
 		service = Executors.newFixedThreadPool(threads);
 		connection = DBConnection.getDBConnection();
@@ -59,18 +59,41 @@ public class SheetExporterCompatManager extends ConcurrentExecutionManager {
 		
 		try {
 			exportCompoundSheet();
-		} catch (SQLException e) {
+		} catch (Throwable e) {
 			Log.e(e);
+			Client.showErrorMessage("Failed to export experiment data!\nA more detailed message will be displayed in the future.", null, e);
 		}
 		
 		waitForTasks();
 	}
 	
 	public void exportCompoundSheet() throws SQLException { //TODO restrictive Params here?
-		ArrayList<Long> compoundIDs = new ArrayList<>();
-		HashMap<Long, ArrayList<Long>> compoundExperimentMap = new HashMap<>();
+		ArrayList<Long> compoundIDs = queryExecutor.getIDs("compound");
+		ArrayList<Long> retainedCompoundIDs = new ArrayList<>();
+		HashMap<Long, ArrayList<Long>> compoundResponseMap = new HashMap<>();
 		
-		for (long id : experimentIDs) {
+		for (long compoundID : compoundIDs) {
+			String query = "SELECT DISTINCT response.id FROM response,compound,experiment WHERE response.experiment_id=experiment.id " +
+					"AND experiment.compound_id=compound.id AND compound.id = " + compoundID + ";";
+			ResultSet set = queryExecutor.executeQuery(query);
+			ArrayList<Long> foundResponseIDs = queryExecutor.extractIDs(set);
+			
+			ArrayList<Long> retained = new ArrayList<>(ListUtils.retainAll(foundResponseIDs, responseIDs));
+			Log.i("Found " + retained.size() + " mutual elements from all responses [" + foundResponseIDs.size() + "] and limited [" + responseIDs.size() + "] for compound ID " + compoundID);
+			
+			if (!retained.isEmpty()) {
+				compoundResponseMap.put(compoundID, retained);
+				retainedCompoundIDs.add(compoundID);
+			}
+		}
+		
+		if (retainedCompoundIDs.isEmpty()) {
+			throw new IllegalStateException("No compounds were found in the database that match the limiter. This happened so late in the algorithm that" +
+					" this error should not be reached. If so, this is a really severe error where data has been lost!");
+		}
+		
+		/*
+		for (long id : responseIDs) {
 			String s = queryExecutor.getFeatureViaID("experiment", "compound_id", id);
 			if (s != null) {
 				Long compoundID = Long.valueOf(s);
@@ -84,13 +107,14 @@ public class SheetExporterCompatManager extends ConcurrentExecutionManager {
 			}
 		}
 		Log.i("There are " + compoundIDs.size() + " derived compound IDs matching the user's preferred experiments.");
+		 */
 		
 		File targetDir = new File(sourceDir, EXPORT_DIRNAME_COMPOUNDS);
 		targetDir.mkdirs();
 		
-		for (Long id : compoundIDs) {
+		for (Long id : retainedCompoundIDs) {
 			Log.i("I am working with this compound id " + id + ". Name: " + queryExecutor.getNameViaID("compound", id));
-			service.submit(new CompoundSheetExporter(targetDir, connection, id, compoundExperimentMap.get(id), includeControls));
+			service.submit(new CompoundSheetExporter(targetDir, connection, id, compoundResponseMap.get(id)));
 		}
 	}
 	

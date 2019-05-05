@@ -22,8 +22,8 @@ public class CompoundSheetExporter extends SheetExporter {
 	private File outFile;
 	private boolean successful;
 	
-	public CompoundSheetExporter(File targetDir, DBConnection connection, long compoundID, ArrayList<Long> experimentIDs, boolean includeControls) throws SQLException {
-		super(targetDir, connection, experimentIDs, includeControls);
+	public CompoundSheetExporter(File targetDir, DBConnection connection, long compoundID, ArrayList<Long> responseIDs) throws SQLException {
+		super(targetDir, connection, responseIDs);
 		this.compoundID = compoundID;
 		successful = false;
 		
@@ -34,7 +34,7 @@ public class CompoundSheetExporter extends SheetExporter {
 		
 		outFile = new File(targetDir, compoundAbbreviation + ".csv");
 		Log.i("Writing " + compoundName + " results to: " + outFile.getAbsolutePath());
-		Log.i("Compound " + getCompoundAbbreviation() + " has " + experimentIDs.size() + " experiments in the DB.");
+		Log.i("Compound " + getCompoundAbbreviation() + " has " + responseIDs.size() + " responses in the DB.");
 	}
 	
 	public StringBuilder buildCSV(ArrayList<ResponseHolder> responseHolders) {
@@ -134,24 +134,17 @@ public class CompoundSheetExporter extends SheetExporter {
 	@Override
 	public void run() {
 		try {
-			ArrayList<Long> responseIDs = new ArrayList<>();
-			for (long id : getExperimentIDs()) {
-				responseIDs.addAll(queryExecutor.getIDsViaFeature("response", "experiment_id", String.valueOf(id)));
-			}
-			Log.i("Compound " + getCompoundAbbreviation() + " has " + responseIDs.size() + " responses in the database.");
+			//ArrayList<Long> responseIDs = new ArrayList<>();
+			//for (long id : getExperimentIDs()) {
+			//	responseIDs.addAll(queryExecutor.getIDsViaFeature("response", "experiment_id", String.valueOf(id)));
+			//}
+			//Log.i("Compound " + getCompoundAbbreviation() + " has " + responseIDs.size() + " responses in the database.");
 			
 			ArrayList<ResponseHolder> responseHolders = new ArrayList<>();
 			for (long id : responseIDs) {
 				ResponseHolder holder = new ResponseHolder(id, queryExecutor);
 				Log.v("I have a holder: " + holder);
-				
-				if (holder.isControl()) {
-					if (includeControls) {
-						responseHolders.add(holder);
-					}
-				} else {
-					responseHolders.add(holder);
-				}
+				responseHolders.add(holder);
 			}
 			Log.i("Holders created for " + getCompoundAbbreviation() + ": " + responseHolders.size());
 			

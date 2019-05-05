@@ -7,7 +7,7 @@ import de.rub.bph.omnineuro.client.core.SheetReaderManager;
 import de.rub.bph.omnineuro.client.core.db.DBConnection;
 import de.rub.bph.omnineuro.client.core.db.OmniNeuroQueryExecutor;
 import de.rub.bph.omnineuro.client.core.db.in.InsertManager;
-import de.rub.bph.omnineuro.client.core.db.out.ExperimentIDLimiter;
+import de.rub.bph.omnineuro.client.core.db.out.ResponseIDLimiter;
 import de.rub.bph.omnineuro.client.core.db.out.SheetExporterCompatManager;
 import de.rub.bph.omnineuro.client.imported.filemanager.FileManager;
 import de.rub.bph.omnineuro.client.imported.log.Log;
@@ -41,7 +41,6 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 	private JSpinner threadsSP;
 	private JButton startExportButton;
 	private JButton resetDatabaseButton;
-	private JCheckBox includeControlsCheckBox;
 	private JLabel configurationStatusLB;
 	private JButton configurationEditorButton;
 	private JButton searchForHashButton;
@@ -206,9 +205,8 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 	}
 	
 	public void requestExport() {
-		boolean includeControls = includeControlsCheckBox.isSelected();
-		Log.i("User requested Export. Including controls: " + includeControls);
 		long startTime = new Date().getTime();
+		ExportConfigManager configManager = ExportConfigManager.getInstance();
 		
 		if (!testDBConnection()) {
 			Log.i("Connection to the database failed. Can't export if there's no connection available.");
@@ -216,7 +214,7 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 			return;
 		}
 		
-		if (!ExportConfigManager.getInstance().hasConfig()) {
+		if (!configManager.hasConfig()) {
 			Client.showErrorMessage("No export limiter configuration set. That's required to do, if you want to export anything.", this);
 			return;
 		}
@@ -226,35 +224,40 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 		if (dir.isFile()) {
 			dir = dir.getParentFile();
 		}
-		
 		if (!dir.exists()) {
 			dir.mkdirs();
 		}
 		
-		//TODO preselect experiments somewhere else
-		ArrayList<Long> experimentIDs = new ArrayList<>();
+		OmniNeuroQueryExecutor executor = new OmniNeuroQueryExecutor(DBConnection.getDBConnection().getConnection());
+		ArrayList<Long> responseIDs;
+		
 		try {
-			experimentIDs = new OmniNeuroQueryExecutor(DBConnection.getDBConnection().getConnection()).getIDs("experiment");
+			responseIDs = executor.getIDs("response");
 		} catch (SQLException e) {
 			Log.e(e);
 			Client.showSQLErrorMessage("Failed to receive experiment data from the database.", e, this);
 			return;
 		}
 		
-		ExportConfigManager configManager = ExportConfigManager.getInstance();
-		ArrayList<Long> limitedExperimentIDs;
+		ArrayList<Long> limitedResponseIDs;
 		try {
-			ExperimentIDLimiter limiter = new ExperimentIDLimiter(experimentIDs, configManager.getCurrentConfig());
-			limitedExperimentIDs = limiter.applyAllLimiters();
+			ResponseIDLimiter limiter = new ResponseIDLimiter(responseIDs, configManager.getCurrentConfig());
+			limitedResponseIDs = limiter.applyAllLimiters();
 		} catch (Throwable e) {
 			Log.e(e);
 			Client.showErrorMessage("Failed to apply limiters and configuration to the database!", this, e);
 			return;
 		}
-		Log.i("After running the limiters, " + experimentIDs.size() + " has been reduced to " + limitedExperimentIDs.size() + ".");
+		Log.i("After running the limiters, " + responseIDs.size() + " has been reduced to " + limitedResponseIDs.size() + ".");
 		
-		SheetExporterCompatManager compatManager = new SheetExporterCompatManager(threads, dir, limitedExperimentIDs, includeControls);
-		compatManager.export(); //TODO Actual export has been disabled for test purposes. Enable export again.
+		if (limitedResponseIDs.isEmpty()) {
+			Client.showErrorMessage("No responses to export. The database has " + responseIDs.size() + " responses, but after " +
+					"applying the limiters, none were left.", this);
+			return;
+		}
+		
+		SheetExporterCompatManager compatManager = new SheetExporterCompatManager(threads, dir, limitedResponseIDs);
+		compatManager.export();
 		
 		long duration = new Date().getTime() - startTime;
 		String formattedTimeTaken = NumberUtils.convertSecondsToHMmSs(duration);

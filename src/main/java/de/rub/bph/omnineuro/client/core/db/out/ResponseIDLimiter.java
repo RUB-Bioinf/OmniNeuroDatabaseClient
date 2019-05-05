@@ -17,17 +17,17 @@ import java.util.List;
 import static de.rub.bph.omnineuro.client.ui.ExportConfigFrame.JSON_TAG_LIMITERS;
 import static de.rub.bph.omnineuro.client.ui.component.ExportConfigDetailPanel.*;
 
-public class ExperimentIDLimiter {
+public class ResponseIDLimiter {
 	
 	private ArrayList<Long> originalExperimentIDs;
 	private JSONObject limiterConfigs;
 	private OmniNeuroQueryExecutor queryExecutor;
 	
-	public ExperimentIDLimiter(ArrayList<Long> originalExperimentIDs, JSONObject limiterConfigs) throws JSONException {
+	public ResponseIDLimiter(ArrayList<Long> originalExperimentIDs, JSONObject limiterConfigs) throws JSONException {
 		this(originalExperimentIDs, limiterConfigs, new OmniNeuroQueryExecutor(DBConnection.getDBConnection().getConnection()));
 	}
 	
-	public ExperimentIDLimiter(ArrayList<Long> originalExperimentIDs, JSONObject limiterConfigs, OmniNeuroQueryExecutor queryExecutor) throws JSONException {
+	public ResponseIDLimiter(ArrayList<Long> originalExperimentIDs, JSONObject limiterConfigs, OmniNeuroQueryExecutor queryExecutor) throws JSONException {
 		this.originalExperimentIDs = originalExperimentIDs;
 		this.queryExecutor = queryExecutor;
 		
@@ -76,94 +76,89 @@ public class ExperimentIDLimiter {
 		
 		switch (limiterName) {
 			case "department":
-				return applyT2NameLimiterSpecific("department", "workgroup", entries);
+				return applyT3LimiterSpecific("department", "workgroup", "name", entries);
 			case "initiator":
-				return applyT2NameLimiterSpecific("initiator", "project", entries);
+				return applyT3LimiterSpecific("initiator", "project", "name", entries);
 			case "leader":
-				return applyT2NameLimiterSpecific("leader", "workgroup", entries);
+				return applyT3LimiterSpecific("leader", "workgroup", "name", entries);
 			case "species":
-				return applyT2NameLimiterSpecific("species", "individual", entries);
+				return applyT3LimiterSpecific("species", "individual", "name", entries);
 			case "sex":
-				return applyT2LimiterSpecific("sex", "individual", "label", entries);
+				return applyT3LimiterSpecific("sex", "individual", "label", entries);
 			case "project":
-				return applyT1NameLimiterSpecific("project", entries);
+				return applyT2LimiterSpecific("project", "experiment", "name", entries);
 			case "workgroup":
-				return applyT1NameLimiterSpecific("workgroup", entries);
+				return applyT2LimiterSpecific("workgroup", "experiment", "name", entries);
 			case "compound":
-				return applyT1NameLimiterSpecific("compound", entries);
+				return applyT2LimiterSpecific("compound", "experiment", "name", entries);
 			case "cell_type":
-				return applyT1NameLimiterSpecific("cell_type", entries);
+				return applyT2LimiterSpecific("cell_type", "experiment", "name", entries);
 			case "individual":
-				return applyT1NameLimiterSpecific("individual", entries);
+				return applyT2LimiterSpecific("individual", "experiment", "name", entries);
 			case "plate_format":
-				return applyT1NameLimiterSpecific("plate_format", entries);
+				return applyT2LimiterSpecific("plate_format", "experiment", "name", entries);
 			case "assay":
-				return applyT1NameLimiterSpecific("assay", entries);
+				return applyT2LimiterSpecific("assay", "experiment", "name", entries);
+			case "control":
+				return applyT2LimiterSpecific("control", "concentration", "name", entries);
 			case "experiment_id":
-				return applyT0LimiterSpecific("name", entries);
+				return applyT1LimiterSpecific("experiment", "name", entries);
 			case "timestamp_experiment":
-				return applyT0LimiterSpecific("timestamp", entries);
+				return applyT1LimiterSpecific("experiment", "timestamp", entries);
 			case "timestamp_response":
-				return applyTN1LimiterSpecific("timestamp", entries);
+				return applyT0LimiterSpecific("timestamp", entries);
 			case "value_concentration":
-				return applyTN2LimiterSpecific("concentration", "value", entries);
+				return applyT1LimiterSpecific("concentration", "value", entries);
 			case "value_response":
-				return applyTN1LimiterSpecific("value", entries);
+				return applyT0LimiterSpecific("value", entries);
 			case "endpoint":
-				return applyTN2LimiterSpecific("endpoint", "name", entries);
+				return applyT1LimiterSpecific("endpoint", "name", entries);
 			case "outlier_type":
-				return applyTN2LimiterSpecific("outlier_type", "name", entries);
+				return applyT1LimiterSpecific("outlier_type", "name", entries);
 			default:
 				Log.e("Invalid limiter: " + limiterName + ". This isn't implemented (yet)!");
 				throw new IllegalArgumentException("Invalid limiter: '" + limiterName + "'! Try again or remove this limiter. The database can't handle this!");
 		}
 	}
 	
-	public ArrayList<Long> applyTN2LimiterSpecific(String t2TableName, String feature, JSONArray entries) throws JSONException, SQLException {
-		Log.i("Applying specific T-2 (response) " + feature + "-limiter at " + t2TableName + " on " + entries.length() + " elements.");
-		String query = "SELECT DISTINCT experiment.id FROM experiment,response," + t2TableName + " WHERE response.experiment_id = experiment.id" +
-				" AND response." + t2TableName + "_id = " + t2TableName + ".id AND (" + concatenatedConditions(t2TableName + "." + feature, entries) + ");";
-		return applyLimiterSQL(query);
-	}
-	
-	public ArrayList<Long> applyTN1LimiterSpecific(String feature, JSONArray entries) throws JSONException, SQLException {
-		Log.i("Applying specific T-1 (response) " + feature + "-limiter on " + entries.length() + " elements.");
-		String query = "SELECT experiment.id FROM experiment,response WHERE response.experiment_id = experiment.id AND (" + concatenatedConditions(feature, entries) + ");";
-		return applyLimiterSQL(query);
-	}
-	
 	public ArrayList<Long> applyT0LimiterSpecific(String feature, JSONArray entries) throws JSONException, SQLException {
-		Log.i("Applying specific T0 (so on experiments) " + feature + "-limiter on " + entries.length() + " elements.");
-		String query = "SELECT id FROM experiment WHERE (" + concatenatedConditions(feature, entries) + ");";
+		Log.i("Applying specific T0 (so on responses) " + feature + "-limiter on " + entries.length() + " elements.");
+		String query = "SELECT DISTINCT id FROM response WHERE (" + concatenatedConditions(feature, entries) + ");";
 		return applyLimiterSQL(query);
 	}
 	
 	/**
 	 * Creates a Tier-1 SQL query, where the table in question is directly mentioned in the experiment, and the column is called 'name'.
 	 */
-	public ArrayList<Long> applyT1NameLimiterSpecific(String tableName, JSONArray entries) throws JSONException, SQLException {
-		Log.i("Applying specific T1 limiter for table: " + tableName + " on " + entries.length() + " elements.");
-		String query = "SELECT experiment.id FROM experiment," + tableName + " WHERE " + tableName + ".id = experiment." + tableName + "_id AND ("
-				+ concatenatedConditions(tableName + ".name", entries) + ");";
+	public ArrayList<Long> applyT1LimiterSpecific(String t1tableName, String featureName, JSONArray entries) throws JSONException, SQLException {
+		Log.i("Applying specific T1 " + featureName + "-limiter for table: " + t1tableName + " on " + entries.length() + " elements.");
+		String query = "SELECT DISTINCT response.id FROM response," + t1tableName + " WHERE " + t1tableName + ".id = response." + t1tableName + "_id AND ("
+				+ concatenatedConditions(t1tableName + "." + featureName, entries) + ");";
 		return applyLimiterSQL(query);
-	}
-	
-	/**
-	 * Creates a Tier-2 SQL query, where the table in question is mentioned via a second table in the experiment, and the column is called 'name'.
-	 */
-	public ArrayList<Long> applyT2NameLimiterSpecific(String t2TableName, String t1TableName, JSONArray entries) throws JSONException, SQLException {
-		return applyT2LimiterSpecific(t2TableName, t1TableName, "name", entries);
 	}
 	
 	public ArrayList<Long> applyT2LimiterSpecific(String t2TableName, String t1TableName, String featureName, JSONArray entries) throws JSONException, SQLException {
 		Log.i("Applying specific '" + featureName + "' T2 limiter for table: " + t2TableName + " via " + t1TableName + " on " + entries.length() + " elements.");
-		String query = "SELECT experiment.id FROM experiment," + t1TableName + "," + t2TableName + " WHERE " + t1TableName + ".id = experiment." + t1TableName + "_id" +
-				" AND " + t1TableName + "." + t2TableName + "_id = " + t2TableName + ".id" +
+		String query = "SELECT DISTINCT response.id FROM response, " + t1TableName + "," + t2TableName + " WHERE response." + t1TableName + "_id = " + t1TableName + ".id AND " + t1TableName + "." + t2TableName + "_id = " + t2TableName + ".id" +
 				" AND (" + concatenatedConditions(t2TableName + "." + featureName, entries) + ");";
 		return applyLimiterSQL(query);
 	}
-
+	
+	public ArrayList<Long> applyT3LimiterSpecific(String t3TableName, String t2TableName, String featureName, JSONArray entries) throws JSONException, SQLException {
+		Log.i("Applying specific '" + featureName + "' T2 limiter for table: " + t3TableName + " via " + t2TableName + " on " + entries.length() + " elements.");
+		String query = "SELECT DISTINCT response.id FROM response, experiment," + t2TableName + "," + t3TableName + " WHERE response.experiment_id = experiment.id AND" +
+				" experiment." + t2TableName + "_id = " + t2TableName + ".id" +
+				" AND " + t2TableName + "." + t3TableName + "_id = " + t3TableName + ".id" +
+				" AND (" + concatenatedConditions(t3TableName + "." + featureName, entries) + ");";
+		return applyLimiterSQL(query);
+	}
+	
 	/*
+	//TODO delete this?
+	public ArrayList<Long> applyT2NameLimiterSpecific(String t2TableName, String t1TableName, JSONArray entries) throws JSONException, SQLException {
+		return applyT2LimiterSpecific(t2TableName, t1TableName, "name", entries);
+	}
+
 	public ArrayList<Long> applyLimiterDepartmentSpecific(JSONArray entries) throws JSONException, SQLException {
 		String query = "SELECT experiment.id FROM experiment,department,workgroup WHERE workgroup.id = experiment.workgroup_id AND workgroup.department_id = department.id AND ("
 				+ concatenatedConditions("department.name", entries) + ");";

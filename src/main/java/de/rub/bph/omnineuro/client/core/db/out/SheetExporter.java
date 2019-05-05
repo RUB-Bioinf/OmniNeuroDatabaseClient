@@ -6,28 +6,23 @@ import java.io.File;
 import java.util.ArrayList;
 
 public abstract class SheetExporter implements Runnable {
-
+	
 	protected File targetDir;
 	protected DBConnection connection;
-	protected ArrayList<Long> experimentIDs;
-	protected boolean includeControls;
-
-	public SheetExporter(File targetDir, DBConnection connection, ArrayList<Long> experimentIDs, boolean includeControls) {
+	protected ArrayList<Long> responseIDs;
+	
+	public SheetExporter(File targetDir, DBConnection connection, ArrayList<Long> responseIDs) {
 		this.targetDir = targetDir;
 		this.connection = connection;
-		this.experimentIDs = experimentIDs;
-		this.includeControls = includeControls;
+		this.responseIDs = responseIDs;
 	}
-
+	
+	public ArrayList<Long> getResponseIDs() {
+		return responseIDs;
+	}
+	
 	public File getTargetDir() {
 		return targetDir;
 	}
-
-	public boolean isIncludeControls() {
-		return includeControls;
-	}
-
-	public ArrayList<Long> getExperimentIDs() {
-		return experimentIDs;
-	}
+	
 }
