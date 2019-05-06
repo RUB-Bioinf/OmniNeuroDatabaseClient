@@ -17,27 +17,25 @@ import java.util.Collections;
 import static de.rub.bph.omnineuro.client.ui.OmniFrame.DEFAULT_LIMITER_HASH_LENGTH;
 
 public class ExportConfigDetailPanel implements MemorizedList.MarkedSelectionListener {
-
-	public static final String JSON_ARG_VERSION = "version";
-	public static final String JSON_ARG_LIMITER_TYPE = "type";
+	
 	public static final String JSON_ARG_LIMITER_DATA = "data";
-	public static final String JSON_ARG_LIMITER_TYPE_SPECIFIC = "list";
+	public static final String JSON_ARG_LIMITER_TYPE = "type";
 	public static final String JSON_ARG_LIMITER_TYPE_RANGE = "range";
-
+	public static final String JSON_ARG_LIMITER_TYPE_SPECIFIC = "list";
 	private JPanel holderPL;
 	private JRadioButton useEverythingRadioButton;
 	private JRadioButton useSpecificEntriesRadioButton;
 	private JRadioButton useRangeRadioButton;
 	private MemorizedList entriesSelectionList;
-	private JScrollPane specificPL;
 	private JPanel rangePL;
+	private JPanel specificPL;
 	private OmniNeuroQueryExecutor queryExecutor;
 	private String tableName;
 	private String featureName;
 	private String limiterName;
 	private JSONObject data;
 	private boolean enableRange;
-
+	
 	public ExportConfigDetailPanel(OmniNeuroQueryExecutor queryExecutor, String tableName, String featureName, String limiterName, JSONObject data, boolean enableRange) {
 		this.queryExecutor = queryExecutor;
 		this.limiterName = limiterName;
@@ -45,10 +43,10 @@ public class ExportConfigDetailPanel implements MemorizedList.MarkedSelectionLis
 		this.featureName = featureName;
 		this.data = data;
 		this.enableRange = enableRange;
-
+		
 		Log.i("Preparing ConfigDetailPanel for table: '" + tableName + "' on '" + featureName + "' as: '" + limiterName + "'.");
 		Log.i("Data as given on create: " + data);
-
+		
 		useEverythingRadioButton.addActionListener(actionEvent -> {
 			onTypeChangeAll();
 			updateTypePLs();
@@ -61,7 +59,7 @@ public class ExportConfigDetailPanel implements MemorizedList.MarkedSelectionLis
 			onTypeChangeRange();
 			updateTypePLs();
 		});
-
+		
 		try {
 			readDataObject();
 		} catch (JSONException e) {
@@ -69,24 +67,24 @@ public class ExportConfigDetailPanel implements MemorizedList.MarkedSelectionLis
 			Client.showErrorMessage("Heavy error occurred in the internal data structure!", holderPL, e);
 		}
 	}
-
+	
 	private ArrayList<String> readDatabase() throws SQLException {
 		String query = "SELECT DISTINCT " + featureName + " FROM " + tableName + " ORDER BY " + featureName + ";";
 		ResultSet set = queryExecutor.executeQuery(query);
-
+		
 		ArrayList<String> entries = new ArrayList<>();
 		while (set.next()) {
 			entries.add(set.getString(featureName));
 		}
 		return entries;
 	}
-
+	
 	private void readDataObject() throws JSONException {
 		useRangeRadioButton.setEnabled(enableRange);
 		if (data.has(limiterName)) {
 			JSONObject limiter = data.getJSONObject(limiterName);
 			String type = limiter.getString(JSON_ARG_LIMITER_TYPE);
-
+			
 			if (type.equals(JSON_ARG_LIMITER_TYPE_SPECIFIC)) {
 				useSpecificEntriesRadioButton.setSelected(true);
 				JSONArray entries = limiter.getJSONArray(JSON_ARG_LIMITER_DATA);
@@ -106,12 +104,12 @@ public class ExportConfigDetailPanel implements MemorizedList.MarkedSelectionLis
 		}
 		updateTypePLs();
 	}
-
+	
 	private void updateTypePLs() {
 		Log.i("Updating type panels. First: Everything vanishes!");
 		specificPL.setVisible(false);
 		rangePL.setVisible(false);
-
+		
 		if (useSpecificEntriesRadioButton.isSelected()) {
 			specificPL.setVisible(true);
 			Log.i("Specifics are made visible.");
@@ -121,14 +119,16 @@ public class ExportConfigDetailPanel implements MemorizedList.MarkedSelectionLis
 			Log.i("Ranges are made visible.");
 		}
 		holderPL.validate();
-
+		
 		Log.i("Current data code: " + new CodeHasher(data.toString()).getCodeHash(DEFAULT_LIMITER_HASH_LENGTH));
+		//TODO update this on every single change
+		//TODO report updates to parent frame
 	}
-
+	
 	public void onTypeChangeAll() {
 		data.remove(limiterName);
 	}
-
+	
 	public void onTypeChangeSpecific() {
 		try {
 			JSONObject limiter = new JSONObject();
@@ -140,27 +140,11 @@ public class ExportConfigDetailPanel implements MemorizedList.MarkedSelectionLis
 			Client.showErrorMessage("Heavy internal error.", holderPL, e);
 		}
 	}
-
+	
 	public void onTypeChangeRange() {
 		//TODO implement
 	}
-
-	public String getTableName() {
-		return tableName;
-	}
-
-	public String getFeatureName() {
-		return featureName;
-	}
-
-	public String getLimiterName() {
-		return limiterName;
-	}
-
-	public JPanel getHolderPL() {
-		return holderPL;
-	}
-
+	
 	private void createUIComponents() {
 		ArrayList<String> entries = new ArrayList<>();
 		try {
@@ -169,17 +153,17 @@ public class ExportConfigDetailPanel implements MemorizedList.MarkedSelectionLis
 			Log.e(e);
 			Client.showSQLErrorMessage("Failed to retrieve data for selected limiter: " + limiterName + " [" + tableName + "].", e, holderPL);
 		}
-
+		
 		Collections.sort(entries);
 		entriesSelectionList = new MemorizedList(entries);
 		entriesSelectionList.addMarkingListener(this);
 	}
-
+	
 	@Override
 	public void onMarkingChange(MemorizedList source) {
 		ArrayList<String> markedItems = source.getMarkedEntries();
 		Log.i("The marking of a list has changed! Currently " + markedItems.size() + " selected entries: " + markedItems);
-
+		
 		JSONArray markings = new JSONArray(markedItems);
 		try {
 			data.getJSONObject(limiterName).put(JSON_ARG_LIMITER_DATA, markings);
@@ -187,5 +171,21 @@ public class ExportConfigDetailPanel implements MemorizedList.MarkedSelectionLis
 			Log.e(e);
 			Client.showErrorMessage("Internal data failure! Please try again!", holderPL, e);
 		}
+	}
+	
+	public String getFeatureName() {
+		return featureName;
+	}
+	
+	public JPanel getHolderPL() {
+		return holderPL;
+	}
+	
+	public String getLimiterName() {
+		return limiterName;
+	}
+	
+	public String getTableName() {
+		return tableName;
 	}
 }

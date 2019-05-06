@@ -30,7 +30,8 @@ public class ExportConfigFrame extends JFrame implements ListSelectionListener {
 	public static final String JSON_SAFE_FILE_EXTENSION = "json";
 	public static final String JSON_TAG_LIMITERS = "limiters";
 	public static final String JSON_TAG_VERSION = "version";
-	public static final String NEW_CONFIG_DEFAULT_TITLE = "New Configuration";
+	public static final String NEW_CONFIG_DEFAULT_TITLE_EXTRA = "New Configuration";
+	public static final String TITLE_BASE = "Experiment configuration editor";
 	private OmniNeuroQueryExecutor queryExecutor;
 	private ArrayList<String> metadataCategories;
 	private HashMap<String, Runnable> panelActionMap;
@@ -40,11 +41,12 @@ public class ExportConfigFrame extends JFrame implements ListSelectionListener {
 	private JButton loadButton;
 	private JList<String> metaDataList;
 	private JPanel configDetailPL;
+	private JButton applyAndCloseButton;
 	private JSONObject configuration;
 	private JFileChooser fileChooser;
 	
 	public ExportConfigFrame(Component parent, OmniNeuroQueryExecutor queryExecutor) throws JSONException {
-		this(parent, queryExecutor, getEmptyConfiguration(), NEW_CONFIG_DEFAULT_TITLE);
+		this(parent, queryExecutor, getEmptyConfiguration(), NEW_CONFIG_DEFAULT_TITLE_EXTRA);
 	}
 	
 	public ExportConfigFrame(Component parent, OmniNeuroQueryExecutor queryExecutor, JSONObject configuration) throws JSONException {
@@ -55,11 +57,6 @@ public class ExportConfigFrame extends JFrame implements ListSelectionListener {
 		this.queryExecutor = queryExecutor;
 		add(rootPanel);
 		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-		
-		if (configTitle == null || configTitle.trim().equals("")) {
-			configTitle = NEW_CONFIG_DEFAULT_TITLE;
-		}
-		setTitle("Experiment configuration editor [" + configTitle + "]");
 		
 		//TODO cache filepath
 		FileNameExtensionFilter filter = new FileNameExtensionFilter("JSON", JSON_SAFE_FILE_EXTENSION);
@@ -84,6 +81,10 @@ public class ExportConfigFrame extends JFrame implements ListSelectionListener {
 			apply();
 			save();
 		});
+		applyAndCloseButton.addActionListener(actionEvent -> {
+			apply();
+			dispose();
+		});
 		loadButton.addActionListener(actionEvent -> load());
 		
 		pack();
@@ -91,8 +92,14 @@ public class ExportConfigFrame extends JFrame implements ListSelectionListener {
 		setSize((int) (getWidth() * 2.5), (int) (getHeight() * 1.5));
 		setLocationRelativeTo(parent);
 		setJMenuBar(createMenu());
-		setVisible(true);
+		
+		if (configTitle == null || configTitle.trim().equals("")) {
+			configTitle = NEW_CONFIG_DEFAULT_TITLE_EXTRA;
+		}
 		updateSelectionPanel();
+		updateTitle(configTitle);
+		
+		setVisible(true);
 	}
 	
 	public JMenuBar createMenu() {
@@ -239,8 +246,19 @@ public class ExportConfigFrame extends JFrame implements ListSelectionListener {
 	private void apply() {
 		Log.i("Saving cached config: " + configuration.toString());
 		
+		updateTitle();
 		ExportConfigManager configManager = ExportConfigManager.getInstance();
 		configManager.setCurrentConfig(configuration);
+	}
+	
+	private void updateTitle() {
+		String hash = new CodeHasher(configuration.toString()).getCodeHash(DEFAULT_LIMITER_HASH_LENGTH);
+		updateTitle(hash);
+	}
+	
+	public void updateTitle(String extra) {
+		setTitle(TITLE_BASE + " [" + extra + "]");
+		//TODO compare to base hash or something and notice about unsaved changes
 	}
 	
 	private void save() {
