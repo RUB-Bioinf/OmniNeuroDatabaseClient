@@ -9,6 +9,8 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -21,6 +23,8 @@ public class ExportConfigDetailPanel implements MemorizedList.MarkedSelectionLis
 	public static final String JSON_ARG_LIMITER_DATA = "data";
 	public static final String JSON_ARG_LIMITER_TYPE = "type";
 	public static final String JSON_ARG_LIMITER_TYPE_RANGE = "range";
+	public static final String JSON_ARG_LIMITER_TYPE_RANGE_CEILING = "ceiling";
+	public static final String JSON_ARG_LIMITER_TYPE_RANGE_FLOOR = "floor";
 	public static final String JSON_ARG_LIMITER_TYPE_SPECIFIC = "list";
 	private JPanel holderPL;
 	private JRadioButton useEverythingRadioButton;
@@ -29,12 +33,17 @@ public class ExportConfigDetailPanel implements MemorizedList.MarkedSelectionLis
 	private MemorizedList entriesSelectionList;
 	private JPanel rangePL;
 	private JPanel specificPL;
+	private JLabel entryMinMaxPL;
+	private JTextField ceilingTF;
+	private JTextField floorTF;
+	private JLabel rangePreviewPL;
 	private OmniNeuroQueryExecutor queryExecutor;
 	private String tableName;
 	private String featureName;
 	private String limiterName;
 	private JSONObject data;
 	private boolean enableRange;
+	private String rangeMin, rangeMax;
 	
 	public ExportConfigDetailPanel(OmniNeuroQueryExecutor queryExecutor, String tableName, String featureName, String limiterName, JSONObject data, boolean enableRange) {
 		this.queryExecutor = queryExecutor;
@@ -98,11 +107,25 @@ public class ExportConfigDetailPanel implements MemorizedList.MarkedSelectionLis
 			}
 			if (type.equals(JSON_ARG_LIMITER_TYPE_RANGE)) {
 				useRangeRadioButton.setSelected(true);
+				JSONObject entries = limiter.getJSONObject(JSON_ARG_LIMITER_DATA);
+				if (entries.has(JSON_ARG_LIMITER_TYPE_RANGE_FLOOR)) {
+					String f = entries.getString(JSON_ARG_LIMITER_TYPE_RANGE_FLOOR);
+					floorTF.setText(f);
+				}
+				if (entries.has(JSON_ARG_LIMITER_TYPE_RANGE_CEILING)) {
+					String c = entries.getString(JSON_ARG_LIMITER_TYPE_RANGE_CEILING);
+					ceilingTF.setText(c);
+				}
+				updateRangePreviewLB();
 			}
 		} else {
 			useEverythingRadioButton.setSelected(true);
 		}
 		updateTypePLs();
+	}
+	
+	private void setUpRangePL() throws SQLException {
+	
 	}
 	
 	private void updateTypePLs() {
@@ -142,7 +165,20 @@ public class ExportConfigDetailPanel implements MemorizedList.MarkedSelectionLis
 	}
 	
 	public void onTypeChangeRange() {
-		//TODO implement
+		Log.i("I have changed to 'Range'.");
+		try {
+			JSONObject limiter = new JSONObject();
+			limiter.put(JSON_ARG_LIMITER_TYPE, JSON_ARG_LIMITER_TYPE_RANGE);
+			JSONObject rangeData = new JSONObject();
+			//rangeData.put(JSON_ARG_LIMITER_TYPE_RANGE_CEILING, rangeMax);
+			//rangeData.put(JSON_ARG_LIMITER_TYPE_RANGE_FLOOR, rangeMin);
+			limiter.put(JSON_ARG_LIMITER_DATA, rangeData);
+			data.put(limiterName, limiter);
+		} catch (JSONException e) {
+			Log.e(e);
+			Client.showErrorMessage("Heavy internal error.", holderPL, e);
+		}
+		updateRangePreviewLB();
 	}
 	
 	private void createUIComponents() {
@@ -154,9 +190,105 @@ public class ExportConfigDetailPanel implements MemorizedList.MarkedSelectionLis
 			Client.showSQLErrorMessage("Failed to retrieve data for selected limiter: " + limiterName + " [" + tableName + "].", e, holderPL);
 		}
 		
+		// Specific entries
 		Collections.sort(entries);
 		entriesSelectionList = new MemorizedList(entries);
 		entriesSelectionList.addMarkingListener(this);
+		ceilingTF = new JTextField();
+		floorTF = new JTextField();
+		entryMinMaxPL = new JLabel("Range entries here");
+		
+		// Range entries
+		if (enableRange) {
+			Log.i("Setting up range Panel.");
+			double min;
+			double max;
+			try {
+				min = queryExecutor.getDoubleMin(tableName, featureName);
+				max = queryExecutor.getDoubleMax(tableName, featureName);
+			} catch (SQLException e) {
+				Log.e(e);
+				Client.showErrorMessage("Failed to get minimum and maximum values from the database!", holderPL, e);
+				return;
+			}
+			Log.i("For " + tableName + " min: " + min + ". Max: " + max);
+			
+			entryMinMaxPL = new JLabel("Currently in the database: Values between " + min + " and " + max + ".");
+			DocumentListener docListener = new DocumentListener() {
+				@Override
+				public void insertUpdate(DocumentEvent documentEvent) {
+					updateRangePreviewLB();
+				}
+				
+				@Override
+				public void removeUpdate(DocumentEvent documentEvent) {
+					updateRangePreviewLB();
+				}
+				
+				@Override
+				public void changedUpdate(DocumentEvent documentEvent) {
+					updateRangePreviewLB();
+				}
+			};
+			
+			rangeMax = String.valueOf(max);
+			rangeMin = String.valueOf(min);
+			ceilingTF.getDocument().addDocumentListener(docListener);
+			floorTF.getDocument().addDocumentListener(docListener);
+			//ceilingTF.setText(rangeMax);
+			//floorTF.setText(rangeMin);
+		}
+	}
+	
+	private void updateRangePreviewLB() {
+		if (rangePreviewPL == null) {
+			Log.w("The preview label does not exist yet. The world isn't ready yet to see those ranges!");
+			return;
+		}
+		
+		String min = floorTF.getText().trim();
+		String max = ceilingTF.getText().trim();
+		
+		boolean minEmpty = min.equals("");
+		boolean maxEmpty = max.equals("");
+		Log.v("Updating previewPL: Floor: '" + min + "'. Ceil: '" + max + "'.");
+		
+		StringBuilder builder = new StringBuilder("Selecting all data ");
+		if (minEmpty && maxEmpty) builder = new StringBuilder("Floor and Ceiling should not be empty");
+		
+		String val = null;
+		if (minEmpty && !maxEmpty) {
+			builder.append("less than");
+			val = max;
+		}
+		if (!minEmpty && maxEmpty) {
+			builder.append("more than");
+			val = min;
+		}
+		if (!maxEmpty && !minEmpty) {
+			builder.append("between");
+			val = min + " and " + max;
+		}
+		if (val != null) {
+			builder.append(" or equal to ");
+			builder.append(val);
+		}
+		builder.append(".");
+		rangePreviewPL.setText(builder.toString());
+		
+		JSONObject rangeData = new JSONObject();
+		try {
+			if (!minEmpty) {
+				rangeData.put(JSON_ARG_LIMITER_TYPE_RANGE_FLOOR, min);
+			}
+			if (!maxEmpty) {
+				rangeData.put(JSON_ARG_LIMITER_TYPE_RANGE_CEILING, max);
+			}
+			data.getJSONObject(limiterName).put(JSON_ARG_LIMITER_DATA, rangeData);
+		} catch (JSONException e) {
+			Log.e(e);
+			Client.showErrorMessage("Internal data failure! Please try again!", holderPL, e);
+		}
 	}
 	
 	@Override

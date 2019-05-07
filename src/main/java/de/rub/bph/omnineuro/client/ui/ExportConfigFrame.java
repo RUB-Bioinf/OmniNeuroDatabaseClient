@@ -27,6 +27,8 @@ import static javax.swing.JFileChooser.APPROVE_OPTION;
 
 public class ExportConfigFrame extends JFrame implements ListSelectionListener {
 	
+	public static final double BASE_HEIGHT_FACTOR = 1.337;
+	public static final double BASE_WIDTH_FACTOR = 1.337;
 	public static final String JSON_SAFE_FILE_EXTENSION = "json";
 	public static final String JSON_TAG_LIMITERS = "limiters";
 	public static final String JSON_TAG_VERSION = "version";
@@ -88,8 +90,8 @@ public class ExportConfigFrame extends JFrame implements ListSelectionListener {
 		loadButton.addActionListener(actionEvent -> load());
 		
 		pack();
+		setSize((int) (getWidth() * BASE_WIDTH_FACTOR), (int) (getHeight() * BASE_HEIGHT_FACTOR));
 		setMinimumSize(getSize());
-		setSize((int) (getWidth() * 2.5), (int) (getHeight() * 1.5));
 		setLocationRelativeTo(parent);
 		setJMenuBar(createMenu());
 		
@@ -328,6 +330,7 @@ public class ExportConfigFrame extends JFrame implements ListSelectionListener {
 	private Runnable getActionConfigFrame(String tableName, String featureName, String limiterName, boolean allowRange) {
 		return () -> {
 			JSONObject limiters = null;
+			JPanel pnl;
 			try {
 				limiters = getConfiguration().getJSONObject(JSON_TAG_LIMITERS);
 			} catch (JSONException e) {
@@ -335,8 +338,14 @@ public class ExportConfigFrame extends JFrame implements ListSelectionListener {
 				Client.showErrorMessage("Failed to build internal limiters data.", rootPane, e);
 				return;
 			}
-			
-			setComponentToDetailPL(new ExportConfigDetailPanel(queryExecutor, tableName, featureName, limiterName, limiters, allowRange).getHolderPL());
+			try {
+				pnl = new ExportConfigDetailPanel(queryExecutor, tableName, featureName, limiterName, limiters, allowRange).getHolderPL();
+			} catch (Throwable e) {
+				Log.e(e);
+				Client.showErrorMessage("Failed to fetch and set up view on detailed database data for '" + tableName + "'", this, e);
+				return;
+			}
+			setComponentToDetailPL(pnl);
 		};
 	}
 	

@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ResponseHolder {
+	
 	private int timestamp;
 	private long endpointID;
 	private String endpointName;
@@ -16,7 +17,7 @@ public class ResponseHolder {
 	private String concentrationDescription;
 	private double response;
 	private boolean control;
-
+	
 	public ResponseHolder(long responseID, OmniNeuroQueryExecutor queryExecutor) throws SQLException {
 		//timestamp = Integer.parseInt(queryExecutor.getFeatureViaID("response", "timestamp", responseID));
 		//endpointID = Long.parseLong(queryExecutor.getFeatureViaID("response", "endpoint_id", responseID));
@@ -27,11 +28,11 @@ public class ResponseHolder {
 		timestamp = resultSet.getInt("timestamp");
 		endpointID = resultSet.getLong("endpoint_id");
 		response = resultSet.getDouble("value");
-
+		
 		long concentrationID = resultSet.getLong("concentration_id");
 		concentration = Double.parseDouble(queryExecutor.getFeatureViaID("concentration", "value", concentrationID));
 		endpointName = queryExecutor.getNameViaID("endpoint", endpointID);
-
+		
 		control = concentration == 0;
 		if (control) {
 			resultSet = queryExecutor.
@@ -42,7 +43,7 @@ public class ResponseHolder {
 			concentrationDescription = String.valueOf(concentration);
 		}
 	}
-
+	
 	public static ArrayList<Long> getUniqueEndpointIDs(List<ResponseHolder> holders) {
 		ArrayList<Long> list = new ArrayList<>();
 		for (ResponseHolder h : holders) {
@@ -51,7 +52,7 @@ public class ResponseHolder {
 		}
 		return list;
 	}
-
+	
 	public static ArrayList<String> getUniqueEndpointNamess(List<ResponseHolder> holders) {
 		ArrayList<String> list = new ArrayList<>();
 		for (ResponseHolder h : holders) {
@@ -60,7 +61,7 @@ public class ResponseHolder {
 		}
 		return list;
 	}
-
+	
 	public static ArrayList<Integer> getUniqueTimestamps(List<ResponseHolder> holders) {
 		ArrayList<Integer> list = new ArrayList<>();
 		for (ResponseHolder h : holders) {
@@ -69,7 +70,7 @@ public class ResponseHolder {
 		}
 		return list;
 	}
-
+	
 	public static ArrayList<String> getUniqueConcentrations(List<ResponseHolder> holders) {
 		ArrayList<String> list = new ArrayList<>();
 		for (ResponseHolder h : holders) {
@@ -78,38 +79,38 @@ public class ResponseHolder {
 		}
 		return list;
 	}
-
+	
 	@Override
 	public String toString() {
 		return "Response handler for " + getConcentrationDescription() + " [Control status: " + isControl() + "], endpoint: " + getEndpointName() + " at " + getTimestamp() + "h. Response value: " + getResponse();
 	}
-
-	public String getEndpointName() {
-		return endpointName;
-	}
-
-	public boolean isControl() {
-		return control;
-	}
-
-	public String getConcentrationDescription() {
-		return concentrationDescription;
-	}
-
-	public int getTimestamp() {
-		return timestamp;
-	}
-
-	public long getEndpointID() {
-		return endpointID;
-	}
-
+	
 	public double getConcentration() {
 		return concentration;
 	}
-
+	
+	public String getConcentrationDescription() {
+		return concentrationDescription;
+	}
+	
+	public long getEndpointID() {
+		return endpointID;
+	}
+	
+	public String getEndpointName() {
+		return endpointName;
+	}
+	
 	public double getResponse() {
 		return response;
 	}
-
+	
+	public int getTimestamp() {
+		return timestamp;
+	}
+	
+	public boolean isControl() {
+		return control;
+	}
+	
 }
