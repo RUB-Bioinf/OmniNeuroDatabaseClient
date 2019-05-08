@@ -12,6 +12,7 @@ import org.json.JSONObject;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import static de.rub.bph.omnineuro.client.ui.ExportConfigFrame.JSON_TAG_LIMITERS;
@@ -22,6 +23,7 @@ public class ResponseIDLimiter {
 	private ArrayList<Long> originalExperimentIDs;
 	private JSONObject limiterConfigs;
 	private OmniNeuroQueryExecutor queryExecutor;
+	private HashMap<String, String> limiterTableMap, limiterColumnMap;
 	
 	public ResponseIDLimiter(ArrayList<Long> originalExperimentIDs, JSONObject limiterConfigs) throws JSONException {
 		this(originalExperimentIDs, limiterConfigs, new OmniNeuroQueryExecutor(DBConnection.getDBConnection().getConnection()));
@@ -39,6 +41,7 @@ public class ResponseIDLimiter {
 			limiterConfigs = limiterConfigs.getJSONObject(JSON_TAG_LIMITERS);
 		}
 		this.limiterConfigs = limiterConfigs;
+		setUpMaps();
 	}
 	
 	public ArrayList<Long> applyAllLimiters() throws SQLException, JSONException {
@@ -58,12 +61,62 @@ public class ResponseIDLimiter {
 			case JSON_ARG_LIMITER_TYPE_SPECIFIC:
 				return applyLimiterSpecific(limiterName, limiter);
 			case JSON_ARG_LIMITER_TYPE_RANGE:
-				//return applyLimiterRange(limiterName, limiter);
-				throw new IllegalStateException("Ranges not yet supported.");
-				//TODO support them then!
+				return applyLimiterRange(limiterName, limiter);
 			default:
 				throw new IllegalArgumentException("Failed to resolve limiter type: " + limiterType);
 		}
+	}
+	
+	public ArrayList<Long> applyLimiterRange(String limiterName, JSONObject limiter) throws JSONException, SQLException {
+		JSONObject entries = limiter.getJSONObject(JSON_ARG_LIMITER_DATA);
+		String floor = null;
+		String ceiling = null;
+		boolean hasFloor = false;
+		boolean hasCeiling = false;
+		
+		if (entries.has(JSON_ARG_LIMITER_TYPE_RANGE_CEILING)) {
+			ceiling = entries.getString(JSON_ARG_LIMITER_TYPE_RANGE_CEILING);
+			hasCeiling = true;
+		}
+		if (entries.has(JSON_ARG_LIMITER_TYPE_RANGE_FLOOR)) {
+			floor = entries.getString(JSON_ARG_LIMITER_TYPE_RANGE_FLOOR);
+			hasFloor = true;
+		}
+		
+		if (!hasFloor && !hasCeiling)
+			throw new IllegalArgumentException("Limiter config error. The range for '" + limiterName + "' has neither a ceiling nor a floor.");
+		
+		String tableName = limiterTableMap.get(limiterName);
+		String colName = limiterColumnMap.get(limiterName);
+		
+		String min = null;
+		String max = null;
+		if (hasFloor && hasCeiling) {
+			min = floor;
+			max = ceiling;
+		}
+		if (hasFloor && !hasCeiling) {
+			min = floor;
+			max = queryExecutor.getTextMax(tableName, colName);
+		}
+		if (!hasFloor && hasCeiling) {
+			min = queryExecutor.getTextMin(tableName, colName);
+			max = ceiling;
+		}
+		if (!hasFloor && !hasCeiling) {
+			min = null;
+			max = null;
+		}
+		
+		ResultSet set = queryExecutor.getValuesBetween(tableName, colName, min, max);
+		ArrayList<String> rangeValues = queryExecutor.extractStringFeature(set, colName);
+		Log.i("Applying range for '" + tableName + "' on '" + colName + "' between " + min + " and " + max + ". " + rangeValues.size() + " items: " + rangeValues);
+		
+		JSONObject temp = new JSONObject();
+		JSONArray rangeArray = new JSONArray(rangeValues);
+		temp.put(JSON_ARG_LIMITER_DATA, rangeArray);
+		
+		return applyLimiterSpecific(limiterName, temp);
 	}
 	
 	public ArrayList<Long> applyLimiterSpecific(String limiterName, JSONObject limiter) throws SQLException, JSONException {
@@ -105,16 +158,16 @@ public class ResponseIDLimiter {
 				return applyT1LimiterSpecific("experiment", "name", entries);
 			case "timestamp_experiment":
 				return applyT1LimiterSpecific("experiment", "timestamp", entries);
-			case "timestamp_response":
-				return applyT0LimiterSpecific("timestamp", entries);
 			case "value_concentration":
 				return applyT1LimiterSpecific("concentration", "value", entries);
-			case "value_response":
-				return applyT0LimiterSpecific("value", entries);
 			case "endpoint":
 				return applyT1LimiterSpecific("endpoint", "name", entries);
 			case "outlier_type":
 				return applyT1LimiterSpecific("outlier_type", "name", entries);
+			case "value_response":
+				return applyT0LimiterSpecific("value", entries);
+			case "timestamp_response":
+				return applyT0LimiterSpecific("timestamp", entries);
 			default:
 				Log.e("Invalid limiter: " + limiterName + ". This isn't implemented (yet)!");
 				throw new IllegalArgumentException("Invalid limiter: '" + limiterName + "'! Try again or remove this limiter. The database can't handle this!");
@@ -153,31 +206,6 @@ public class ResponseIDLimiter {
 		return applyLimiterSQL(query);
 	}
 	
-	/*
-	//TODO delete this?
-	public ArrayList<Long> applyT2NameLimiterSpecific(String t2TableName, String t1TableName, JSONArray entries) throws JSONException, SQLException {
-		return applyT2LimiterSpecific(t2TableName, t1TableName, "name", entries);
-	}
-
-	public ArrayList<Long> applyLimiterDepartmentSpecific(JSONArray entries) throws JSONException, SQLException {
-		String query = "SELECT experiment.id FROM experiment,department,workgroup WHERE workgroup.id = experiment.workgroup_id AND workgroup.department_id = department.id AND ("
-				+ concatenatedConditions("department.name", entries) + ");";
-		return applyLimiterSQL(query);
-	}
-
-	public ArrayList<Long> applyLimiterProjectSpecific(JSONArray entries) throws JSONException, SQLException {
-		String query = "SELECT experiment.id FROM experiment,project WHERE project.id = experiment.project_id AND ("
-				+ concatenatedConditions("project.name", entries) + ");";
-		return applyLimiterSQL(query);
-	}
-
-	public ArrayList<Long> applyLimiterWorkgroupSpecific(JSONArray entries) throws SQLException, JSONException {
-		String query = "SELECT experiment.id FROM experiment,workgroup WHERE workgroup.id = experiment.workgroup_id AND ("
-				+ concatenatedConditions("workgroup.name", entries) + ");";
-		return applyLimiterSQL(query);
-	}
-	 */
-	
 	private String concatenatedConditions(String columnName, JSONArray entries) throws JSONException {
 		StringBuilder builder = new StringBuilder();
 		for (int i = 0; i < entries.length(); i++) {
@@ -200,6 +228,52 @@ public class ResponseIDLimiter {
 	
 	public boolean hasLimiters() {
 		return !getLimiterNames().isEmpty();
+	}
+	
+	public void setUpMaps() {
+		limiterTableMap = new HashMap<>();
+		limiterTableMap.put("department", "department");
+		limiterTableMap.put("initiator", "initiator");
+		limiterTableMap.put("leader", "leader");
+		limiterTableMap.put("species", "species");
+		limiterTableMap.put("sex", "sex");
+		limiterTableMap.put("project", "project");
+		limiterTableMap.put("workgroup", "workgroup");
+		limiterTableMap.put("compound", "compound");
+		limiterTableMap.put("cell_type", "cell_type");
+		limiterTableMap.put("individual", "individual");
+		limiterTableMap.put("plate_format", "plate_format");
+		limiterTableMap.put("assay", "assay");
+		limiterTableMap.put("control", "control");
+		limiterTableMap.put("experiment_id", "experiment");
+		limiterTableMap.put("timestamp_experiment", "experiment");
+		limiterTableMap.put("value_concentration", "concentration");
+		limiterTableMap.put("endpoint", "endpoint");
+		limiterTableMap.put("outlier_type", "outlier_type");
+		limiterTableMap.put("value_response", "response");
+		limiterTableMap.put("timestamp_response", "response");
+		
+		limiterColumnMap = new HashMap<>();
+		limiterColumnMap.put("department", "name");
+		limiterColumnMap.put("initiator", "name");
+		limiterColumnMap.put("leader", "name");
+		limiterColumnMap.put("species", "name");
+		limiterColumnMap.put("sex", "label");
+		limiterColumnMap.put("project", "name");
+		limiterColumnMap.put("workgroup", "name");
+		limiterColumnMap.put("compound", "name");
+		limiterColumnMap.put("cell_type", "name");
+		limiterColumnMap.put("individual", "name");
+		limiterColumnMap.put("plate_format", "name");
+		limiterColumnMap.put("assay", "name");
+		limiterColumnMap.put("control", "name");
+		limiterColumnMap.put("experiment_id", "name");
+		limiterColumnMap.put("timestamp_experiment", "timestamp");
+		limiterColumnMap.put("value_concentration", "value");
+		limiterColumnMap.put("endpoint", "name");
+		limiterColumnMap.put("outlier_type", "name");
+		limiterColumnMap.put("value_response", "value");
+		limiterColumnMap.put("timestamp_response", "timestamp");
 	}
 	
 	public ArrayList<String> getLimiterNames() {

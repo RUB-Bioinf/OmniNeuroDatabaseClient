@@ -119,11 +119,11 @@ public class QueryExecutor {
 		return extractDoubleFeature(executeQuery("SELECT max(" + featureName + ") FROM " + tableName + ";"), "max").get(0);
 	}
 	
-	public synchronized String getTextMax(String tableName, String featureName) throws SQLException {
-		return extractStringFeature(executeQuery("SELECT max(" + featureName + ") FROM " + tableName + ";"), "max").get(0);
+	public synchronized String getTextMin(String tableName, String featureName) throws SQLException {
+		return extractStringFeature(executeQuery("SELECT min(" + featureName + ") FROM " + tableName + ";"), "min").get(0);
 	}
 	
-	public synchronized String getTextMin(String tableName, String featureName) throws SQLException {
+	public synchronized String getTextMax(String tableName, String featureName) throws SQLException {
 		return extractStringFeature(executeQuery("SELECT max(" + featureName + ") FROM " + tableName + ";"), "max").get(0);
 	}
 	
@@ -137,14 +137,14 @@ public class QueryExecutor {
 	}
 	
 	public synchronized ResultSet getValuesBetween(String tableName, String featureName, String min, String max) throws SQLException {
-		return executeQuery("SELECT " + featureName + " FROM " + tableName + " WHERE " + featureName + " BETWEEN '" + min + "' AND '" + max + "';");
+		return executeQuery("SELECT DISTINCT " + featureName + " FROM " + tableName + " WHERE " + featureName + " BETWEEN '" + min + "' AND '" + max + "';");
 	}
 	
 	public synchronized ArrayList<String> extractStringFeature(ResultSet set, String feature) throws SQLException {
 		ArrayList<String> res = new ArrayList<>();
 		
 		while (set.next()) {
-			res.add(set.getObject(feature).toString());
+			res.add(String.valueOf(set.getObject(feature)));
 		}
 		
 		return res;
