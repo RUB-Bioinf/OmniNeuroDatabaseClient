@@ -159,15 +159,15 @@ public class ExportConfigFrame extends JFrame implements ListSelectionListener {
 		
 		category = "Experiment Plating Date";
 		metadataCategories.add(category);
-		panelActionMap.put(category, getActionConfigFrame("experiment", "timestamp", "timestamp_experiment", true));
+		panelActionMap.put(category, getActionConfigFrame("experiment", "timestamp", "timestamp_experiment", true, true));
 		
 		category = "Experiment Name";
 		metadataCategories.add(category);
-		panelActionMap.put(category, getActionConfigFrame("experiment", "name", "experiment_id", false));
+		panelActionMap.put(category, getActionConfigFrame("experiment", "name", "experiment_id", false, false));
 		
 		category = "Response Timestamp";
 		metadataCategories.add(category);
-		panelActionMap.put(category, getActionConfigFrame("response", "timestamp", "timestamp_response", false));
+		panelActionMap.put(category, getActionConfigFrame("response", "timestamp", "timestamp_response", false, false));
 		
 		category = "Endpoint";
 		metadataCategories.add(category);
@@ -227,15 +227,15 @@ public class ExportConfigFrame extends JFrame implements ListSelectionListener {
 		
 		category = "Sex";
 		metadataCategories.add(category);
-		panelActionMap.put(category, getActionConfigFrame("sex", "label", "sex", false));
+		panelActionMap.put(category, getActionConfigFrame("sex", "label", "sex", false, false));
 		
 		category = "Concentration";
 		metadataCategories.add(category);
-		panelActionMap.put(category, getActionConfigFrame("concentration", "value", "value_concentration", true));
+		panelActionMap.put(category, getActionConfigFrame("concentration", "value", "value_concentration", true, false));
 		
 		category = "Response Value";
 		metadataCategories.add(category);
-		panelActionMap.put(category, getActionConfigFrame("response", "value", "value_response", true));
+		panelActionMap.put(category, getActionConfigFrame("response", "value", "value_response", true, false));
 		
 		Collections.sort(metadataCategories);
 		DefaultListModel<String> listModel = new DefaultListModel<>();
@@ -324,12 +324,12 @@ public class ExportConfigFrame extends JFrame implements ListSelectionListener {
 	}
 	
 	private Runnable getActionConfigFrameName(String tableName) {
-		return getActionConfigFrame(tableName, "name", tableName, false);
+		return getActionConfigFrame(tableName, "name", tableName, false, false);
 	}
 	
-	private Runnable getActionConfigFrame(String tableName, String featureName, String limiterName, boolean allowRange) {
+	private Runnable getActionConfigFrame(String tableName, String featureName, String limiterName, boolean allowRange, boolean dateMode) {
 		return () -> {
-			JSONObject limiters = null;
+			JSONObject limiters;
 			JPanel pnl;
 			try {
 				limiters = getConfiguration().getJSONObject(JSON_TAG_LIMITERS);
@@ -339,7 +339,7 @@ public class ExportConfigFrame extends JFrame implements ListSelectionListener {
 				return;
 			}
 			try {
-				pnl = new ExportConfigDetailPanel(queryExecutor, tableName, featureName, limiterName, limiters, allowRange).getHolderPL();
+				pnl = new ExportConfigDetailPanel(queryExecutor, tableName, featureName, limiterName, limiters, allowRange, dateMode).getHolderPL();
 			} catch (Throwable e) {
 				Log.e(e);
 				Client.showErrorMessage("Failed to fetch and set up view on detailed database data for '" + tableName + "'", this, e);

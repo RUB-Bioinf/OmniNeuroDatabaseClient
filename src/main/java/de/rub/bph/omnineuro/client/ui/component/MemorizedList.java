@@ -1,5 +1,6 @@
 package de.rub.bph.omnineuro.client.ui.component;
 
+import de.rub.bph.omnineuro.client.Client;
 import de.rub.bph.omnineuro.client.imported.log.Log;
 
 import javax.swing.*;
@@ -23,6 +24,7 @@ public class MemorizedList extends JList<String> implements ListSelectionListene
 	private boolean[] markedEntries;
 	private Color unMarkedColor, markedColor;
 	private ArrayList<MarkedSelectionListener> listeners;
+	private JFormattedTextField.AbstractFormatter textFormatter;
 	
 	public MemorizedList() {
 		this(new ArrayList<>());
@@ -126,6 +128,14 @@ public class MemorizedList extends JList<String> implements ListSelectionListene
 		listeners.clear();
 	}
 	
+	public void setTextFormatter(JFormattedTextField.AbstractFormatter textFormatter) {
+		this.textFormatter = textFormatter;
+	}
+	
+	public boolean hasTextFormatter() {
+		return textFormatter != null;
+	}
+	
 	@Override
 	public void valueChanged(ListSelectionEvent listSelectionEvent) {
 		if (!listSelectionEvent.getValueIsAdjusting()) {
@@ -183,7 +193,18 @@ public class MemorizedList extends JList<String> implements ListSelectionListene
 	private class MemorizedListRenderer extends DefaultListCellRenderer {
 		
 		public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
-			Component c = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+			String element = value.toString();
+			
+			if (hasTextFormatter()) {
+				try {
+					element = textFormatter.valueToString(element);
+				} catch (Throwable e) {
+					Log.e(e);
+					Client.showErrorMessage("Failed to convert database format for '" + element + "' to desired format.\nFormat demanded: " + textFormatter.getClass().getSimpleName(), this, e);
+				}
+			}
+			
+			Component c = super.getListCellRendererComponent(list, element, index, isSelected, cellHasFocus);
 			if (isMarked(index)) {
 				c.setForeground(markedColor);
 			} else {

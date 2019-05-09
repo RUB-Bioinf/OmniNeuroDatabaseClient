@@ -4,6 +4,10 @@ import de.rub.bph.omnineuro.client.Client;
 import de.rub.bph.omnineuro.client.core.db.OmniNeuroQueryExecutor;
 import de.rub.bph.omnineuro.client.imported.log.Log;
 import de.rub.bph.omnineuro.client.util.CodeHasher;
+import de.rub.bph.omnineuro.client.util.DateLabelFormatter;
+import org.jdatepicker.impl.JDatePanelImpl;
+import org.jdatepicker.impl.JDatePickerImpl;
+import org.jdatepicker.impl.UtilDateModel;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -13,13 +17,16 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Properties;
 
 import static de.rub.bph.omnineuro.client.ui.OmniFrame.DEFAULT_LIMITER_HASH_LENGTH;
 
 public class ExportConfigDetailPanel implements MemorizedList.MarkedSelectionListener {
 	
+	public static final String DEFAULT_DATE_PICKER_DATE_FORMAT = "yyyy-MM-dd";
 	public static final String JSON_ARG_LIMITER_DATA = "data";
 	public static final String JSON_ARG_LIMITER_TYPE = "type";
 	public static final String JSON_ARG_LIMITER_TYPE_RANGE = "range";
@@ -37,6 +44,8 @@ public class ExportConfigDetailPanel implements MemorizedList.MarkedSelectionLis
 	private JTextField ceilingTF;
 	private JTextField floorTF;
 	private JLabel rangePreviewPL;
+	private JDatePickerImpl dateCeilingPicker;
+	private JDatePickerImpl dateFloorPicker;
 	private OmniNeuroQueryExecutor queryExecutor;
 	private String tableName;
 	private String featureName;
@@ -44,14 +53,18 @@ public class ExportConfigDetailPanel implements MemorizedList.MarkedSelectionLis
 	private JSONObject data;
 	private boolean enableRange;
 	private String rangeMin, rangeMax;
+	private boolean dateMode;
+	private SimpleDateFormat configDateFormatter;
 	
-	public ExportConfigDetailPanel(OmniNeuroQueryExecutor queryExecutor, String tableName, String featureName, String limiterName, JSONObject data, boolean enableRange) {
+	public ExportConfigDetailPanel(OmniNeuroQueryExecutor queryExecutor, String tableName, String featureName, String limiterName, JSONObject data, boolean enableRange, boolean dateMode) {
 		this.queryExecutor = queryExecutor;
+		this.dateMode = dateMode;
 		this.limiterName = limiterName;
 		this.tableName = tableName;
 		this.featureName = featureName;
 		this.data = data;
 		this.enableRange = enableRange;
+		configDateFormatter = new SimpleDateFormat(DEFAULT_DATE_PICKER_DATE_FORMAT);
 		
 		Log.i("Preparing ConfigDetailPanel for table: '" + tableName + "' on '" + featureName + "' as: '" + limiterName + "'.");
 		Log.i("Data as given on create: " + data);
@@ -111,10 +124,16 @@ public class ExportConfigDetailPanel implements MemorizedList.MarkedSelectionLis
 				if (entries.has(JSON_ARG_LIMITER_TYPE_RANGE_FLOOR)) {
 					String f = entries.getString(JSON_ARG_LIMITER_TYPE_RANGE_FLOOR);
 					floorTF.setText(f);
+					if (dateMode) {
+						dateFloorPicker.getJFormattedTextField().setText(configDateFormatter.format(Long.parseLong(f)));
+					}
 				}
 				if (entries.has(JSON_ARG_LIMITER_TYPE_RANGE_CEILING)) {
 					String c = entries.getString(JSON_ARG_LIMITER_TYPE_RANGE_CEILING);
 					ceilingTF.setText(c);
+					if (dateMode) {
+						dateCeilingPicker.getJFormattedTextField().setText(configDateFormatter.format(Long.parseLong(c)));
+					}
 				}
 				updateRangePreviewLB();
 			}
@@ -122,10 +141,6 @@ public class ExportConfigDetailPanel implements MemorizedList.MarkedSelectionLis
 			useEverythingRadioButton.setSelected(true);
 		}
 		updateTypePLs();
-	}
-	
-	private void setUpRangePL() throws SQLException {
-	
 	}
 	
 	private void updateTypePLs() {
@@ -198,56 +213,95 @@ public class ExportConfigDetailPanel implements MemorizedList.MarkedSelectionLis
 		floorTF = new JTextField();
 		entryMinMaxPL = new JLabel("Range entries here");
 		
+		if (dateMode) {
+			entriesSelectionList.setTextFormatter(new DateLabelFormatter(DEFAULT_DATE_PICKER_DATE_FORMAT));
+		}
+		
+		DocumentListener docListener = new DocumentListener() {
+			@Override
+			public void insertUpdate(DocumentEvent documentEvent) {
+				updateRangePreviewLB();
+			}
+			
+			@Override
+			public void removeUpdate(DocumentEvent documentEvent) {
+				updateRangePreviewLB();
+			}
+			
+			@Override
+			public void changedUpdate(DocumentEvent documentEvent) {
+				updateRangePreviewLB();
+			}
+		};
+		
 		// Range entries
 		if (enableRange) {
 			Log.i("Setting up range Panel.");
-			double min;
-			double max;
 			try {
-				min = queryExecutor.getDoubleMin(tableName, featureName);
-				max = queryExecutor.getDoubleMax(tableName, featureName);
+				rangeMin = queryExecutor.getTextMin(tableName, featureName);
+				rangeMax = queryExecutor.getTextMax(tableName, featureName);
+				
 			} catch (SQLException e) {
 				Log.e(e);
 				Client.showErrorMessage("Failed to get minimum and maximum values from the database!", holderPL, e);
 				return;
 			}
-			Log.i("For " + tableName + " min: " + min + ". Max: " + max);
+			String textMin = rangeMin;
+			String textMax = rangeMax;
+			Log.i("For " + tableName + " min: " + rangeMin + ". Max: " + rangeMax);
+			if (dateMode) {
+				configDateFormatter = new SimpleDateFormat(DEFAULT_DATE_PICKER_DATE_FORMAT);
+				long min = Long.parseLong(rangeMin);
+				long max = Long.parseLong(rangeMax);
+				textMax = configDateFormatter.format(max);
+				textMin = configDateFormatter.format(min);
+			}
 			
-			entryMinMaxPL = new JLabel("Currently in the database: Values between " + min + " and " + max + ".");
-			DocumentListener docListener = new DocumentListener() {
-				@Override
-				public void insertUpdate(DocumentEvent documentEvent) {
-					updateRangePreviewLB();
-				}
-				
-				@Override
-				public void removeUpdate(DocumentEvent documentEvent) {
-					updateRangePreviewLB();
-				}
-				
-				@Override
-				public void changedUpdate(DocumentEvent documentEvent) {
-					updateRangePreviewLB();
-				}
-			};
-			
-			rangeMax = String.valueOf(max);
-			rangeMin = String.valueOf(min);
+			entryMinMaxPL = new JLabel("Currently in the database: Values between " + textMin + " and " + textMax + ".");
 			ceilingTF.getDocument().addDocumentListener(docListener);
 			floorTF.getDocument().addDocumentListener(docListener);
 			//ceilingTF.setText(rangeMax);
 			//floorTF.setText(rangeMin);
 		}
+		
+		//Date styles
+		
+		UtilDateModel ceilingModel = new UtilDateModel();
+		UtilDateModel floorModel = new UtilDateModel();
+		Properties ceilingProperties = new Properties();
+		ceilingProperties.put("text.today", "Today");
+		ceilingProperties.put("text.month", "Month");
+		ceilingProperties.put("text.year", "Year");
+		Properties floorProperties = new Properties(ceilingProperties);
+		JDatePanelImpl dateFloorPanel = new JDatePanelImpl(floorModel, floorProperties);
+		JDatePanelImpl dateCeilingPanel = new JDatePanelImpl(ceilingModel, ceilingProperties);
+		dateCeilingPicker = new JDatePickerImpl(dateCeilingPanel, new DateLabelFormatter(DEFAULT_DATE_PICKER_DATE_FORMAT));
+		dateFloorPicker = new JDatePickerImpl(dateFloorPanel, new DateLabelFormatter(DEFAULT_DATE_PICKER_DATE_FORMAT));
+		dateCeilingPicker.getJFormattedTextField().getDocument().addDocumentListener(docListener);
+		dateFloorPicker.getJFormattedTextField().getDocument().addDocumentListener(docListener);
+		
+		dateFloorPicker.setVisible(dateMode);
+		dateCeilingPicker.setVisible(dateMode);
+		ceilingTF.setVisible(!dateMode);
+		floorTF.setVisible(!dateMode);
 	}
 	
 	private void updateRangePreviewLB() {
+		Log.i("Updating the range preview labels!");
 		if (rangePreviewPL == null) {
 			Log.w("The preview label does not exist yet. The world isn't ready yet to see those ranges!");
 			return;
 		}
 		
-		String min = floorTF.getText().trim();
-		String max = ceilingTF.getText().trim();
+		String min;
+		String max;
+		if (dateMode) {
+			min = dateFloorPicker.getJFormattedTextField().getText();
+			max = dateCeilingPicker.getJFormattedTextField().getText();
+		} else {
+			min = floorTF.getText().trim();
+			max = ceilingTF.getText().trim();
+		}
 		
 		boolean minEmpty = min.equals("");
 		boolean maxEmpty = max.equals("");
@@ -258,11 +312,21 @@ public class ExportConfigDetailPanel implements MemorizedList.MarkedSelectionLis
 		
 		String val = null;
 		if (minEmpty && !maxEmpty) {
-			builder.append("less than");
+			if (dateMode) {
+				builder.append("earlier");
+			} else {
+				builder.append("less");
+			}
+			builder.append(" than");
 			val = max;
 		}
 		if (!minEmpty && maxEmpty) {
-			builder.append("more than");
+			if (dateMode) {
+				builder.append("later");
+			} else {
+				builder.append("less");
+			}
+			builder.append(" than");
 			val = min;
 		}
 		if (!maxEmpty && !minEmpty) {
@@ -275,6 +339,25 @@ public class ExportConfigDetailPanel implements MemorizedList.MarkedSelectionLis
 		}
 		builder.append(".");
 		rangePreviewPL.setText(builder.toString());
+		
+		if (dateMode) {
+			if (!minEmpty) {
+				try {
+					min = String.valueOf(configDateFormatter.parse(min).getTime());
+				} catch (Throwable e) {
+					Log.e(e);
+					Client.showErrorMessage("Can't convert the input '" + min + "' into UNIX timestamp!", holderPL, e);
+				}
+			}
+			if (!maxEmpty) {
+				try {
+					max = String.valueOf(configDateFormatter.parse(max).getTime());
+				} catch (Throwable e) {
+					Log.e(e);
+					Client.showErrorMessage("Can't convert the input '" + max + "' into UNIX timestamp!", holderPL, e);
+				}
+			}
+		}
 		
 		JSONObject rangeData = new JSONObject();
 		try {
