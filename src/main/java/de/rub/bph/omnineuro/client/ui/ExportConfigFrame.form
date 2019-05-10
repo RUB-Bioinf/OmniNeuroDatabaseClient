@@ -99,7 +99,7 @@
                         <constraints/>
                         <properties>
                           <selectionMode value="0"/>
-                          <toolTipText value=""/>
+                          <toolTipText value="Select one limiter at a time. Adjust limiter on the right side."/>
                         </properties>
                         <clientProperties>
                           <html.disable class="java.lang.Boolean" value="true"/>

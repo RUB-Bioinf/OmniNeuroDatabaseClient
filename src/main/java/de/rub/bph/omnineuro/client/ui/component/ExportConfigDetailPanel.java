@@ -46,6 +46,9 @@ public class ExportConfigDetailPanel implements MemorizedList.MarkedSelectionLis
 	private JLabel rangePreviewPL;
 	private JDatePickerImpl dateCeilingPicker;
 	private JDatePickerImpl dateFloorPicker;
+	private JButton selectNoneButton;
+	private JButton selectAllButton;
+	private JLabel markedElementsCountLB;
 	private OmniNeuroQueryExecutor queryExecutor;
 	private String tableName;
 	private String featureName;
@@ -88,6 +91,8 @@ public class ExportConfigDetailPanel implements MemorizedList.MarkedSelectionLis
 			e.printStackTrace();
 			Client.showErrorMessage("Heavy error occurred in the internal data structure!", holderPL, e);
 		}
+		selectAllButton.addActionListener(actionEvent -> entriesSelectionList.setMarked(true, entriesSelectionList.getEntries()));
+		selectNoneButton.addActionListener(actionEvent -> entriesSelectionList.setMarked(false, entriesSelectionList.getEntries()));
 	}
 	
 	private ArrayList<String> readDatabase() throws SQLException {
@@ -117,6 +122,7 @@ public class ExportConfigDetailPanel implements MemorizedList.MarkedSelectionLis
 				}
 				Log.i("These would have been selected: " + entryList);
 				entriesSelectionList.setMarked(true, (entryList));
+				updateSpecificPreviewLB();
 			}
 			if (type.equals(JSON_ARG_LIMITER_TYPE_RANGE)) {
 				useRangeRadioButton.setSelected(true);
@@ -177,6 +183,7 @@ public class ExportConfigDetailPanel implements MemorizedList.MarkedSelectionLis
 			Log.e(e);
 			Client.showErrorMessage("Heavy internal error.", holderPL, e);
 		}
+		updateSpecificPreviewLB();
 	}
 	
 	public void onTypeChangeRange() {
@@ -185,8 +192,6 @@ public class ExportConfigDetailPanel implements MemorizedList.MarkedSelectionLis
 			JSONObject limiter = new JSONObject();
 			limiter.put(JSON_ARG_LIMITER_TYPE, JSON_ARG_LIMITER_TYPE_RANGE);
 			JSONObject rangeData = new JSONObject();
-			//rangeData.put(JSON_ARG_LIMITER_TYPE_RANGE_CEILING, rangeMax);
-			//rangeData.put(JSON_ARG_LIMITER_TYPE_RANGE_FLOOR, rangeMin);
 			limiter.put(JSON_ARG_LIMITER_DATA, rangeData);
 			data.put(limiterName, limiter);
 		} catch (JSONException e) {
@@ -194,6 +199,7 @@ public class ExportConfigDetailPanel implements MemorizedList.MarkedSelectionLis
 			Client.showErrorMessage("Heavy internal error.", holderPL, e);
 		}
 		updateRangePreviewLB();
+		updateSpecificPreviewLB();
 	}
 	
 	private void createUIComponents() {
@@ -286,6 +292,11 @@ public class ExportConfigDetailPanel implements MemorizedList.MarkedSelectionLis
 		floorTF.setVisible(!dateMode);
 	}
 	
+	private void updateSpecificPreviewLB() {
+		ArrayList<String> markedItems = entriesSelectionList.getMarkedEntries();
+		markedElementsCountLB.setText("Selected item(s): " + markedItems.size() + " / " + entriesSelectionList.getEntries().size());
+	}
+	
 	private void updateRangePreviewLB() {
 		Log.i("Updating the range preview labels!");
 		if (rangePreviewPL == null) {
@@ -313,9 +324,9 @@ public class ExportConfigDetailPanel implements MemorizedList.MarkedSelectionLis
 		String val = null;
 		if (minEmpty && !maxEmpty) {
 			if (dateMode) {
-				builder.append("earlier");
+				builder.append("before");
 			} else {
-				builder.append("less");
+				builder.append("after");
 			}
 			builder.append(" than");
 			val = max;
@@ -386,6 +397,7 @@ public class ExportConfigDetailPanel implements MemorizedList.MarkedSelectionLis
 			Log.e(e);
 			Client.showErrorMessage("Internal data failure! Please try again!", holderPL, e);
 		}
+		updateSpecificPreviewLB();
 	}
 	
 	public String getFeatureName() {
