@@ -128,6 +128,50 @@ public class CompoundSheetExporter extends SheetExporter {
 			ArrayList<Double> responses = timestampMap.get(timestamp);
 			responses.add(response);
 		}
+
+		/*
+		TODO implement this
+		Experimental stuff. Doesn't work yet.
+		if (clean) {
+			ArrayList<Integer> allTimestamps = ResponseHolder.getUniqueTimestamps(holders);
+			ArrayList<String> allConcentrations = ResponseHolder.getUniqueConcentrations(holders);
+			ArrayList<String> allEndpoints = ResponseHolder.getUniqueEndpointNamess(holders);
+
+			HashMap<String, ArrayList<Integer>> deleteMap = new HashMap<>();
+
+			for (String endpoint : allEndpoints) {
+				for (int timestamp : allTimestamps) {
+					boolean empty = false;
+
+					for (String concentration : allConcentrations) {
+						if (data.containsKey(concentration)) {
+							HashMap<String, HashMap<Integer, ArrayList<Double>>> concentrationMap = data.get(concentration);
+							if (concentrationMap.containsKey(endpoint)) {
+								HashMap<Integer, ArrayList<Double>> endpointMap = concentrationMap.get(endpoint);
+								if (endpointMap.containsKey(timestamp)) {
+									ArrayList<Double> responses = endpointMap.get(timestamp);
+									empty |= responses.isEmpty();
+								}
+							}
+						}
+					}
+
+					if (empty) {
+						if (!deleteMap.containsKey(endpoint)) deleteMap.put(endpoint, new ArrayList<>());
+						deleteMap.get(endpoint).add(timestamp);
+					}
+				}
+			}
+
+			for (String endpoint : deleteMap.keySet()) {
+				ArrayList<Integer> timestamps = deleteMap.get(endpoint);
+				for (String concentration : allConcentrations) {
+					data.get(concentration).get(endpoint).remove(timestamps);
+				}
+			}
+		}
+		 */
+
 		return data;
 	}
 	
