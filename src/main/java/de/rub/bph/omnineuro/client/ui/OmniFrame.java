@@ -45,6 +45,7 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 	private JButton configurationEditorButton;
 	private JButton searchForHashButton;
 	private JPanel configurationDDPL;
+	private JCheckBox commaCB;
 	
 	public OmniFrame() {
 		add(rootPanel);
@@ -207,6 +208,7 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 	public void requestExport() {
 		long startTime = new Date().getTime();
 		ExportConfigManager configManager = ExportConfigManager.getInstance();
+		boolean useComma = commaCB.isSelected();
 		
 		if (!testDBConnection()) {
 			Log.i("Connection to the database failed. Can't export if there's no connection available.");
@@ -240,8 +242,9 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 		}
 		
 		ArrayList<Long> limitedResponseIDs;
+		JSONObject limiters = configManager.getCurrentConfig();
 		try {
-			ResponseIDLimiter limiter = new ResponseIDLimiter(responseIDs, configManager.getCurrentConfig());
+			ResponseIDLimiter limiter = new ResponseIDLimiter(responseIDs, limiters);
 			limitedResponseIDs = limiter.applyAllLimiters();
 		} catch (Throwable e) {
 			Log.e(e);
@@ -256,7 +259,7 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 			return;
 		}
 		
-		SheetExporterCompatManager compatManager = new SheetExporterCompatManager(threads, dir, limitedResponseIDs);
+		SheetExporterCompatManager compatManager = new SheetExporterCompatManager(threads, dir, limitedResponseIDs, useComma);
 		compatManager.export();
 		
 		long duration = new Date().getTime() - startTime;

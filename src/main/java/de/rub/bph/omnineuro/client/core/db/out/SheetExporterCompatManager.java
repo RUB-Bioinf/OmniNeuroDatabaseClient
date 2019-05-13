@@ -5,6 +5,7 @@ import de.rub.bph.omnineuro.client.config.ExportConfigManager;
 import de.rub.bph.omnineuro.client.core.db.DBConnection;
 import de.rub.bph.omnineuro.client.core.db.OmniNeuroQueryExecutor;
 import de.rub.bph.omnineuro.client.core.db.out.r.CompoundSheetExporter;
+import de.rub.bph.omnineuro.client.imported.filemanager.FileManager;
 import de.rub.bph.omnineuro.client.imported.log.Log;
 import de.rub.bph.omnineuro.client.util.CodeHasher;
 import de.rub.bph.omnineuro.client.util.concurrent.ConcurrentExecutionManager;
@@ -29,9 +30,11 @@ public class SheetExporterCompatManager extends ConcurrentExecutionManager {
 	private DBConnection connection;
 	private ArrayList<Long> responseIDs;
 	private JSONObject config;
+	private boolean useComma;
 	
-	public SheetExporterCompatManager(int threads, File sourceDir, ArrayList<Long> responseIDs) {
+	public SheetExporterCompatManager(int threads, File sourceDir, ArrayList<Long> responseIDs, boolean useComma) {
 		super(threads);
+		this.useComma = useComma;
 		
 		config = ExportConfigManager.getInstance().getCurrentConfig();
 		String dirTag = "";
@@ -48,6 +51,14 @@ public class SheetExporterCompatManager extends ConcurrentExecutionManager {
 		
 		this.sourceDir = sourceDir;
 		this.responseIDs = responseIDs;
+		
+		File configFile = new File(sourceDir, "config" + dirTag + ".json");
+		FileManager manager = new FileManager();
+		try {
+			manager.writeFile(configFile, config.toString(4));
+		} catch (Throwable e) {
+			Log.e("Failed to write current config as a reminder here: " + configFile.getAbsolutePath() + ". This fails silently.", e);
+		}
 		
 		service = Executors.newFixedThreadPool(threads);
 		connection = DBConnection.getDBConnection();
@@ -114,7 +125,7 @@ public class SheetExporterCompatManager extends ConcurrentExecutionManager {
 		
 		for (Long id : retainedCompoundIDs) {
 			Log.i("I am working with this compound id " + id + ". Name: " + queryExecutor.getNameViaID("compound", id));
-			service.submit(new CompoundSheetExporter(targetDir, connection, id, compoundResponseMap.get(id)));
+			service.submit(new CompoundSheetExporter(targetDir, connection, id, compoundResponseMap.get(id), useComma));
 		}
 	}
 	

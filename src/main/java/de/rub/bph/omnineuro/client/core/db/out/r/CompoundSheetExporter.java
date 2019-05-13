@@ -22,8 +22,8 @@ public class CompoundSheetExporter extends SheetExporter {
 	private File outFile;
 	private boolean successful;
 	
-	public CompoundSheetExporter(File targetDir, DBConnection connection, long compoundID, ArrayList<Long> responseIDs) throws SQLException {
-		super(targetDir, connection, responseIDs);
+	public CompoundSheetExporter(File targetDir, DBConnection connection, long compoundID, ArrayList<Long> responseIDs, boolean useComma) throws SQLException {
+		super(targetDir, connection, responseIDs, useComma);
 		this.compoundID = compoundID;
 		successful = false;
 		
@@ -64,7 +64,7 @@ public class CompoundSheetExporter extends SheetExporter {
 			StringBuilder rowBuilder = new StringBuilder();
 			rowBuilder.append(concentration).append(";");
 			
-			boolean nextReplicant = true;
+			boolean nextReplica = true;
 			for (String endpoint : allEndpoints) {
 				for (int timestamp : allTimestamps) {
 					if (holderMap.containsKey(concentration)) {
@@ -78,8 +78,16 @@ public class CompoundSheetExporter extends SheetExporter {
 								} else {
 									Double d = responses.get(0);
 									responses.remove(d);
-									rowBuilder.append(d);
-									nextReplicant = false;
+									
+									String s = String.valueOf(d);
+									if (isUseComma()) {
+										s = s.replace(".", ",");
+									} else {
+										s = s.replace(",", ".");
+									}
+									
+									rowBuilder.append(s);
+									nextReplica = false;
 								}
 							}
 						}
@@ -96,7 +104,7 @@ public class CompoundSheetExporter extends SheetExporter {
 			}
 			
 			rowBuilder.append("\n");
-			if (nextReplicant) {
+			if (nextReplica) {
 				concentrationIndex++;
 			} else {
 				builder.append(rowBuilder.toString());
@@ -171,7 +179,7 @@ public class CompoundSheetExporter extends SheetExporter {
 			}
 		}
 		 */
-
+		
 		return data;
 	}
 	
@@ -202,6 +210,7 @@ public class CompoundSheetExporter extends SheetExporter {
 			successful = true;
 		} catch (Throwable e) {
 			Log.e("Failed to create " + getCompoundAbbreviation() + " ['" + getCompoundName() + "'] export file because of an " + e.getClass().getSimpleName() + "-Error!", e);
+			errorList.add(e.getMessage());
 		}
 	}
 	
