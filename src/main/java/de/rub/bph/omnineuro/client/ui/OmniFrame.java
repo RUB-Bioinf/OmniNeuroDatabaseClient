@@ -269,7 +269,21 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 	
 	public void resetDatabase() {
 		Log.i("Reset Database has been requested!");
-		testDBConnection();
+		
+		boolean confirm = Client.showConfirmDialog("The following things will be removed from the database: Comments, Responses, Concentrations and Experiments.\n" +
+				"This cannot be undone! Are you sure, you want to do this?", this);
+		if (!confirm) {
+			Log.i("The user chickened out and the request was canceled.");
+			return;
+		} else {
+			Log.i("Cowabunga it is!");
+		}
+		
+		boolean connected = testDBConnection(true);
+		if (!connected) {
+			Client.showErrorMessage("Failed to connect to the database. Can't reset the database if there is no connection.", this);
+			return;
+		}
 		
 		DBConnection connection = DBConnection.getDBConnection();
 		try {
