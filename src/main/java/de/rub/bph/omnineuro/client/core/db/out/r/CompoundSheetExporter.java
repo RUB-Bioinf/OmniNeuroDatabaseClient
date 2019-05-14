@@ -44,7 +44,18 @@ public class CompoundSheetExporter extends SheetExporter {
 		ArrayList<String> allConcentrations = ResponseHolder.getUniqueConcentrations(responseHolders);
 		ArrayList<String> allEndpoints = ResponseHolder.getUniqueEndpointNamess(responseHolders);
 		ArrayList<Integer> allTimestamps = ResponseHolder.getUniqueTimestamps(responseHolders);
-		Collections.sort(allConcentrations);
+		
+		allConcentrations.sort((s, t1) -> {
+			try {
+				double d1 = Double.parseDouble(s);
+				double d2 = Double.parseDouble(t1);
+				
+				return Double.compare(d1, d2);
+			} catch (NumberFormatException e) {
+				Log.w("Can't compare concentrations '" + s + "' and '" + t1 + "' as numbers.");
+				return s.compareTo(t1);
+			}
+		});
 		Collections.sort(allEndpoints);
 		Collections.sort(allTimestamps);
 		
@@ -61,8 +72,16 @@ public class CompoundSheetExporter extends SheetExporter {
 		int concentrationIndex = 0;
 		while (concentrationIndex < allConcentrations.size()) {
 			String concentration = allConcentrations.get(concentrationIndex);
+			
+			String concentrationCorrectSeparator;
+			if (isUseComma()) {
+				concentrationCorrectSeparator = concentration.replace(".", ",");
+			} else {
+				concentrationCorrectSeparator = concentration.replace(",", ".");
+			}
+			
 			StringBuilder rowBuilder = new StringBuilder();
-			rowBuilder.append(concentration).append(";");
+			rowBuilder.append(concentrationCorrectSeparator).append(";");
 			
 			boolean nextReplica = true;
 			for (String endpoint : allEndpoints) {
