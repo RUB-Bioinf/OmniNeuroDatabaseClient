@@ -4,7 +4,8 @@ import de.rub.bph.omnineuro.client.Client;
 import de.rub.bph.omnineuro.client.core.db.OmniNeuroQueryExecutor;
 import de.rub.bph.omnineuro.client.imported.log.Log;
 import de.rub.bph.omnineuro.client.util.CodeHasher;
-import de.rub.bph.omnineuro.client.util.DateLabelFormatter;
+import de.rub.bph.omnineuro.client.util.textformatter.CompoundFormatter;
+import de.rub.bph.omnineuro.client.util.textformatter.DateLabelFormatter;
 import org.jdatepicker.impl.JDatePanelImpl;
 import org.jdatepicker.impl.JDatePickerImpl;
 import org.jdatepicker.impl.UtilDateModel;
@@ -221,6 +222,15 @@ public class ExportConfigDetailPanel implements MemorizedList.MarkedSelectionLis
 		
 		if (dateMode) {
 			entriesSelectionList.setTextFormatter(new DateLabelFormatter(DEFAULT_DATE_PICKER_DATE_FORMAT));
+		}
+		
+		if (limiterName.equals("compound")) {
+			Log.i("Compound mode activated!");
+			try {
+				entriesSelectionList.setTextFormatter(new CompoundFormatter(queryExecutor));
+			} catch (SQLException e) {
+				Client.showErrorMessage("Failed to attach more detailed compound information. Something is wrong with the database.", holderPL, e);
+			}
 		}
 		
 		DocumentListener docListener = new DocumentListener() {

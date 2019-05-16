@@ -13,6 +13,7 @@ public class ResponseHolder {
 	private int timestamp;
 	private long endpointID;
 	private String endpointName;
+	private String experimentName;
 	private double concentration;
 	private String concentrationDescription;
 	private double response;
@@ -28,6 +29,9 @@ public class ResponseHolder {
 		timestamp = resultSet.getInt("timestamp");
 		endpointID = resultSet.getLong("endpoint_id");
 		response = resultSet.getDouble("value");
+		
+		long experimentID = resultSet.getLong("experiment_id");
+		experimentName = queryExecutor.getNameViaID("experiment", experimentID);
 		
 		long concentrationID = resultSet.getLong("concentration_id");
 		concentration = Double.parseDouble(queryExecutor.getFeatureViaID("concentration", "value", concentrationID));
@@ -53,7 +57,16 @@ public class ResponseHolder {
 		return list;
 	}
 	
-	public static ArrayList<String> getUniqueEndpointNamess(List<ResponseHolder> holders) {
+	public static ArrayList<String> getUniqueExperimentNames(List<ResponseHolder> holders) {
+		ArrayList<String> list = new ArrayList<>();
+		for (ResponseHolder h : holders) {
+			String s = h.getExperimentName();
+			if (!list.contains(s)) list.add(s);
+		}
+		return list;
+	}
+	
+	public static ArrayList<String> getUniqueEndpointNames(List<ResponseHolder> holders) {
 		ArrayList<String> list = new ArrayList<>();
 		for (ResponseHolder h : holders) {
 			String s = h.getEndpointName();
@@ -101,6 +114,14 @@ public class ResponseHolder {
 		return endpointName;
 	}
 	
+	public String getExperimentName() {
+		return experimentName;
+	}
+	
+	public void setExperimentName(String experimentName) {
+		this.experimentName = experimentName;
+	}
+	
 	public double getResponse() {
 		return response;
 	}
@@ -112,5 +133,6 @@ public class ResponseHolder {
 	public boolean isControl() {
 		return control;
 	}
+	
 	
 }

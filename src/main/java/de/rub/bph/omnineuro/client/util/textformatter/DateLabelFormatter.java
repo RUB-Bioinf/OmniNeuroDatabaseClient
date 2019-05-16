@@ -1,4 +1,4 @@
-package de.rub.bph.omnineuro.client.util;
+package de.rub.bph.omnineuro.client.util.textformatter;
 
 
 import javax.swing.*;

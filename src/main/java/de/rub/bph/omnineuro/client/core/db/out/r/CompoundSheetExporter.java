@@ -16,11 +16,11 @@ import java.util.List;
 
 public class CompoundSheetExporter extends SheetExporter {
 	
-	private long compoundID;
-	private String compoundName, compoundAbbreviation;
-	private OmniNeuroQueryExecutor queryExecutor;
-	private File outFile;
-	private boolean successful;
+	protected long compoundID;
+	protected String compoundName, compoundAbbreviation;
+	protected OmniNeuroQueryExecutor queryExecutor;
+	protected File outFile;
+	protected boolean successful;
 	
 	public CompoundSheetExporter(File targetDir, DBConnection connection, long compoundID, ArrayList<Long> responseIDs, boolean useComma) throws SQLException {
 		super(targetDir, connection, responseIDs, useComma);
@@ -39,10 +39,13 @@ public class CompoundSheetExporter extends SheetExporter {
 	
 	public StringBuilder buildCSV(ArrayList<ResponseHolder> responseHolders) {
 		StringBuilder builder = new StringBuilder();
-		builder.append(getCompoundName()).append(";");
+		builder.append("Experiment ID;");
+		builder.append(getCompoundName());
+		builder.append(";");
 		
 		ArrayList<String> allConcentrations = ResponseHolder.getUniqueConcentrations(responseHolders);
-		ArrayList<String> allEndpoints = ResponseHolder.getUniqueEndpointNamess(responseHolders);
+		ArrayList<String> allEndpoints = ResponseHolder.getUniqueEndpointNames(responseHolders);
+		ArrayList<String> allExperimentNames = ResponseHolder.getUniqueExperimentNames(responseHolders);
 		ArrayList<Integer> allTimestamps = ResponseHolder.getUniqueTimestamps(responseHolders);
 		
 		allConcentrations.sort((s, t1) -> {
@@ -52,12 +55,13 @@ public class CompoundSheetExporter extends SheetExporter {
 				
 				return Double.compare(d1, d2);
 			} catch (NumberFormatException e) {
-				Log.w("Can't compare concentrations '" + s + "' and '" + t1 + "' as numbers.");
+				Log.v("Can't compare concentrations '" + s + "' and '" + t1 + "' as numbers.");
 				return s.compareTo(t1);
 			}
 		});
 		Collections.sort(allEndpoints);
 		Collections.sort(allTimestamps);
+		Collections.sort(allExperimentNames);
 		
 		for (String e : allEndpoints) {
 			for (int t : allTimestamps) {
@@ -66,7 +70,7 @@ public class CompoundSheetExporter extends SheetExporter {
 		}
 		builder.append("\n");
 		
-		HashMap<String, HashMap<String, HashMap<Integer, ArrayList<Double>>>> holderMap = remapResponseHolders(responseHolders);
+		HashMap<String, HashMap<String, HashMap<String, HashMap<Integer, ArrayList<Double>>>>> holderMap = remapResponseHolders(responseHolders);
 		Log.v("Remapped data: " + remapResponseHolders(responseHolders));
 		
 		int concentrationIndex = 0;
@@ -80,73 +84,87 @@ public class CompoundSheetExporter extends SheetExporter {
 				concentrationCorrectSeparator = concentration.replace(",", ".");
 			}
 			
-			StringBuilder rowBuilder = new StringBuilder();
-			rowBuilder.append(concentrationCorrectSeparator).append(";");
-			
-			boolean nextReplica = true;
-			for (String endpoint : allEndpoints) {
-				for (int timestamp : allTimestamps) {
-					if (holderMap.containsKey(concentration)) {
-						HashMap<String, HashMap<Integer, ArrayList<Double>>> concentrationMap = holderMap.get(concentration);
-						if (concentrationMap.containsKey(endpoint)) {
-							HashMap<Integer, ArrayList<Double>> endpointMap = concentrationMap.get(endpoint);
-							if (endpointMap.containsKey(timestamp)) {
-								ArrayList<Double> responses = endpointMap.get(timestamp);
-								if (responses.isEmpty()) {
-									endpointMap.remove(timestamp);
-								} else {
-									Double d = responses.get(0);
-									responses.remove(d);
-									
-									String s = String.valueOf(d);
-									if (isUseComma()) {
-										s = s.replace(".", ",");
+			int experimentNameIndex = 0;
+			while (experimentNameIndex < allExperimentNames.size()) {
+				boolean nextExperiment = true;
+				StringBuilder rowBuilder = new StringBuilder();
+				
+				String experimentName = allExperimentNames.get(experimentNameIndex);
+				HashMap<String, HashMap<String, HashMap<Integer, ArrayList<Double>>>> nameMap = holderMap.get(experimentName);
+				
+				rowBuilder.append(experimentName).append(";");
+				rowBuilder.append(concentrationCorrectSeparator).append(";");
+				
+				boolean nextReplica = true;
+				for (String endpoint : allEndpoints) {
+					for (int timestamp : allTimestamps) {
+						if (nameMap.containsKey(concentration)) {
+							HashMap<String, HashMap<Integer, ArrayList<Double>>> concentrationMap = nameMap.get(concentration);
+							if (concentrationMap.containsKey(endpoint)) {
+								HashMap<Integer, ArrayList<Double>> endpointMap = concentrationMap.get(endpoint);
+								if (endpointMap.containsKey(timestamp)) {
+									ArrayList<Double> responses = endpointMap.get(timestamp);
+									if (responses.isEmpty()) {
+										endpointMap.remove(timestamp);
 									} else {
-										s = s.replace(",", ".");
+										Double d = responses.get(0);
+										responses.remove(d);
+										
+										String s = String.valueOf(d);
+										if (isUseComma()) {
+											s = s.replace(".", ",");
+										} else {
+											s = s.replace(",", ".");
+										}
+										
+										rowBuilder.append(s);
+										nextExperiment = false;
 									}
-									
-									rowBuilder.append(s);
-									nextReplica = false;
 								}
 							}
 						}
+						
+						rowBuilder.append(";");
 					}
-					
-					rowBuilder.append(";");
-					//ArrayList<Double> d = holderMap.get(concentration).get(endpoint).get(timestamp);
-					//
-					////TODO Hashmaps aufdröseln und nullchecks und dann alles in den stringwriter packen
-					//
-					//Log.i(d + "");
-					//builder.append(d.get(0));
+				}
+				
+				rowBuilder.append("\n");
+				if (nextExperiment) {
+					experimentNameIndex++;
+				} else {
+					builder.append(rowBuilder.toString());
 				}
 			}
 			
-			rowBuilder.append("\n");
-			if (nextReplica) {
-				concentrationIndex++;
-			} else {
-				builder.append(rowBuilder.toString());
-			}
+			concentrationIndex++;
+			//rowBuilder.append("\n");
+			//if (nextReplica) {
+			//	concentrationIndex++;
+			//} else {
+			//	builder.append(rowBuilder.toString());
+			//}
 		}
-		
 		return builder;
 	}
 	
 	/**
-	 * Data structure: Concentration -> Endpoint name -> Timestamp -> List of Responses
+	 * Data structure: Experiment Name -> Concentration -> Endpoint name -> Timestamp -> List of Responses
 	 */
-	public HashMap<String, HashMap<String, HashMap<Integer, ArrayList<Double>>>> remapResponseHolders(List<ResponseHolder> holders) {
-		HashMap<String, HashMap<String, HashMap<Integer, ArrayList<Double>>>> data = new HashMap<>();
+	public HashMap<String, HashMap<String, HashMap<String, HashMap<Integer, ArrayList<Double>>>>> remapResponseHolders(List<ResponseHolder> holders) {
+		HashMap<String, HashMap<String, HashMap<String, HashMap<Integer, ArrayList<Double>>>>> data = new HashMap<>();
 		
 		for (ResponseHolder holder : holders) {
 			String concentration = holder.getConcentrationDescription();
+			String name = holder.getExperimentName();
 			String endpoint = holder.getEndpointName();
 			int timestamp = holder.getTimestamp();
 			double response = holder.getResponse();
 			
-			if (!data.containsKey(concentration)) data.put(concentration, new HashMap<>());
-			HashMap<String, HashMap<Integer, ArrayList<Double>>> concentrationMap = data.get(concentration);
+			if (!data.containsKey(name)) data.put(name, new HashMap<>());
+			HashMap<String, HashMap<String, HashMap<Integer, ArrayList<Double>>>> nameMap = data.get(name);
+			
+			if (!nameMap.containsKey(concentration)) nameMap.put(concentration, new HashMap<>());
+			HashMap<String, HashMap<Integer, ArrayList<Double>>> concentrationMap = nameMap.get(concentration);
 			
 			if (!concentrationMap.containsKey(endpoint)) concentrationMap.put(endpoint, new HashMap<>());
 			HashMap<Integer, ArrayList<Double>> timestampMap = concentrationMap.get(endpoint);
@@ -155,49 +173,6 @@ public class CompoundSheetExporter extends SheetExporter {
 			ArrayList<Double> responses = timestampMap.get(timestamp);
 			responses.add(response);
 		}
-
-		/*
-		TODO implement this
-		Experimental stuff. Doesn't work yet.
-		if (clean) {
-			ArrayList<Integer> allTimestamps = ResponseHolder.getUniqueTimestamps(holders);
-			ArrayList<String> allConcentrations = ResponseHolder.getUniqueConcentrations(holders);
-			ArrayList<String> allEndpoints = ResponseHolder.getUniqueEndpointNamess(holders);
-
-			HashMap<String, ArrayList<Integer>> deleteMap = new HashMap<>();
-
-			for (String endpoint : allEndpoints) {
-				for (int timestamp : allTimestamps) {
-					boolean empty = false;
-
-					for (String concentration : allConcentrations) {
-						if (data.containsKey(concentration)) {
-							HashMap<String, HashMap<Integer, ArrayList<Double>>> concentrationMap = data.get(concentration);
-							if (concentrationMap.containsKey(endpoint)) {
-								HashMap<Integer, ArrayList<Double>> endpointMap = concentrationMap.get(endpoint);
-								if (endpointMap.containsKey(timestamp)) {
-									ArrayList<Double> responses = endpointMap.get(timestamp);
-									empty |= responses.isEmpty();
-								}
-							}
-						}
-					}
-
-					if (empty) {
-						if (!deleteMap.containsKey(endpoint)) deleteMap.put(endpoint, new ArrayList<>());
-						deleteMap.get(endpoint).add(timestamp);
-					}
-				}
-			}
-
-			for (String endpoint : deleteMap.keySet()) {
-				ArrayList<Integer> timestamps = deleteMap.get(endpoint);
-				for (String concentration : allConcentrations) {
-					data.get(concentration).get(endpoint).remove(timestamps);
-				}
-			}
-		}
-		 */
 		
 		return data;
 	}

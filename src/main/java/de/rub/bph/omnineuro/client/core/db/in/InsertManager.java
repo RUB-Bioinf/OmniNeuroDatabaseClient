@@ -91,7 +91,7 @@ public class InsertManager {
 
 		DBConnection connection = DBConnection.getDBConnection();
 		OmniNeuroQueryExecutor executor = new OmniNeuroQueryExecutor(connection.getConnection());
-		triviaList.add("Inserted into database: " + connection.getIp() + " on '" + connection.getDbName() + "' as " + connection.getUserName() + ".");
+		triviaList.add("Inserted into database: '" + connection.getIp() + "' on '" + connection.getDbName() + "' as '" + connection.getUserName() + "'.");
 		try {
 			triviaList.add("Total experiments count in the database: " + executor.selectRowCount("experiment", "id", false));
 			triviaList.add("All response values in the database: " + executor.selectRowCount("response", "value", false));
