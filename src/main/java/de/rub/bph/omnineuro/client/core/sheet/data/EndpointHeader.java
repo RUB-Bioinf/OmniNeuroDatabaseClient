@@ -7,13 +7,15 @@ public class EndpointHeader {
 	private int expectedValues;
 	private int timestamp;
 	private int rowIndex;
+	private String detectionMethod;
 	
-	public EndpointHeader(String name, int columnIndex, int expectedValues, int timestamp, int rowIndex) {
+	public EndpointHeader(String name, int columnIndex, int expectedValues, int timestamp, int rowIndex, String detectionMethod) {
 		this.name = name;
 		this.columnIndex = columnIndex;
 		this.expectedValues = expectedValues;
 		this.timestamp = timestamp;
 		this.rowIndex = rowIndex;
+		this.detectionMethod = detectionMethod;
 	}
 	
 	public int getColumnIndex() {
@@ -22,6 +24,14 @@ public class EndpointHeader {
 	
 	public void setColumnIndex(int columnIndex) {
 		this.columnIndex = columnIndex;
+	}
+	
+	public String getDetectionMethod() {
+		return detectionMethod;
+	}
+	
+	public void setDetectionMethod(String detectionMethod) {
+		this.detectionMethod = detectionMethod;
 	}
 	
 	public int getExpectedValues() {

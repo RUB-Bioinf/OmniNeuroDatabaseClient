@@ -22,23 +22,23 @@ public class ExperimentDataReaderTaskV0 extends ExperimentDataReaderTask {
 
 	@Override
 	public JSONObject readEndpointValues(EndpointHeader header) throws JSONException {
-		return readEndpointValuesContinuous(header);
+		return readEndpointValuesContinuous(header,WELL_INDEX_NOT_AVAILABLE);
 	}
 
 	@Override
 	public ArrayList<EndpointHeader> readEndpointsHeaders() throws SheetReaderException, NumberFormatException {
-		boolean amalgam;
+		boolean amalgamV0V1;
 		//Hint: Sometimes version 0 sheets may have the structure from version 1.
 		//Indicator for this: These sheets have a timestamp entry in A2
 
 		try {
 			String v1Indicator = getValueAt("A2", false);
-			amalgam = v1Indicator.equals("Timepoint");
+			amalgamV0V1 = v1Indicator.equals("Timepoint");
 		} catch (Throwable e) {
-			amalgam = false;
+			amalgamV0V1 = false;
 		}
 
-		if (amalgam) {
+		if (amalgamV0V1) {
 			Log.i(getFileName() + " is a version 0 and version 1 amalgam! Calculating amalgam headers.");
 			try {
 				return new DataReaderCompat(workbook, sourceFile, 1).getExperimentDataTask().readEndpointsHeaders();
@@ -46,7 +46,6 @@ public class ExperimentDataReaderTaskV0 extends ExperimentDataReaderTask {
 				Log.e("Failed to generate header amalgam info for experiment: " + getFileName(), e);
 			}
 		}
-
 
 		Log.i("Reading endpoints.");
 		ArrayList<EndpointHeader> headers = new ArrayList<>();
@@ -77,7 +76,7 @@ public class ExperimentDataReaderTaskV0 extends ExperimentDataReaderTask {
 				throw new SheetReaderException("Endpoint lookup error! The lookup table [Expected location: " + timestampLookupManager.getDataFile().getAbsolutePath() + "] does not contain information for endpoint '" + endpointName + "' in sheet " + getFileName() + "!");
 			}
 
-			EndpointHeader header = new EndpointHeader(timestampLookupManager.getName(endpointName), i, expectedValues, timestampLookupManager.getTimestamp(endpointName), 3);
+			EndpointHeader header = new EndpointHeader(timestampLookupManager.getName(endpointName), i, expectedValues, timestampLookupManager.getTimestamp(endpointName), 3,null);
 			Log.i("Header added: " + header);
 			headers.add(header);
 		}

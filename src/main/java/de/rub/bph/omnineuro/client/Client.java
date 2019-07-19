@@ -80,7 +80,7 @@ public class Client {
 		String s = ("\n\n" + message).trim();
 		showErrorMessage(
 				"An internal SQL Exception occurred.\n" + s + "\n\n" + e.getMessage()
-						+ "\n\nIf this message keeps occurred check your network connection and / or consult your system admin.",
+						+ "\n\nIf this message keeps occurring check your network connection and / or consult your system admin.",
 				parent);
 	}
 	

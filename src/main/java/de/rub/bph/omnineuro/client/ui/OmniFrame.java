@@ -89,6 +89,8 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 	}
 	
 	public void startImport() {
+		Log.i("Start import pressed.");
+		
 		if (!testDBConnection(true)) {
 			Client.showErrorMessage("Failed to connect to the database.\nPlease run diagnostics and try again.\nCan't import anything to the DB if a connection can't be established.", this);
 			return;
@@ -290,6 +292,8 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 			new OmniNeuroQueryExecutor(connection.getConnection()).resetDatabase();
 		} catch (SQLException e) {
 			Log.e(e);
+			Client.showSQLErrorMessage(e,this);
+			return;
 		}
 		Log.i("Finished DB reset. Did it work?");
 		Client.showInfoMessage("All experiments and responses have been deleted from the database. Certain project specific meta data is untouched.", this);

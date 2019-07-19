@@ -25,6 +25,10 @@ public class OmniNeuroQueryExecutor extends QueryExecutor {
 		return execute("INSERT INTO comment VALUES (DEFAULT, '" + text + "'," + experimentID + ");");
 	}
 	
+	public synchronized boolean insertWell(String name) throws SQLException {
+		return execute("INSERT INTO well VALUES (DEFAULT, '" + name + "');");
+	}
+	
 	public synchronized boolean insertExperiment(long id, long timestamp, String name, long projectID, long labID, long individualID, long compoundID, long cellTypeID, long assayID, long plateFormatID) throws SQLException {
 		return execute("INSERT INTO experiment VALUES (" + id + "," + timestamp + ",'" + name + "'," + projectID +
 				"," + labID + "," + individualID + "," + compoundID + "," + cellTypeID + "," + assayID + "," + plateFormatID + ");");
@@ -40,18 +44,21 @@ public class OmniNeuroQueryExecutor extends QueryExecutor {
 		b &= deleteTable("response", true);
 		b &= deleteTable("concentration", true);
 		b &= deleteTable("experiment", true);
+		b &= deleteTable("well", true);
 		b &= deleteBlindedCompounds();
+		
+		b &= insertWell("Unknown");
 		
 		return b;
 	}
 	
-	public synchronized boolean insertResponse(double value, int timestamp, long endpointID, long concentrationID, long experimentID) throws SQLException {
-		long outlierTypeID = getIDViaName("outlier_type", "Unchecked");
-		return insertResponse(value, timestamp, endpointID, concentrationID, experimentID, outlierTypeID);
-	}
+	//public synchronized boolean insertResponse(double value, int timestamp, long endpointID, long concentrationID, long experimentID,long wellID) throws SQLException {
+	//	long outlierTypeID = getIDViaName("outlier_type", "Unchecked");
+	//	return insertResponse(value, timestamp, endpointID, concentrationID, experimentID, outlierTypeID,wellID);
+	//}
 	
-	public synchronized boolean insertResponse(double value, int timestamp, long endpointID, long concentrationID, long experimentID, long outlierTypeID) throws SQLException {
-		return execute("INSERT INTO response VALUES (DEFAULT, " + value + "," + timestamp + "," + endpointID + "," + concentrationID + "," + experimentID + "," + outlierTypeID + ");");
+	public synchronized boolean insertResponse(double value, int timestamp, long endpointID, long concentrationID, long experimentID, long wellID,long outlierTypeID,long detectionMethodID) throws SQLException {
+		return execute("INSERT INTO response VALUES (DEFAULT, " + value + "," + timestamp + "," + endpointID + "," + concentrationID + "," + experimentID + "," + outlierTypeID + "," + wellID + "," + detectionMethodID + ");");
 	}
 	
 	public synchronized long insertConcentration(double value) throws SQLException {
