@@ -15,6 +15,8 @@
 /cache/
 /json/
 /data/hash/
+/.gradle/*
+/.gradle
 
 \sheets\*
 
@@ -133,3 +135,5 @@ local.properties
 .cache-main
 .scala_dependencies
 .worksheet
+/.gradle/
+/.idea/modules/bioinf.gradle-OmniNeuroDBC.iml

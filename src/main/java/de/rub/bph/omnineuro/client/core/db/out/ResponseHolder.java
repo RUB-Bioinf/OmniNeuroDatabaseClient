@@ -14,6 +14,7 @@ public class ResponseHolder {
 	private long endpointID;
 	private String endpointName;
 	private String experimentName;
+	private String well;
 	private double concentration;
 	private String concentrationDescription;
 	private double response;
@@ -36,6 +37,9 @@ public class ResponseHolder {
 		long concentrationID = resultSet.getLong("concentration_id");
 		concentration = Double.parseDouble(queryExecutor.getFeatureViaID("concentration", "value", concentrationID));
 		endpointName = queryExecutor.getNameViaID("endpoint", endpointID);
+		
+		long wellID = resultSet.getLong("well_id");
+		well = queryExecutor.getNameViaID("well", wellID);
 		
 		control = concentration == 0;
 		if (control) {
@@ -61,6 +65,15 @@ public class ResponseHolder {
 		ArrayList<String> list = new ArrayList<>();
 		for (ResponseHolder h : holders) {
 			String s = h.getExperimentName();
+			if (!list.contains(s)) list.add(s);
+		}
+		return list;
+	}
+	
+	public static ArrayList<String> getUniqueWells(List<ResponseHolder> holders) {
+		ArrayList<String> list = new ArrayList<>();
+		for (ResponseHolder h : holders) {
+			String s = h.getWell();
 			if (!list.contains(s)) list.add(s);
 		}
 		return list;
@@ -95,7 +108,7 @@ public class ResponseHolder {
 	
 	@Override
 	public String toString() {
-		return "Response handler for " + getConcentrationDescription() + " [Control status: " + isControl() + "], endpoint: " + getEndpointName() + " at " + getTimestamp() + "h. Response value: " + getResponse();
+		return "Response handler for " + getConcentrationDescription() + " [Control status: " + isControl() + "], endpoint: " + getEndpointName() + " at " + getTimestamp() + "h from well "+getWell()+". Response value: " + getResponse();
 	}
 	
 	public double getConcentration() {
@@ -130,9 +143,11 @@ public class ResponseHolder {
 		return timestamp;
 	}
 	
+	public String getWell() {
+		return well;
+	}
+	
 	public boolean isControl() {
 		return control;
 	}
-	
-	
 }

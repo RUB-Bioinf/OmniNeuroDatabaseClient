@@ -41,12 +41,13 @@ public class CompoundSheetExporter extends SheetExporter {
 		StringBuilder builder = new StringBuilder();
 		builder.append("Experiment ID;");
 		builder.append(getCompoundName());
-		builder.append(";");
+		builder.append(";Well;");
 		
 		ArrayList<String> allConcentrations = ResponseHolder.getUniqueConcentrations(responseHolders);
 		ArrayList<String> allEndpoints = ResponseHolder.getUniqueEndpointNames(responseHolders);
 		ArrayList<String> allExperimentNames = ResponseHolder.getUniqueExperimentNames(responseHolders);
 		ArrayList<Integer> allTimestamps = ResponseHolder.getUniqueTimestamps(responseHolders);
+		ArrayList<String> allWells = ResponseHolder.getUniqueWells(responseHolders);
 		
 		allConcentrations.sort((s, t1) -> {
 			try {
@@ -62,6 +63,7 @@ public class CompoundSheetExporter extends SheetExporter {
 		Collections.sort(allEndpoints);
 		Collections.sort(allTimestamps);
 		Collections.sort(allExperimentNames);
+		Collections.sort(allWells);
 		
 		for (String e : allEndpoints) {
 			for (int t : allTimestamps) {
@@ -70,104 +72,109 @@ public class CompoundSheetExporter extends SheetExporter {
 		}
 		builder.append("\n");
 		
-		HashMap<String, HashMap<String, HashMap<String, HashMap<Integer, ArrayList<Double>>>>> holderMap = remapResponseHolders(responseHolders);
-		Log.v("Remapped data: " + remapResponseHolders(responseHolders));
+		HashMap<String, HashMap<String, HashMap<String, HashMap<String, HashMap<Integer, ArrayList<Double>>>>>> holderMap = remapResponseHolders(responseHolders);
+		Log.v("Remapped data: " + holderMap);
 		
-		int concentrationIndex = 0;
-		while (concentrationIndex < allConcentrations.size()) {
-			String concentration = allConcentrations.get(concentrationIndex);
-			
-			String concentrationCorrectSeparator;
-			if (isUseComma()) {
-				concentrationCorrectSeparator = concentration.replace(".", ",");
-			} else {
-				concentrationCorrectSeparator = concentration.replace(",", ".");
-			}
-			
-			int experimentNameIndex = 0;
-			while (experimentNameIndex < allExperimentNames.size()) {
-				boolean nextExperiment = true;
-				StringBuilder rowBuilder = new StringBuilder();
+		for (String well : allWells) {
+			int concentrationIndex = 0;
+			while (concentrationIndex < allConcentrations.size()) {
+				String concentration = allConcentrations.get(concentrationIndex);
 				
-				String experimentName = allExperimentNames.get(experimentNameIndex);
-				HashMap<String, HashMap<String, HashMap<Integer, ArrayList<Double>>>> nameMap = holderMap.get(experimentName);
+				String concentrationCorrectSeparator;
+				if (isUseComma()) {
+					concentrationCorrectSeparator = concentration.replace(".", ",");
+				} else {
+					concentrationCorrectSeparator = concentration.replace(",", ".");
+				}
 				
-				rowBuilder.append(experimentName).append(";");
-				rowBuilder.append(concentrationCorrectSeparator).append(";");
-				
-				boolean nextReplica = true;
-				for (String endpoint : allEndpoints) {
-					for (int timestamp : allTimestamps) {
-						if (nameMap.containsKey(concentration)) {
-							HashMap<String, HashMap<Integer, ArrayList<Double>>> concentrationMap = nameMap.get(concentration);
-							if (concentrationMap.containsKey(endpoint)) {
-								HashMap<Integer, ArrayList<Double>> endpointMap = concentrationMap.get(endpoint);
-								if (endpointMap.containsKey(timestamp)) {
-									ArrayList<Double> responses = endpointMap.get(timestamp);
-									if (responses.isEmpty()) {
-										endpointMap.remove(timestamp);
-									} else {
-										Double d = responses.get(0);
-										responses.remove(d);
+				int experimentNameIndex = 0;
+				while (experimentNameIndex < allExperimentNames.size()) {
+					boolean nextExperiment = true;
+					StringBuilder rowBuilder = new StringBuilder();
+					
+					String experimentName = allExperimentNames.get(experimentNameIndex);
+					HashMap<String, HashMap<String, HashMap<String, HashMap<Integer, ArrayList<Double>>>>> nameMap = holderMap.get(experimentName);
+					
+					rowBuilder.append(experimentName).append(";");
+					rowBuilder.append(concentrationCorrectSeparator).append(";");
+					rowBuilder.append(well).append(";");
+					
+					for (String endpoint : allEndpoints) {
+						for (int timestamp : allTimestamps) {
+							if (nameMap.containsKey(concentration)) {
+								HashMap<String, HashMap<String, HashMap<Integer, ArrayList<Double>>>> concentrationMap = nameMap.get(concentration);
+								if (concentrationMap.containsKey(well)) {
+									
+									HashMap<String, HashMap<Integer, ArrayList<Double>>> wellMap = concentrationMap.get(well);
+									if (wellMap.containsKey(endpoint)) {
 										
-										String s = String.valueOf(d);
-										if (isUseComma()) {
-											s = s.replace(".", ",");
-										} else {
-											s = s.replace(",", ".");
+										HashMap<Integer, ArrayList<Double>> endpointMap = wellMap.get(endpoint);
+										if (endpointMap.containsKey(timestamp)) {
+											ArrayList<Double> responses = endpointMap.get(timestamp);
+											if (responses.isEmpty()) {
+												endpointMap.remove(timestamp);
+											} else {
+												Double d = responses.get(0);
+												responses.remove(d);
+												
+												String s = String.valueOf(d);
+												if (isUseComma()) {
+													s = s.replace(".", ",");
+												} else {
+													s = s.replace(",", ".");
+												}
+												
+												rowBuilder.append(s);
+												nextExperiment = false;
+											}
 										}
-										
-										rowBuilder.append(s);
-										nextExperiment = false;
 									}
 								}
 							}
+							
+							rowBuilder.append(";");
 						}
-						
-						rowBuilder.append(";");
+					}
+					
+					rowBuilder.append("\n");
+					if (nextExperiment) {
+						experimentNameIndex++;
+					} else {
+						builder.append(rowBuilder.toString());
 					}
 				}
 				
-				rowBuilder.append("\n");
-				if (nextExperiment) {
-					experimentNameIndex++;
-				} else {
-					builder.append(rowBuilder.toString());
-				}
+				concentrationIndex++;
 			}
-			
-			concentrationIndex++;
-			//rowBuilder.append("\n");
-			//if (nextReplica) {
-			//	concentrationIndex++;
-			//} else {
-			//	builder.append(rowBuilder.toString());
-			//}
 		}
 		return builder;
 	}
 	
 	/**
-	 * Data structure: Experiment Name -> Concentration -> Endpoint name -> Timestamp -> List of Responses
+	 * Data structure: Experiment Name -> Concentration -> Well -> Endpoint name -> Timestamp -> List of Responses
 	 */
-	public HashMap<String, HashMap<String, HashMap<String, HashMap<Integer, ArrayList<Double>>>>> remapResponseHolders(List<ResponseHolder> holders) {
-		HashMap<String, HashMap<String, HashMap<String, HashMap<Integer, ArrayList<Double>>>>> data = new HashMap<>();
+	public HashMap<String, HashMap<String, HashMap<String, HashMap<String, HashMap<Integer, ArrayList<Double>>>>>> remapResponseHolders(List<ResponseHolder> holders) {
+		HashMap<String, HashMap<String, HashMap<String, HashMap<String, HashMap<Integer, ArrayList<Double>>>>>> data = new HashMap<>();
 		
 		for (ResponseHolder holder : holders) {
 			String concentration = holder.getConcentrationDescription();
 			String name = holder.getExperimentName();
 			String endpoint = holder.getEndpointName();
+			String well = holder.getWell();
 			int timestamp = holder.getTimestamp();
 			double response = holder.getResponse();
 			
 			if (!data.containsKey(name)) data.put(name, new HashMap<>());
-			HashMap<String, HashMap<String, HashMap<Integer, ArrayList<Double>>>> nameMap = data.get(name);
+			HashMap<String, HashMap<String, HashMap<String, HashMap<Integer, ArrayList<Double>>>>> nameMap = data.get(name);
 			
 			if (!nameMap.containsKey(concentration)) nameMap.put(concentration, new HashMap<>());
-			HashMap<String, HashMap<Integer, ArrayList<Double>>> concentrationMap = nameMap.get(concentration);
+			HashMap<String, HashMap<String, HashMap<Integer, ArrayList<Double>>>> concentrationMap = nameMap.get(concentration);
 			
-			if (!concentrationMap.containsKey(endpoint)) concentrationMap.put(endpoint, new HashMap<>());
-			HashMap<Integer, ArrayList<Double>> timestampMap = concentrationMap.get(endpoint);
+			if (!concentrationMap.containsKey(well)) concentrationMap.put(well, new HashMap<>());
+			HashMap<String, HashMap<Integer, ArrayList<Double>>> wellMap = concentrationMap.get(well);
+			
+			if (!wellMap.containsKey(endpoint)) wellMap.put(endpoint, new HashMap<>());
+			HashMap<Integer, ArrayList<Double>> timestampMap = wellMap.get(endpoint);
 			
 			if (!timestampMap.containsKey(timestamp)) timestampMap.put(timestamp, new ArrayList<>());
 			ArrayList<Double> responses = timestampMap.get(timestamp);
