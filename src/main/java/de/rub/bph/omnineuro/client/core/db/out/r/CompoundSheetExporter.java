@@ -13,9 +13,12 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class CompoundSheetExporter extends SheetExporter {
 	
+	public static final String WELL_REGEX = "([A-Z]+)(\\d+)";
 	protected long compoundID;
 	protected String compoundName, compoundAbbreviation;
 	protected OmniNeuroQueryExecutor queryExecutor;
@@ -60,10 +63,30 @@ public class CompoundSheetExporter extends SheetExporter {
 				return s.compareTo(t1);
 			}
 		});
+		allWells.sort((well1, well2) -> {
+			Pattern p = Pattern.compile(WELL_REGEX);
+			Matcher m1 = p.matcher(well1);
+			Matcher m2 = p.matcher(well2);
+			
+			if (m1.matches() && m2.matches()) {
+				String part1 = m1.group(1);
+				String part2 = m2.group(1);
+				
+				int value1 = Integer.parseInt(m1.group(2));
+				int value2 = Integer.parseInt(m2.group(2));
+				
+				if (part1.equals(part2)) {
+					return Integer.compare(value1, value2);
+				}
+				return part1.compareTo(part2);
+			} else {
+				Log.w("Failed to apply well regex ['" + WELL_REGEX + "'] to '" + well1 + "' and '" + well2 + "'!");
+				return well1.compareTo(well2);
+			}
+		});
 		Collections.sort(allEndpoints);
 		Collections.sort(allTimestamps);
 		Collections.sort(allExperimentNames);
-		Collections.sort(allWells);
 		
 		for (String e : allEndpoints) {
 			for (int t : allTimestamps) {
@@ -75,29 +98,30 @@ public class CompoundSheetExporter extends SheetExporter {
 		HashMap<String, HashMap<String, HashMap<String, HashMap<String, HashMap<Integer, ArrayList<Double>>>>>> holderMap = remapResponseHolders(responseHolders);
 		Log.v("Remapped data: " + holderMap);
 		
-		for (String well : allWells) {
-			int concentrationIndex = 0;
-			while (concentrationIndex < allConcentrations.size()) {
-				String concentration = allConcentrations.get(concentrationIndex);
+		int concentrationIndex = 0;
+		while (concentrationIndex < allConcentrations.size()) {
+			String concentration = allConcentrations.get(concentrationIndex);
+			
+			String concentrationCorrectSeparator;
+			if (isUseComma()) {
+				concentrationCorrectSeparator = concentration.replace(".", ",");
+			} else {
+				concentrationCorrectSeparator = concentration.replace(",", ".");
+			}
+			
+			int experimentNameIndex = 0;
+			while (experimentNameIndex < allExperimentNames.size()) {
+				boolean nextExperiment = true;
 				
-				String concentrationCorrectSeparator;
-				if (isUseComma()) {
-					concentrationCorrectSeparator = concentration.replace(".", ",");
-				} else {
-					concentrationCorrectSeparator = concentration.replace(",", ".");
-				}
-				
-				int experimentNameIndex = 0;
-				while (experimentNameIndex < allExperimentNames.size()) {
-					boolean nextExperiment = true;
-					StringBuilder rowBuilder = new StringBuilder();
-					
-					String experimentName = allExperimentNames.get(experimentNameIndex);
+				String experimentName = allExperimentNames.get(experimentNameIndex);
+				for (String well : allWells) {
 					HashMap<String, HashMap<String, HashMap<String, HashMap<Integer, ArrayList<Double>>>>> nameMap = holderMap.get(experimentName);
 					
+					StringBuilder rowBuilder = new StringBuilder();
 					rowBuilder.append(experimentName).append(";");
 					rowBuilder.append(concentrationCorrectSeparator).append(";");
 					rowBuilder.append(well).append(";");
+					boolean valuesAdded = false;
 					
 					for (String endpoint : allEndpoints) {
 						for (int timestamp : allTimestamps) {
@@ -126,6 +150,7 @@ public class CompoundSheetExporter extends SheetExporter {
 												
 												rowBuilder.append(s);
 												nextExperiment = false;
+												valuesAdded = true;
 											}
 										}
 									}
@@ -136,16 +161,17 @@ public class CompoundSheetExporter extends SheetExporter {
 						}
 					}
 					
-					rowBuilder.append("\n");
-					if (nextExperiment) {
-						experimentNameIndex++;
-					} else {
+					if (valuesAdded) {
+						rowBuilder.append("\n");
 						builder.append(rowBuilder.toString());
 					}
 				}
 				
-				concentrationIndex++;
+				if (nextExperiment) {
+					experimentNameIndex++;
+				}
 			}
+			concentrationIndex++;
 		}
 		return builder;
 	}
