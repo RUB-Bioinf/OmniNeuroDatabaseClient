@@ -150,7 +150,7 @@ public class JSONInserter extends JSONOperator implements Runnable {
 			try {
 				compoundID = executor.getIDViaName("compound", compound);
 			} catch (Throwable e) {
-				if (compound.equals("?") || compound.equals(casNR) ) {
+				if (compound.equals("?") || compound.equals(casNR)) {
 					Log.i("It is assumed that '" + casNR + "' is a blinded compound. It's not yet present in the database. Fetching it!");
 					
 					synchronized (executor) {
@@ -223,6 +223,14 @@ public class JSONInserter extends JSONOperator implements Runnable {
 					} else {
 						controlID = executor.getIDViaName("control", "No control");
 						double d = Double.parseDouble(concentration);
+						
+						if (d == 0) {
+							addError("A concentration for endpoint " + endpoint + " at " + timestamp + "h is zero, but this is not a control.");
+						}
+						if (d < 0) {
+							addError("The concentration for endpoint " + endpoint + " at " + timestamp + "h is negative!");
+						}
+						
 						concentrationID = executor.insertConcentration(d);
 					}
 					
@@ -240,13 +248,15 @@ public class JSONInserter extends JSONOperator implements Runnable {
 						
 						long wellID = wellNotAvailableID;
 						if (response.has("well")) {
-							String well = response.getString("well");
-							try {
-								wellID = executor.getIDViaName("well", well);
-							} catch (Throwable e2) {
-								Log.i("Failed to fetch well '" + well + "' from the DB. Inserting it instead!");
-								executor.insertWell(well);
-								wellID = executor.getIDViaName("well", well);
+							synchronized (executor) {
+								String well = response.getString("well");
+								try {
+									wellID = executor.getIDViaName("well", well);
+								} catch (Throwable e2) {
+									Log.i("Failed to fetch well '" + well + "' from the DB. Inserting it instead!");
+									executor.insertWell(well);
+									wellID = executor.getIDViaName("well", well);
+								}
 							}
 						}
 						

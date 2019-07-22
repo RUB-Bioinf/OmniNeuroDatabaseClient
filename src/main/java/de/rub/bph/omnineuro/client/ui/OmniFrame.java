@@ -33,6 +33,7 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 	public static final int DEFAULT_LIMITER_HASH_LENGTH = 6;
 	public static final String OUT_DIR_NAME_INSERTER = "inserts";
 	public static final String OUT_DIR_NAME_STATISTICS = "statistics";
+	public static final String OUT_FILE_NAME_ERRORS = "errors.txt";
 	private JPanel rootPanel;
 	private DBCredentialsPanel DBCredentialsPanel;
 	private JButton button1;
@@ -209,6 +210,7 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 	
 	public void requestExport() {
 		long startTime = new Date().getTime();
+		FileManager fileManager = new FileManager();
 		ExportConfigManager configManager = ExportConfigManager.getInstance();
 		boolean useComma = commaCB.isSelected();
 		
@@ -264,9 +266,21 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 		SheetExporterCompatManager compatManager = new SheetExporterCompatManager(threads, dir, limitedResponseIDs, useComma);
 		compatManager.export();
 		
+		int taskCount = compatManager.getTaskCount();
+		ArrayList<String> errors = compatManager.getErrors();
+		File outDir = compatManager.getSourceDir();
+		outDir.mkdirs();
+		outDir = new File(outDir, OUT_DIR_NAME_STATISTICS);
+		
+		try {
+			fileManager.saveListFile(errors, new File(outDir, OUT_FILE_NAME_ERRORS), true);
+		} catch (IOException e) {
+			Client.showErrorMessage("Failed to save errors to file!", this, e);
+		}
+		
 		long duration = new Date().getTime() - startTime;
 		String formattedTimeTaken = NumberUtils.convertSecondsToHMmSs(duration);
-		Client.showInfoMessage("Job done. Execution time: " + formattedTimeTaken + "\n\nDetailed export reports will be shown here, but only in a later version.", this);
+		Client.showInfoMessage("Job done. Execution time: " + formattedTimeTaken + "\n\nErrors: " + errors.size() + " in " + taskCount + " sheets.", this);
 	}
 	
 	public void resetDatabase() {
@@ -292,7 +306,7 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 			new OmniNeuroQueryExecutor(connection.getConnection()).resetDatabase();
 		} catch (SQLException e) {
 			Log.e(e);
-			Client.showSQLErrorMessage(e,this);
+			Client.showSQLErrorMessage(e, this);
 			return;
 		}
 		Log.i("Finished DB reset. Did it work?");

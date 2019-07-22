@@ -31,6 +31,7 @@ public class SheetExporterCompatManager extends ConcurrentExecutionManager {
 	private ArrayList<Long> responseIDs;
 	private JSONObject config;
 	private boolean useComma;
+	private ArrayList<CompoundSheetExporter> exporters;
 	
 	public SheetExporterCompatManager(int threads, File sourceDir, ArrayList<Long> responseIDs, boolean useComma) {
 		super(threads);
@@ -69,7 +70,7 @@ public class SheetExporterCompatManager extends ConcurrentExecutionManager {
 		//TODO distinguish parameters here and add via sub functions?
 		
 		try {
-			exportCompoundSheet();
+			exporters = exportCompoundSheet();
 		} catch (Throwable e) {
 			Log.e(e);
 			Client.showErrorMessage("Failed to export experiment data!\nA more detailed message will be displayed in the future.", null, e);
@@ -78,7 +79,7 @@ public class SheetExporterCompatManager extends ConcurrentExecutionManager {
 		waitForTasks();
 	}
 	
-	public void exportCompoundSheet() throws SQLException { //TODO restrictive Params here?
+	public ArrayList<CompoundSheetExporter> exportCompoundSheet() throws SQLException { //TODO restrictive Params here?
 		ArrayList<Long> compoundIDs = queryExecutor.getIDs("compound");
 		ArrayList<Long> retainedCompoundIDs = new ArrayList<>();
 		HashMap<Long, ArrayList<Long>> compoundResponseMap = new HashMap<>();
@@ -103,30 +104,42 @@ public class SheetExporterCompatManager extends ConcurrentExecutionManager {
 					" this error should not be reached. If so, this is a really severe error where data has been lost!");
 		}
 		
-		/*
-		for (long id : responseIDs) {
-			String s = queryExecutor.getFeatureViaID("experiment", "compound_id", id);
-			if (s != null) {
-				Long compoundID = Long.valueOf(s);
-				if (!compoundIDs.contains(compoundID)) {
-					compoundIDs.add(compoundID);
-					compoundExperimentMap.put(compoundID, new ArrayList<>());
-				}
-				compoundExperimentMap.get(compoundID).add(id);
-			} else {
-				Log.w("Experiment ID " + id + " does not have a compound ID!");
-			}
-		}
-		Log.i("There are " + compoundIDs.size() + " derived compound IDs matching the user's preferred experiments.");
-		 */
-		
 		File targetDir = new File(sourceDir, EXPORT_DIRNAME_COMPOUNDS);
 		targetDir.mkdirs();
 		
+		ArrayList<CompoundSheetExporter> exporterList = new ArrayList<>();
 		for (Long id : retainedCompoundIDs) {
 			Log.i("I am working with this compound id " + id + ". Name: " + queryExecutor.getNameViaID("compound", id));
-			service.submit(new CompoundSheetExporter(targetDir, connection, id, compoundResponseMap.get(id), useComma));
+			
+			CompoundSheetExporter exporter = new CompoundSheetExporter(targetDir, connection, id, compoundResponseMap.get(id), useComma);
+			exporterList.add(exporter);
+			service.submit(exporter);
 		}
+		
+		return exporterList;
 	}
 	
+	public ArrayList<String> getErrors() {
+		ArrayList<String> tempList = new ArrayList<>();
+		for (CompoundSheetExporter exporter : exporters) {
+			tempList.addAll(exporter.getErrors());
+		}
+		return tempList;
+	}
+	
+	public int getTaskCount() {
+		return exporters.size();
+	}
+	
+	public File getSourceDir() {
+		return sourceDir;
+	}
+	
+	public ArrayList<Long> getResponseIDs() {
+		return responseIDs;
+	}
+	
+	public boolean isUseComma() {
+		return useComma;
+	}
 }

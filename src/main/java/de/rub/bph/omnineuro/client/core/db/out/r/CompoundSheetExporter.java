@@ -53,6 +53,9 @@ public class CompoundSheetExporter extends SheetExporter {
 		ArrayList<String> allWells = ResponseHolder.getUniqueWells(responseHolders);
 		
 		allConcentrations.sort((s, t1) -> {
+			if (s == null) s = "<Null>";
+			if (t1 == null) t1 = "<Null>";
+			
 			try {
 				double d1 = Double.parseDouble(s);
 				double d2 = Double.parseDouble(t1);
@@ -89,10 +92,15 @@ public class CompoundSheetExporter extends SheetExporter {
 		Collections.sort(allExperimentNames);
 		
 		for (String e : allEndpoints) {
+			e = e.replace("Viabillity","Viability");
+			
 			for (int t : allTimestamps) {
 				builder.append(e).append(" [").append(t).append("h];");
 			}
 		}
+		String firstRow = builder.toString();
+		firstRow = firstRow.substring(0, firstRow.length() - 1);
+		builder = new StringBuilder(firstRow);
 		builder.append("\n");
 		
 		HashMap<String, HashMap<String, HashMap<String, HashMap<String, HashMap<Integer, ArrayList<Double>>>>>> holderMap = remapResponseHolders(responseHolders);
@@ -101,6 +109,11 @@ public class CompoundSheetExporter extends SheetExporter {
 		int concentrationIndex = 0;
 		while (concentrationIndex < allConcentrations.size()) {
 			String concentration = allConcentrations.get(concentrationIndex);
+			if (concentration == null) {
+				addError("A Concentration is null for " + getCompoundName() + "! Index: " + concentrationIndex + ". All concentrations: " + allConcentrations);
+				concentrationIndex++;
+				continue;
+			}
 			
 			String concentrationCorrectSeparator;
 			if (isUseComma()) {
@@ -162,8 +175,12 @@ public class CompoundSheetExporter extends SheetExporter {
 					}
 					
 					if (valuesAdded) {
-						rowBuilder.append("\n");
-						builder.append(rowBuilder.toString());
+						String row = rowBuilder.toString();
+						if (row.endsWith(";")) {
+							row = row.substring(0, row.length() - 1);
+						}
+						row = row + "\n";
+						builder.append(row);
 					}
 				}
 				
@@ -236,8 +253,8 @@ public class CompoundSheetExporter extends SheetExporter {
 			
 			successful = true;
 		} catch (Throwable e) {
-			Log.e("Failed to create " + getCompoundAbbreviation() + " ['" + getCompoundName() + "'] export file because of an " + e.getClass().getSimpleName() + "-Error!", e);
-			errorList.add(e.getMessage());
+			addError("Failed to create " + getCompoundAbbreviation() + " ['" + getCompoundName() + "'] export file because of an " + e.getClass().getSimpleName() + "-Error!");
+			Log.e(e);
 		}
 	}
 	

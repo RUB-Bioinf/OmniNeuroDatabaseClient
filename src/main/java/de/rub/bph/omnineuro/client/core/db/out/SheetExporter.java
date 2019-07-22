@@ -1,6 +1,7 @@
 package de.rub.bph.omnineuro.client.core.db.out;
 
 import de.rub.bph.omnineuro.client.core.db.DBConnection;
+import de.rub.bph.omnineuro.client.imported.log.Log;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -40,6 +41,11 @@ public abstract class SheetExporter implements Runnable {
 	
 	public boolean isUseComma() {
 		return useComma;
+	}
+	
+	protected void addError(String error){
+		errorList.add(error);
+		Log.e(error);
 	}
 	
 }
