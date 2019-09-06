@@ -73,8 +73,9 @@ public abstract class ExperimentDataReaderTask extends SheetReaderTask {
 				
 				try {
 					String stringValue = getValueAt(cell, false);
+					stringValue = stringValue.trim();
 					Log.i("Testing for String value. If that's a blank string then it's confirmed that here's a missing value! Criteria: " + stringValue);
-					if (stringValue.equals("")) {
+					if (stringValue.equals("") || stringValue.equals("No Sphere") || stringValue.equals("wrong migration")) {
 						value = "NaN";
 					}
 				} catch (SheetReaderException e) {

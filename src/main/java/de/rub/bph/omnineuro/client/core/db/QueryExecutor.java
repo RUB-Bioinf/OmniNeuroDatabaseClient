@@ -19,6 +19,15 @@ public class QueryExecutor {
 	}
 	
 	public synchronized ResultSet executeQuery(String query) throws SQLException {
+		synchronized (connection) {
+			if (connection.isClosed()) {
+				Log.w("Connection closed unexpectedly! Reconnecting...");
+				DBConnection c = DBConnection.getDBConnection();
+				c.reconnect();
+				this.connection = c.getConnection();
+			}
+		}
+		
 		Statement stmt = connection.createStatement();
 		
 		if (isLogEnabled()) {

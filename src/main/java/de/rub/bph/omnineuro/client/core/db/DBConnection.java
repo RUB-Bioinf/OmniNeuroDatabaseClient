@@ -38,6 +38,10 @@ public class DBConnection {
 		return connection;
 	}
 	
+	public void reconnect(){
+		myConnection = new DBConnection();
+	}
+	
 	public String getURI(String ip, String port, String dbName) {
 		return POTGRESQL_JDBC_URI_BASE + ip + ":" + port + "/" + dbName;
 	}
