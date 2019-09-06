@@ -2,6 +2,8 @@ package de.rub.bph.omnineuro.client.core.sheet.reader.versions;
 
 import de.rub.bph.omnineuro.client.core.sheet.reader.ExperimentDataReaderTask;
 import de.rub.bph.omnineuro.client.core.sheet.reader.MetaDataReaderTask;
+import de.rub.bph.omnineuro.client.core.sheet.reader.versions.experiment.ExperimentDataReaderTaskV0;
+import de.rub.bph.omnineuro.client.core.sheet.reader.versions.experiment.ExperimentDataReaderTaskV1;
 import de.rub.bph.omnineuro.client.core.sheet.reader.versions.experiment.ExperimentDataReaderTaskV2;
 import de.rub.bph.omnineuro.client.core.sheet.reader.versions.meta.MetaDataReaderTaskV0;
 import de.rub.bph.omnineuro.client.core.sheet.reader.versions.meta.MetaDataReaderTaskV1;
@@ -52,11 +54,12 @@ public class DataReaderCompat {
 				Log.e("Fatal error while reading the sheet version.");
 				return null;
 			case 0:
-				return new ExperimentDataReaderTaskV2(workbook, EXCEL_SHEET_SUBNAME_EXPERIMENT_DATA, sourceFile);
+				return new ExperimentDataReaderTaskV0(workbook, EXCEL_SHEET_SUBNAME_EXPERIMENT_DATA, sourceFile);
 			case 1:
-				return new ExperimentDataReaderTaskV2(workbook, EXCEL_SHEET_SUBNAME_EXPERIMENT_DATA, sourceFile);
+				return new ExperimentDataReaderTaskV1(workbook, EXCEL_SHEET_SUBNAME_EXPERIMENT_DATA, sourceFile);
 			case 2:
 				return new ExperimentDataReaderTaskV2(workbook, EXCEL_SHEET_SUBNAME_EXPERIMENT_DATA, sourceFile);
+				//TODO Use DataReaderTasks, other than forcing Task V2 on all versions
 			default:
 				Log.e("Sheet version read as " + getVersion() + ", but don't know how to handle it for experiment compat reader.");
 				return null;

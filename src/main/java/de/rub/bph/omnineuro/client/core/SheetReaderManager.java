@@ -1,13 +1,18 @@
 package de.rub.bph.omnineuro.client.core;
 
 import de.rub.bph.omnineuro.client.core.sheet.reader.SheetReader;
+import de.rub.bph.omnineuro.client.imported.filemanager.FileManager;
 import de.rub.bph.omnineuro.client.imported.log.Log;
 import de.rub.bph.omnineuro.client.util.concurrent.ConcurrentExecutionManager;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import javax.swing.filechooser.FileNameExtensionFilter;
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
+
+import static de.rub.bph.omnineuro.client.core.sheet.reader.SheetReader.JSON_ROW_SPACES;
 
 public class SheetReaderManager extends ConcurrentExecutionManager {
 
@@ -36,6 +41,8 @@ public class SheetReaderManager extends ConcurrentExecutionManager {
 		Log.i("Starting to discover valid experiment files.");
 		ArrayList<File> files = discoverFiles(sourceDir);
 		ArrayList<JSONObject> experiments = new ArrayList<>();
+		FileManager fileManager = new FileManager();
+		
 		int count = files.size();
 		Log.i("Finished discovering. Files found: " + count);
 
@@ -59,11 +66,28 @@ public class SheetReaderManager extends ConcurrentExecutionManager {
 
 		waitForTasks();
 
+		JSONObject combinedExperiments = new JSONObject();
+		File combinedExperimentsFile = new File(outDir,"combinedExperiments.json");
+		
 		for (SheetReader reader : readers) {
 			if (reader.hasBufferedExperiment()) {
-				experiments.add(reader.getBufferedExperiment());
+				JSONObject experiment = reader.getBufferedExperiment();
+				experiments.add(experiment);
+				
+				try {
+					combinedExperiments.put(reader.getExperimentJSONFile().getName(),experiment);
+				} catch (JSONException e) {
+					Log.e("Failed to add experiment for "+reader.getSourceFile().getName()+" to combined JSON!",e);
+				}
 			}
 		}
+		
+		try {
+			fileManager.writeFile(combinedExperimentsFile,combinedExperiments.toString(JSON_ROW_SPACES));
+		} catch (IOException | JSONException e) {
+			Log.e("Failed to write combined experiments file at "+combinedExperimentsFile.getAbsolutePath(),e);
+		}
+		
 		Log.i("Files read: " + readers.size() + ". Experiments extracted: " + experiments.size());
 		return experiments;
 	}

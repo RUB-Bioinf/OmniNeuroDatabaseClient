@@ -25,6 +25,7 @@ public class SheetReader extends JSONOperator implements Runnable {
 
 	private File sourceFile;
 	private File outDir;
+	private File experimentJSONFile;
 	private JSONObject bufferedExperiment;
 	private int sheetVersion;
 
@@ -99,10 +100,10 @@ public class SheetReader extends JSONOperator implements Runnable {
 			return;
 		}
 
-		File outFile = new File(outDir, sourceFile.getName().replace(".xlsx", "") + ".json");
-		Log.i("Writing file to: " + outFile.getAbsolutePath());
+		experimentJSONFile = new File(outDir, sourceFile.getName().replace(".xlsx", "") + ".json");
+		Log.i("Writing file to: " + experimentJSONFile.getAbsolutePath());
 		try {
-			fileManager.writeFile(outFile, experiment.toString(JSON_ROW_SPACES));
+			fileManager.writeFile(experimentJSONFile, experiment.toString(JSON_ROW_SPACES));
 		} catch (IOException | JSONException e) {
 			e.printStackTrace();
 		}
@@ -110,7 +111,15 @@ public class SheetReader extends JSONOperator implements Runnable {
 
 		bufferedExperiment = experiment;
 	}
-
+	
+	public File getExperimentJSONFile() {
+		return experimentJSONFile;
+	}
+	
+	public boolean hasExperimentJSONFile(){
+		return getExperimentJSONFile() != null;
+	}
+	
 	public int getSheetVersion() {
 		return sheetVersion;
 	}

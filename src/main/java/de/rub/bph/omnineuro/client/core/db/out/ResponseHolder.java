@@ -21,10 +21,6 @@ public class ResponseHolder {
 	private boolean control;
 	
 	public ResponseHolder(long responseID, OmniNeuroQueryExecutor queryExecutor) throws SQLException {
-		//timestamp = Integer.parseInt(queryExecutor.getFeatureViaID("response", "timestamp", responseID));
-		//endpointID = Long.parseLong(queryExecutor.getFeatureViaID("response", "endpoint_id", responseID));
-		//concentration = Long.parseLong(queryExecutor.getFeatureViaID("response", "concentration_id", responseID));
-		//response = Double.parseDouble(queryExecutor.getFeatureViaID("response", "value", responseID));
 		ResultSet resultSet = queryExecutor.getFeaturesViaID("response", responseID);
 		resultSet.next();
 		timestamp = resultSet.getInt("timestamp");

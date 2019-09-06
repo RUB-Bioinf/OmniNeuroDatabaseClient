@@ -166,7 +166,8 @@ public class JSONInserter extends JSONOperator implements Runnable {
 				} else {
 					addError("Failed to resolve compound name: '" + compound + "' [" + compuntAbbreviation + "]. That's okay, if a valid Cas Nr. is provided instead: '" + casNR + "'.");
 					compoundID = executor.getIDViaFeature("compound", "cas_no", casNR);
-					addError("\t\t\tBut that CAS Nr. existed in the DB and the compound was resolved.");
+					String newCompoundName = executor.getNameViaID("compound",compoundID);
+					addError("\t\t\tBut that CAS Nr. existed in the DB and the compound was resolved as '"+newCompoundName+"'.");
 				}
 			}
 			

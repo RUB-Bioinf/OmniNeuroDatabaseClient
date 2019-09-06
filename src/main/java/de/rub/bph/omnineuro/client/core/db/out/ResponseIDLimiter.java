@@ -164,6 +164,10 @@ public class ResponseIDLimiter {
 				return applyT1LimiterSpecific("endpoint", "name", entries);
 			case "outlier_type":
 				return applyT1LimiterSpecific("outlier_type", "name", entries);
+			case "well":
+				return applyT1LimiterSpecific("well", "name", entries);
+			case "detection_method":
+				return applyT1LimiterSpecific("detection_method", "name", entries);
 			case "value_response":
 				return applyT0LimiterSpecific("value", entries);
 			case "timestamp_response":
@@ -252,6 +256,8 @@ public class ResponseIDLimiter {
 		limiterTableMap.put("outlier_type", "outlier_type");
 		limiterTableMap.put("value_response", "response");
 		limiterTableMap.put("timestamp_response", "response");
+		limiterTableMap.put("well", "well");
+		limiterTableMap.put("detection_method", "detection_method");
 		
 		limiterColumnMap = new HashMap<>();
 		limiterColumnMap.put("department", "name");
@@ -274,6 +280,8 @@ public class ResponseIDLimiter {
 		limiterColumnMap.put("outlier_type", "name");
 		limiterColumnMap.put("value_response", "value");
 		limiterColumnMap.put("timestamp_response", "timestamp");
+		limiterColumnMap.put("well", "name");
+		limiterColumnMap.put("detection_method", "name");
 	}
 	
 	public ArrayList<String> getLimiterNames() {
