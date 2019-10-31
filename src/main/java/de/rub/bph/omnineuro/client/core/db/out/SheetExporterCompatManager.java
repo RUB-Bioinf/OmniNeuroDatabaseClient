@@ -4,6 +4,7 @@ import de.rub.bph.omnineuro.client.Client;
 import de.rub.bph.omnineuro.client.config.ExportConfigManager;
 import de.rub.bph.omnineuro.client.core.db.DBConnection;
 import de.rub.bph.omnineuro.client.core.db.OmniNeuroQueryExecutor;
+import de.rub.bph.omnineuro.client.core.db.out.efsa.BlindedCompoundsExporter;
 import de.rub.bph.omnineuro.client.core.db.out.r.CompoundSheetExporter;
 import de.rub.bph.omnineuro.client.imported.filemanager.FileManager;
 import de.rub.bph.omnineuro.client.imported.log.Log;
@@ -24,7 +25,9 @@ import static de.rub.bph.omnineuro.client.ui.OmniFrame.DEFAULT_LIMITER_HASH_LENG
 public class SheetExporterCompatManager extends ConcurrentExecutionManager {
 	
 	public static final String EXPORT_DIRNAME_COMPOUNDS = "compounds";
+	public static final String EXPORT_DIRNAME_EFSA = "efsa";
 	public static final String ROOT_FILENAME_BASE = "exports";
+	
 	private File sourceDir;
 	private OmniNeuroQueryExecutor queryExecutor;
 	private DBConnection connection;
@@ -70,6 +73,13 @@ public class SheetExporterCompatManager extends ConcurrentExecutionManager {
 		//TODO distinguish parameters here and add via sub functions?
 		
 		try {
+			exportEFSASheet();
+		} catch (SQLException e) {
+			Log.e(e);
+			Client.showErrorMessage("Failed to export experiment data!\nA more detailed message will be displayed in the future.", null, e);
+		}
+		
+		try {
 			exporters = exportCompoundSheet();
 		} catch (Throwable e) {
 			Log.e(e);
@@ -77,6 +87,20 @@ public class SheetExporterCompatManager extends ConcurrentExecutionManager {
 		}
 		
 		waitForTasks();
+	}
+	
+	public void exportEFSASheet() throws SQLException {
+		String query = "SELECT DISTINCT response.id FROM response, experiment, compound WHERE compound.blinded = TRUE AND compound.id = experiment.compound_id AND\n" +
+				"experiment.id = response.id AND (response.endpoint_id = 1 OR response.endpoint_id = 2 OR response.endpoint_id = 4);";
+		ResultSet set = queryExecutor.executeQuery(query);
+		ArrayList<Long> foundResponseIDs = queryExecutor.extractIDs(set);
+		ArrayList<Long> retained = new ArrayList<>(ListUtils.retainAll(foundResponseIDs, responseIDs));
+		
+		File targetDir = new File(sourceDir, EXPORT_DIRNAME_EFSA);
+		targetDir.mkdirs();
+		
+		BlindedCompoundsExporter exporter = new BlindedCompoundsExporter(targetDir, connection, retained, useComma);
+		exporter.run();
 	}
 	
 	public ArrayList<CompoundSheetExporter> exportCompoundSheet() throws SQLException { //TODO restrictive Params here?
@@ -127,16 +151,16 @@ public class SheetExporterCompatManager extends ConcurrentExecutionManager {
 		return tempList;
 	}
 	
-	public int getTaskCount() {
-		return exporters.size();
+	public ArrayList<Long> getResponseIDs() {
+		return responseIDs;
 	}
 	
 	public File getSourceDir() {
 		return sourceDir;
 	}
 	
-	public ArrayList<Long> getResponseIDs() {
-		return responseIDs;
+	public int getTaskCount() {
+		return exporters.size();
 	}
 	
 	public boolean isUseComma() {

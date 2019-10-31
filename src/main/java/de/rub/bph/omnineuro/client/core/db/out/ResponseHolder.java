@@ -12,6 +12,7 @@ public class ResponseHolder {
 	
 	private int timestamp;
 	private long endpointID;
+	private long experimentID;
 	private String endpointName;
 	private String experimentName;
 	private String well;
@@ -19,6 +20,8 @@ public class ResponseHolder {
 	private String concentrationDescription;
 	private double response;
 	private boolean control;
+	private long concentrationID;
+	private long wellID;
 	
 	public ResponseHolder(long responseID, OmniNeuroQueryExecutor queryExecutor) throws SQLException {
 		ResultSet resultSet = queryExecutor.getFeaturesViaID("response", responseID);
@@ -27,14 +30,14 @@ public class ResponseHolder {
 		endpointID = resultSet.getLong("endpoint_id");
 		response = resultSet.getDouble("value");
 		
-		long experimentID = resultSet.getLong("experiment_id");
+		experimentID = resultSet.getLong("experiment_id");
 		experimentName = queryExecutor.getNameViaID("experiment", experimentID);
 		
-		long concentrationID = resultSet.getLong("concentration_id");
+		concentrationID = resultSet.getLong("concentration_id");
 		concentration = Double.parseDouble(queryExecutor.getFeatureViaID("concentration", "value", concentrationID));
 		endpointName = queryExecutor.getNameViaID("endpoint", endpointID);
 		
-		long wellID = resultSet.getLong("well_id");
+		wellID = resultSet.getLong("well_id");
 		well = queryExecutor.getNameViaID("well", wellID);
 		
 		control = concentration == 0;
@@ -104,7 +107,7 @@ public class ResponseHolder {
 	
 	@Override
 	public String toString() {
-		return "Response handler for " + getConcentrationDescription() + " [Control status: " + isControl() + "], endpoint: " + getEndpointName() + " at " + getTimestamp() + "h from well "+getWell()+". Response value: " + getResponse();
+		return "Response handler for " + getConcentrationDescription() + " [Control status: " + isControl() + "], endpoint: " + getEndpointName() + " at " + getTimestamp() + "h from well " + getWell() + ". Response value: " + getResponse();
 	}
 	
 	public double getConcentration() {
@@ -115,12 +118,20 @@ public class ResponseHolder {
 		return concentrationDescription;
 	}
 	
+	public long getConcentrationID() {
+		return concentrationID;
+	}
+	
 	public long getEndpointID() {
 		return endpointID;
 	}
 	
 	public String getEndpointName() {
 		return endpointName;
+	}
+	
+	public long getExperimentID() {
+		return experimentID;
 	}
 	
 	public String getExperimentName() {
@@ -141,6 +152,10 @@ public class ResponseHolder {
 	
 	public String getWell() {
 		return well;
+	}
+	
+	public long getWellID() {
+		return wellID;
 	}
 	
 	public boolean isControl() {

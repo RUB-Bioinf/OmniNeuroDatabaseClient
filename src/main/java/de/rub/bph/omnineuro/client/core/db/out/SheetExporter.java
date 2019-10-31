@@ -27,6 +27,11 @@ public abstract class SheetExporter implements Runnable {
 		return !getErrors().isEmpty();
 	}
 	
+	protected void addError(String error) {
+		errorList.add(error);
+		Log.e(error);
+	}
+	
 	public ArrayList<String> getErrors() {
 		return new ArrayList<>(errorList);
 	}
@@ -41,11 +46,6 @@ public abstract class SheetExporter implements Runnable {
 	
 	public boolean isUseComma() {
 		return useComma;
-	}
-	
-	protected void addError(String error){
-		errorList.add(error);
-		Log.e(error);
 	}
 	
 }

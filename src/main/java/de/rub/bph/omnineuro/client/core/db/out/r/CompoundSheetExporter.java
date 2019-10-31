@@ -6,6 +6,7 @@ import de.rub.bph.omnineuro.client.core.db.out.ResponseHolder;
 import de.rub.bph.omnineuro.client.core.db.out.SheetExporter;
 import de.rub.bph.omnineuro.client.imported.filemanager.FileManager;
 import de.rub.bph.omnineuro.client.imported.log.Log;
+import de.rub.bph.omnineuro.client.util.WellBuilder;
 
 import java.io.File;
 import java.sql.SQLException;
@@ -13,17 +14,18 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+
+import static de.rub.bph.omnineuro.client.util.WellBuilder.WELL_REGEX;
 
 public class CompoundSheetExporter extends SheetExporter {
 	
-	public static final String WELL_REGEX = "([A-Z]+)(\\d+)";
 	protected long compoundID;
 	protected String compoundName, compoundAbbreviation;
 	protected OmniNeuroQueryExecutor queryExecutor;
 	protected File outFile;
 	protected boolean successful;
+	
+	private ArrayList<ResponseHolder> responseHolders;
 	
 	public CompoundSheetExporter(File targetDir, DBConnection connection, long compoundID, ArrayList<Long> responseIDs, boolean useComma) throws SQLException {
 		super(targetDir, connection, responseIDs, useComma);
@@ -40,7 +42,7 @@ public class CompoundSheetExporter extends SheetExporter {
 		Log.i("Compound " + getCompoundAbbreviation() + " has " + responseIDs.size() + " responses in the DB.");
 	}
 	
-	public StringBuilder buildCSV(ArrayList<ResponseHolder> responseHolders) {
+	public StringBuilder buildCSV() {
 		StringBuilder builder = new StringBuilder();
 		builder.append("Experiment ID;");
 		builder.append(getCompoundName());
@@ -66,33 +68,26 @@ public class CompoundSheetExporter extends SheetExporter {
 				return s.compareTo(t1);
 			}
 		});
+		
 		allWells.sort((well1, well2) -> {
-			Pattern p = Pattern.compile(WELL_REGEX);
-			Matcher m1 = p.matcher(well1);
-			Matcher m2 = p.matcher(well2);
-			
-			if (m1.matches() && m2.matches()) {
-				String part1 = m1.group(1);
-				String part2 = m2.group(1);
-				
-				int value1 = Integer.parseInt(m1.group(2));
-				int value2 = Integer.parseInt(m2.group(2));
-				
-				if (part1.equals(part2)) {
-					return Integer.compare(value1, value2);
-				}
-				return part1.compareTo(part2);
-			} else {
+			WellBuilder builder1;
+			WellBuilder builder2;
+			try {
+				builder1 = WellBuilder.convertWell(well1);
+				builder2 = WellBuilder.convertWell(well2);
+			} catch (Exception e) {
 				Log.w("Failed to apply well regex ['" + WELL_REGEX + "'] to '" + well1 + "' and '" + well2 + "'!");
 				return well1.compareTo(well2);
 			}
+			
+			return builder1.compareTo(builder2);
 		});
 		Collections.sort(allEndpoints);
 		Collections.sort(allTimestamps);
 		Collections.sort(allExperimentNames);
 		
 		for (String e : allEndpoints) {
-			e = e.replace("Viabillity","Viability");
+			e = e.replace("Viabillity", "Viability");
 			
 			for (int t : allTimestamps) {
 				builder.append(e).append(" [").append(t).append("h];");
@@ -236,7 +231,7 @@ public class CompoundSheetExporter extends SheetExporter {
 			//}
 			//Log.i("Compound " + getCompoundAbbreviation() + " has " + responseIDs.size() + " responses in the database.");
 			
-			ArrayList<ResponseHolder> responseHolders = new ArrayList<>();
+			responseHolders = new ArrayList<>();
 			for (long id : responseIDs) {
 				ResponseHolder holder = new ResponseHolder(id, queryExecutor);
 				Log.v("I have a holder: " + holder);
@@ -247,7 +242,7 @@ public class CompoundSheetExporter extends SheetExporter {
 			ArrayList<String> uniqueConcentrations = ResponseHolder.getUniqueConcentrations(responseHolders);
 			Log.i("Unique concentrations: " + uniqueConcentrations);
 			
-			StringBuilder fileContents = buildCSV(responseHolders);
+			StringBuilder fileContents = buildCSV();
 			FileManager fileManager = new FileManager();
 			fileManager.writeFile(outFile, fileContents.toString());
 			
@@ -272,6 +267,10 @@ public class CompoundSheetExporter extends SheetExporter {
 	
 	public File getOutFile() {
 		return outFile;
+	}
+	
+	public ArrayList<ResponseHolder> getResponseHolders() {
+		return responseHolders;
 	}
 	
 	public boolean isSuccessful() {
