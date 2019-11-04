@@ -53,8 +53,8 @@ public class BlindedCompoundsExporter extends SheetExporter {
 	}
 	
 	private String getRow(String name, String well) throws SQLException {
-		String query = "SELECT response.id, response.value, compound.name, concentration.id, endpoint.id, experiment.name FROM compound, response,experiment,well,endpoint, concentration WHERE\n" +
-				" response.experiment_id = experiment.id AND response.well_id = well.id AND response.endpoint_id = endpoint.id AND experiment.compound_id = compound.id AND\n" +
+		String query = "SELECT response.id, response.value, compound.name, concentration.id, endpoint.id, experiment.name, compound.abbreviation, individual.name, assay.name FROM assay, individual, compound, response,experiment,well,endpoint, concentration WHERE\n" +
+				"assay.id = experiment.assay_id AND individual.id = experiment.individual_id AND response.experiment_id = experiment.id AND response.well_id = well.id AND response.endpoint_id = endpoint.id AND experiment.compound_id = compound.id AND\n" +
 				" response.concentration_id = concentration.id\n" +
 				" AND (endpoint.id = 4 OR endpoint.id = 1 OR endpoint.id = 2) AND response.timestamp = 72 AND experiment.name = '" + name + "' AND well.name = '" + well + "' ORDER BY endpoint_id;";
 		ResultSet set = queryExecutor.executeQuery(query);
@@ -66,11 +66,17 @@ public class BlindedCompoundsExporter extends SheetExporter {
 		
 		String compoundName, experimentName;
 		long concentrationID;
-		String viablilityResponse = ";";
+		String viabilityResponse = ";";
 		String proliferationResponse = ";";
 		String proliferationAreaResponse = ";";
+		String individualName;
+		String compoundAbbreviation;
+		String assayName;
 		
 		do {
+			assayName = set.getString(9);
+			individualName = set.getString(8);
+			compoundAbbreviation = set.getString(7);
 			experimentName = set.getString(6);
 			long endpointID = set.getLong(5);
 			concentrationID = set.getLong(4);
@@ -83,13 +89,28 @@ public class BlindedCompoundsExporter extends SheetExporter {
 			} else if (endpointID == 2) {
 				proliferationAreaResponse = responseValue + ";";
 			} else if (endpointID == 4) {
-				viablilityResponse = responseValue + ";";
+				viabilityResponse = responseValue + ";";
 			} else {
 				throw new IllegalStateException("Wow, you ripped a hole in the fabric of the universe! Response ID " + endpointID + " was returned, but how is that possible??");
 			}
 		} while (set.next());
 		
 		ConcentrationHolder concentrationHolder = new ConcentrationHolder(concentrationID, queryExecutor);
+		//individualName = individualName.substring(0, individualName.length() - 2);
+		if (individualName.length() == 0 || individualName.trim().equals("")) {
+			individualName = "<Unknown Individual>";
+		}
+		
+		try {
+			int individualNumeric = (int) Double.parseDouble(individualName);
+			individualName = String.valueOf(individualNumeric);
+		} catch (Exception e) {
+			Log.w("Non numeric individual name: " + individualName);
+		}
+		
+		while (individualName.length() < 3) {
+			individualName = "0" + individualName;
+		}
 		
 		StringBuilder row = new StringBuilder();
 		WellBuilder wellBuilder = WellBuilder.convertWell(well);
@@ -111,10 +132,16 @@ public class BlindedCompoundsExporter extends SheetExporter {
 					wellType = "n";
 					break;
 				case "PC":
-					wellType = "p";
+					wellType = "p1";
+					break;
+				case "BGBrdU":
+					wellType = "b1";
 					break;
 				case "BG":
-					wellType = "b";
+					wellType = "b2";
+					break;
+				case "LC":
+					wellType = "p2";
 					break;
 				default:
 					wellType = "?";
@@ -126,11 +153,11 @@ public class BlindedCompoundsExporter extends SheetExporter {
 		row.append("1;");
 		row.append(concentrationHolder.getDescription() + ";");
 		
-		row.append(viablilityResponse);
+		row.append(viabilityResponse);
 		row.append(proliferationResponse);
 		row.append(proliferationAreaResponse);
 		
-		row.append(experimentName + "_??");
+		row.append(experimentName + "_??_" + assayName + "_" + individualName);
 		
 		return row.toString();
 	}

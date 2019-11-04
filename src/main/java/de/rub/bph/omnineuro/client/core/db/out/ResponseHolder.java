@@ -16,12 +16,9 @@ public class ResponseHolder {
 	private String endpointName;
 	private String experimentName;
 	private String well;
-	private double concentration;
-	private String concentrationDescription;
 	private double response;
-	private boolean control;
-	private long concentrationID;
 	private long wellID;
+	private ConcentrationHolder concentrationHolder;
 	
 	public ResponseHolder(long responseID, OmniNeuroQueryExecutor queryExecutor) throws SQLException {
 		ResultSet resultSet = queryExecutor.getFeaturesViaID("response", responseID);
@@ -33,22 +30,12 @@ public class ResponseHolder {
 		experimentID = resultSet.getLong("experiment_id");
 		experimentName = queryExecutor.getNameViaID("experiment", experimentID);
 		
-		concentrationID = resultSet.getLong("concentration_id");
-		concentration = Double.parseDouble(queryExecutor.getFeatureViaID("concentration", "value", concentrationID));
+		long concentrationID = resultSet.getLong("concentration_id");
+		concentrationHolder = new ConcentrationHolder(concentrationID, queryExecutor);
 		endpointName = queryExecutor.getNameViaID("endpoint", endpointID);
 		
 		wellID = resultSet.getLong("well_id");
 		well = queryExecutor.getNameViaID("well", wellID);
-		
-		control = concentration == 0;
-		if (control) {
-			resultSet = queryExecutor.
-					executeQuery("SELECT control.acronym FROM control,concentration WHERE control.id = concentration.control_id AND concentration.id = " + concentrationID);
-			resultSet.next();
-			concentrationDescription = resultSet.getString("acronym");
-		} else {
-			concentrationDescription = String.valueOf(concentration);
-		}
 	}
 	
 	public static ArrayList<Long> getUniqueEndpointIDs(List<ResponseHolder> holders) {
@@ -111,15 +98,19 @@ public class ResponseHolder {
 	}
 	
 	public double getConcentration() {
-		return concentration;
+		return getConcentrationHolder().getValue();
 	}
 	
 	public String getConcentrationDescription() {
-		return concentrationDescription;
+		return getConcentrationHolder().getDescription();
+	}
+	
+	public ConcentrationHolder getConcentrationHolder() {
+		return concentrationHolder;
 	}
 	
 	public long getConcentrationID() {
-		return concentrationID;
+		return getConcentrationHolder().getId();
 	}
 	
 	public long getEndpointID() {
@@ -159,6 +150,6 @@ public class ResponseHolder {
 	}
 	
 	public boolean isControl() {
-		return control;
+		return getConcentrationHolder().isControl();
 	}
 }
