@@ -99,6 +99,7 @@ public class BlindedCompoundsExporter extends SheetExporter {
 		//individualName = individualName.substring(0, individualName.length() - 2);
 		if (individualName.length() == 0 || individualName.trim().equals("")) {
 			individualName = "<Unknown Individual>";
+			addError("Experiment " + experimentName + " has an unknown individual.");
 		}
 		
 		try {
@@ -106,6 +107,7 @@ public class BlindedCompoundsExporter extends SheetExporter {
 			individualName = String.valueOf(individualNumeric);
 		} catch (Exception e) {
 			Log.w("Non numeric individual name: " + individualName);
+			addError("Experiment " + experimentName + " has a non numeric individual. Individual read: '" + individualName + "'");
 		}
 		
 		while (individualName.length() < 3) {
@@ -113,12 +115,22 @@ public class BlindedCompoundsExporter extends SheetExporter {
 		}
 		
 		StringBuilder row = new StringBuilder();
-		WellBuilder wellBuilder = WellBuilder.convertWell(well);
+		WellBuilder wellBuilder = null;
+		try {
+			wellBuilder = WellBuilder.convertWell(well);
+		} catch (IllegalArgumentException e) {
+			addError("Experiment " + experimentName + " has an invalid well name: '" + well + "'");
+		}
+		
 		row.append(compoundName + ";"); //TODO compound
 		row.append(experimentName + ";");
 		
-		row.append(wellBuilder.getRow() + ";");
-		row.append(wellBuilder.getColExtended() + ";");
+		if (wellBuilder == null) {
+			row.append("<unknown>;<unknown>;");
+		} else {
+			row.append(wellBuilder.getRow() + ";");
+			row.append(wellBuilder.getColExtended() + ";");
+		}
 		
 		String wellType = "t";
 		if (concentrationHolder.isControl()) {
@@ -165,10 +177,18 @@ public class BlindedCompoundsExporter extends SheetExporter {
 	@Override
 	public void run() {
 		responseHolders = new ArrayList<>();
+		queryExecutor.setLogEnabled(false);
+		
 		try {
-			for (long id : responseIDs) {
+			int fivePercent = (int) (responseIDs.size() * .05);
+			for (int i = 0; i < responseIDs.size(); i++) {
+				long id = responseIDs.get(i);
 				ResponseHolder holder = new ResponseHolder(id, queryExecutor);
 				responseHolders.add(holder);
+				
+				if (i % fivePercent == 0) {
+					Log.i("Holder created: " + i + "/" + responseIDs.size() + " -> " + (int) (((double) i / (double) responseIDs.size()) * 100) + "%");
+				}
 			}
 		} catch (SQLException e) {
 			Log.e(e);
@@ -184,12 +204,20 @@ public class BlindedCompoundsExporter extends SheetExporter {
 		Collections.sort(uniqueWells, new Comparator<String>() {
 			@Override
 			public int compare(String o1, String o2) {
-				return WellBuilder.convertWell(o1).compareTo(WellBuilder.convertWell(o2));
+				try {
+					return WellBuilder.convertWell(o1).compareTo(WellBuilder.convertWell(o2));
+				} catch (Exception e) {
+					return o1.compareTo(o2);
+				}
 			}
 		});
 		
+		int count = 0;
+		int combinedVals = uniqueNames.size() * uniqueWells.size();
+		int fivePercent = (int) (combinedVals * .05);
 		for (String name : uniqueNames) {
 			for (String well : uniqueWells) {
+				count++;
 				String row = null;
 				try {
 					row = getRow(name, well);
@@ -201,13 +229,19 @@ public class BlindedCompoundsExporter extends SheetExporter {
 					builder.append(row);
 					builder.append("\n");
 				}
+				
+				if (count % fivePercent == 0) {
+					Log.i("Row: " + count + "/" + combinedVals + " -> " + (int) (((double) count / (double) combinedVals) * 100) + "%");
+				}
 			}
 		}
 		
 		File outFile = new File(targetDir, "blindCompounds.csv");
+		File outErrors = new File(targetDir, "errors.txt");
 		FileManager fileManager = new FileManager();
 		try {
 			fileManager.writeFile(outFile, builder.toString());
+			fileManager.saveListFile(errorList, outErrors);
 		} catch (IOException e) {
 			Log.e(e);
 		}

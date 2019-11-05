@@ -91,10 +91,11 @@ public class SheetExporterCompatManager extends ConcurrentExecutionManager {
 	
 	public void exportEFSASheet() throws SQLException {
 		String query = "SELECT DISTINCT response.id FROM response, experiment, compound WHERE compound.blinded = TRUE AND compound.id = experiment.compound_id AND\n" +
-				"experiment.id = response.id AND (response.endpoint_id = 1 OR response.endpoint_id = 2 OR response.endpoint_id = 4);";
+				"experiment.id = response.experiment_id AND (response.endpoint_id = 1 OR response.endpoint_id = 2 OR response.endpoint_id = 4);";
 		ResultSet set = queryExecutor.executeQuery(query);
 		ArrayList<Long> foundResponseIDs = queryExecutor.extractIDs(set);
-		ArrayList<Long> retained = new ArrayList<>(ListUtils.retainAll(foundResponseIDs, responseIDs));
+		ArrayList<Long> retained = foundResponseIDs;
+		//ArrayList<Long> retained = new ArrayList<>(ListUtils.retainAll(foundResponseIDs, responseIDs));
 		
 		File targetDir = new File(sourceDir, EXPORT_DIRNAME_EFSA);
 		targetDir.mkdirs();

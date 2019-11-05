@@ -47,11 +47,11 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 	private JButton searchForHashButton;
 	private JPanel configurationDDPL;
 	private JCheckBox commaCB;
+	private JButton EFSAImportButton;
 	
 	public OmniFrame() {
+		setupMenuBars();
 		add(rootPanel);
-		
-		button1.addActionListener(actionEvent -> startImport());
 		
 		int cores = Runtime.getRuntime().availableProcessors();
 		Log.i("This device has " + cores + " CPU cores available!");
@@ -70,6 +70,8 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 		startExportButton.addActionListener(actionEvent -> requestExport());
 		resetDatabaseButton.addActionListener(actionEvent -> resetDatabase());
 		configurationEditorButton.addActionListener(actionEvent -> actionOpenConfigWindow());
+		EFSAImportButton.addActionListener(e -> startEFSAImport());
+		button1.addActionListener(actionEvent -> startImport());
 		searchForHashButton.addActionListener(actionEvent -> {
 			ExportConfigManager configManager1 = ExportConfigManager.getInstance();
 			try {
@@ -85,8 +87,30 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 		loadConfigCache();
 		new ConfigurationFileDrop().register(configurationDDPL, true);
 		
+		Log.i(getJMenuBar().toString());
 		searchForHashButton.setVisible(false);
+		pack();
 		setVisible(true);
+	}
+	
+	private void setupMenuBars() {
+		JMenuBar menuBar = new JMenuBar();
+		
+		JMenu menu = new JMenu();
+		JMenuItem parentMenu = new JMenuItem("File");
+		menu.add(parentMenu);
+		
+		JMenuItem menuItem = new JMenuItem("Exit");
+		menuItem.addActionListener(e -> System.exit(0));
+		parentMenu.add(menuItem);
+		
+		menuBar.setVisible(true);
+		setJMenuBar(menuBar);
+		repaint();
+	}
+	
+	public void startEFSAImport() {
+	
 	}
 	
 	public void startImport() {
