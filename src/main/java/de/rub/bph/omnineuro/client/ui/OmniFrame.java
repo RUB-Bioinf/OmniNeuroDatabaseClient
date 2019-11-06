@@ -2,8 +2,6 @@ package de.rub.bph.omnineuro.client.ui;
 
 import de.rub.bph.omnineuro.client.Client;
 import de.rub.bph.omnineuro.client.config.ExportConfigManager;
-import de.rub.bph.omnineuro.client.core.ExperimentReaderStatistics;
-import de.rub.bph.omnineuro.client.core.SheetReaderManager;
 import de.rub.bph.omnineuro.client.core.db.DBConnection;
 import de.rub.bph.omnineuro.client.core.db.OmniNeuroQueryExecutor;
 import de.rub.bph.omnineuro.client.core.db.in.InsertManager;
@@ -48,6 +46,7 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 	private JPanel configurationDDPL;
 	private JCheckBox commaCB;
 	private JButton EFSAImportButton;
+	private JComboBox importMethodCB;
 	
 	public OmniFrame() {
 		setupMenuBars();
@@ -70,7 +69,6 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 		startExportButton.addActionListener(actionEvent -> requestExport());
 		resetDatabaseButton.addActionListener(actionEvent -> resetDatabase());
 		configurationEditorButton.addActionListener(actionEvent -> actionOpenConfigWindow());
-		EFSAImportButton.addActionListener(e -> startEFSAImport());
 		button1.addActionListener(actionEvent -> startImport());
 		searchForHashButton.addActionListener(actionEvent -> {
 			ExportConfigManager configManager1 = ExportConfigManager.getInstance();
@@ -109,12 +107,11 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 		repaint();
 	}
 	
-	public void startEFSAImport() {
-	
-	}
-	
 	public void startImport() {
 		Log.i("Start import pressed.");
+		int cores = (int) threadsSP.getValue();
+		File dir = new File(importDirChooserPanel1.getText());
+		TimestampLookupManager.reset();
 		
 		if (!testDBConnection(true)) {
 			Client.showErrorMessage("Failed to connect to the database.\nPlease run diagnostics and try again.\nCan't import anything to the DB if a connection can't be established.", this);
@@ -123,26 +120,13 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 			Log.i("Connection to the DB is possible. Starting import process.");
 		}
 		
-		int cores = (int) threadsSP.getValue();
+		int methodIndex = importMethodCB.getSelectedIndex();
+		String methodName = importMethodCB.getItemAt(methodIndex).toString();
+		Log.i("Selected import method: '" + methodName + "'");
+		
 		long startTime = new Date().getTime();
-		File dir = new File(importDirChooserPanel1.getText());
-		TimestampLookupManager.reset();
 		
-		ArrayList<JSONObject> readExperiments = new ArrayList<>();
-		
-		if (dir.exists() && dir.isDirectory()) {
-			readExperiments = readExcelSheets(dir, cores);
-		} else {
-			Client.showErrorMessage("The specified path does not exist or is invalid!", this);
-			return;
-		}
-		
-		if (readExperiments == null || readExperiments.isEmpty()) {
-			showErrorMessage("No experiments located!");
-			return;
-		}
-		
-		InsertManager insertManager = new InsertManager(new File(dir, OUT_DIR_NAME_INSERTER), cores, readExperiments);
+		InsertManager insertManager = new InsertManager(dir, cores, methodIndex, this);
 		insertManager.insert();
 		
 		long timeTaken = new Date().getTime() - startTime;
@@ -155,28 +139,6 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 		Client.showInfoMessage(msgBuilder.toString().trim(), this);
 	}
 	
-	public ArrayList<JSONObject> readExcelSheets(File sourceDir, int cores) {
-		SheetReaderManager readerManager = new SheetReaderManager(sourceDir, cores);
-		ArrayList<JSONObject> readExperiments = readerManager.startReading();
-		
-		if (readExperiments == null || readExperiments.size() == 0) {
-			Client.showInfoMessage("No Experiments were found!", this);
-			return null;
-		}
-		
-		File statisticsDir = new File(sourceDir, OUT_DIR_NAME_STATISTICS);
-		Log.i("Saving statistics to: " + statisticsDir.getAbsolutePath());
-		
-		ExperimentReaderStatistics statistics = new ExperimentReaderStatistics(readExperiments, statisticsDir);
-		try {
-			statistics.calculateAll();
-		} catch (Exception e) {
-			Log.e(e);
-			Client.showErrorMessage("Failed to calculate statistics, due to: " + e.getMessage(), this);
-		}
-		
-		return readExperiments;
-	}
 	
 	private boolean testDBConnection() {
 		return testDBConnection(true);

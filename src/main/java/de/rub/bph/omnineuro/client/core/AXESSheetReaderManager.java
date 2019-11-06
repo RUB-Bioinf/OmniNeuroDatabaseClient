@@ -14,7 +14,7 @@ import java.util.ArrayList;
 
 import static de.rub.bph.omnineuro.client.core.sheet.reader.SheetReader.JSON_ROW_SPACES;
 
-public class SheetReaderManager extends ConcurrentExecutionManager {
+public class AXESSheetReaderManager extends ConcurrentExecutionManager {
 
 	public static final String EXCEL_FILE_EXTENSION = "xlsx";
 	public static final String JSON_FILE_OUTDIRNAME = "json";
@@ -23,7 +23,7 @@ public class SheetReaderManager extends ConcurrentExecutionManager {
 	private File sourceDir;
 	private FileNameExtensionFilter filter;
 
-	public SheetReaderManager(File sourceDir, int threads) {
+	public AXESSheetReaderManager(File sourceDir, int threads) {
 		super(threads);
 		this.sourceDir = sourceDir;
 		setFilter(new FileNameExtensionFilter("Excel Sheets", DEFAULT_ALLOWED_EXTENSIONS));

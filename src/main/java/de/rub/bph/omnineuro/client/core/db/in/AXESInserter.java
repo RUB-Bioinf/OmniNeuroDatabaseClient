@@ -1,7 +1,5 @@
 package de.rub.bph.omnineuro.client.core.db.in;
 
-import de.rub.bph.omnineuro.client.core.db.DBConnection;
-import de.rub.bph.omnineuro.client.core.db.OmniNeuroQueryExecutor;
 import de.rub.bph.omnineuro.client.core.sheet.data.DateInterpreter;
 import de.rub.bph.omnineuro.client.imported.log.Log;
 import de.rub.bph.omnineuro.client.util.JSONOperator;
@@ -11,33 +9,18 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.File;
-import java.sql.Connection;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
 
-public class JSONInserter extends JSONOperator implements Runnable {
+public class AXESInserter extends DBInserter implements Runnable {
 	
-	private static OmniNeuroQueryExecutor executor;
-	
-	private ArrayList<String> errors, errorsWoNaN;
 	private JSONObject data;
 	private String name;
-	private int insertedResponses;
-	private int NaNCounts;
 	
-	public JSONInserter(JSONObject data) {
+	public AXESInserter(JSONObject data) {
+		super();
 		this.data = data;
-		Connection connection = DBConnection.getDBConnection().getConnection();
-		errors = new ArrayList<>();
-		errorsWoNaN = new ArrayList<>(errors);
-		insertedResponses = 0;
-		NaNCounts = 0;
-		
-		if (executor == null) {
-			executor = new OmniNeuroQueryExecutor(connection);
-		}
 		
 		name = "<Unknown>";
 		try {
@@ -46,10 +29,6 @@ public class JSONInserter extends JSONOperator implements Runnable {
 		} catch (Throwable e) {
 			Log.e(e);
 		}
-	}
-	
-	public void insert() {
-		run();
 	}
 	
 	private synchronized long getIndividualID(String individual, String sex, String species) throws JSONException, SQLException {
@@ -71,28 +50,6 @@ public class JSONInserter extends JSONOperator implements Runnable {
 		}
 		
 		return individualID;
-	}
-	
-	private void addError(String text) {
-		addError(text, false);
-	}
-	
-	private void addError(String text, boolean isNaN) {
-		String s = getName() + ": " + text;
-		Log.w("Inserter error: " + s);
-		errors.add(s);
-		
-		if (!isNaN) {
-			errorsWoNaN.add(s);
-		}
-	}
-	
-	public boolean hasError() {
-		return !errors.isEmpty();
-	}
-	
-	public boolean hasNaNs() {
-		return getNaNCount() != 0;
 	}
 	
 	@Override
@@ -166,8 +123,8 @@ public class JSONInserter extends JSONOperator implements Runnable {
 				} else {
 					addError("Failed to resolve compound name: '" + compound + "' [" + compuntAbbreviation + "]. That's okay, if a valid Cas Nr. is provided instead: '" + casNR + "'.");
 					compoundID = executor.getIDViaFeature("compound", "cas_no", casNR);
-					String newCompoundName = executor.getNameViaID("compound",compoundID);
-					addError("\t\t\tBut that CAS Nr. existed in the DB and the compound was resolved as '"+newCompoundName+"'.");
+					String newCompoundName = executor.getNameViaID("compound", compoundID);
+					addError("\t\t\tBut that CAS Nr. existed in the DB and the compound was resolved as '" + newCompoundName + "'.");
 				}
 			}
 			
@@ -184,7 +141,7 @@ public class JSONInserter extends JSONOperator implements Runnable {
 			JSONObject experimentData = data.getJSONObject("ExperimentData").getJSONObject("Endpoints");
 			
 			long outlierID = executor.getIDViaName("outlier_type", "Unchecked");
-			for (String endpoint : getKeys(experimentData)) {
+			for (String endpoint : JSONOperator.getKeys(experimentData)) {
 				JSONObject endpointData = experimentData.getJSONObject(endpoint);
 				int timestamp = endpointData.getInt("timestamp");
 				String detectionMethod = endpointData.getString("detectionMethod");
@@ -207,7 +164,7 @@ public class JSONInserter extends JSONOperator implements Runnable {
 					continue;
 				}
 				
-				for (String concentration : getKeys(responses)) {
+				for (String concentration : JSONOperator.getKeys(responses)) {
 					boolean control = !numberUtils.isNumeric(concentration);
 					
 					long controlID;
@@ -244,7 +201,7 @@ public class JSONInserter extends JSONOperator implements Runnable {
 						
 						boolean nan = Double.isNaN(result);
 						if (nan) {
-							NaNCounts++;
+							incrementNaNCount();
 						}
 						
 						long wellID = wellNotAvailableID;
@@ -268,7 +225,7 @@ public class JSONInserter extends JSONOperator implements Runnable {
 							continue;
 						}
 						
-						insertedResponses++;
+						incrementInsertedResponsesCount();
 					}
 				}
 			}
@@ -276,26 +233,12 @@ public class JSONInserter extends JSONOperator implements Runnable {
 			Log.e("Failed to insert Experiment: " + getName(), e);
 			addError("Failed to insert Experiment " + getName() + " into the database! Error Type: " + e.getClass().getSimpleName() + ". Reason: '" + e.getMessage() + "'");
 		}
-		Log.i("Finished inserting responses for " + getName() + ". Count: " + getInsertedResponses());
+		Log.i("Finished inserting responses for " + getName() + ". Count: " + getInsertedResponsesCount());
 	}
 	
-	public ArrayList<String> getErrors() {
-		return new ArrayList<>(errors);
-	}
-	
-	public ArrayList<String> getErrorsWithoutNaN() {
-		return new ArrayList<>(errorsWoNaN);
-	}
-	
-	public int getInsertedResponses() {
-		return insertedResponses;
-	}
-	
-	public int getNaNCount() {
-		return NaNCounts;
-	}
-	
+	@Override
 	public String getName() {
 		return name;
 	}
+	
 }
