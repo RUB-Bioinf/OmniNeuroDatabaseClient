@@ -51,35 +51,6 @@ public abstract class MetaDataReaderTask extends SheetReaderTask {
 		return readRows(start, getContinuousRowEntries("A", start), data);
 	}
 
-	public int getContinuousRowEntries(String colName, int start) {
-		Log.i("Looking for continuous entries from " + colName + start + " onwards.");
-		int offset = 0;
-
-		while (true) {
-			String cellName = colName + (start + offset);
-			Log.i("Discovering if there exists an entry for: " + cellName);
-
-			String cell;
-			try {
-				cell = getValueAt(cellName, false);
-			} catch (SheetReaderException e) {
-				e.printStackTrace();
-				Log.i("Nope. Nothing found. Stopping at offset: " + offset);
-				break;
-			}
-
-			if (cell == null || cell.trim().equals("")) {
-				break;
-			}
-
-			Log.i("Yup. There was something written there: " + cell.trim());
-			offset++;
-		}
-
-		Log.i("Results: From " + colName + start + " onwards, there were " + offset + " row(s) of data!");
-		return offset;
-	}
-
 	public JSONObject readRows(int start, int end) throws JSONException {
 		return readRows(start, end, new JSONObject());
 	}

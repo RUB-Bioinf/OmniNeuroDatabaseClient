@@ -8,7 +8,7 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 
-import static de.rub.bph.omnineuro.client.core.sheet.reader.SheetReader.EXCEL_SHEET_SUBNAME_METADATA;
+import static de.rub.bph.omnineuro.client.core.sheet.reader.AXESSheetReader.EXCEL_SHEET_SUBNAME_METADATA;
 
 public class SheetVersionReader extends MetaDataReaderTask {
 

@@ -41,7 +41,19 @@ public class InsertManager {
 		errorsWoNaN = new ArrayList<>(errors);
 	}
 	
-	public ArrayList<DBInserter> inserAXESsheets() {
+	public ArrayList<DBInserter> insertKonstanzSheets() {
+		AXESSheetReaderManager readerManager = new AXESSheetReaderManager(inDir, threads);
+		ArrayList<File> sheets = readerManager.discoverFiles();
+		Log.i("Discovered " + sheets.size() + " Konstanz source sheets.");
+		
+		ArrayList<DBInserter> inserters = new ArrayList<>();
+		for (File f : sheets) {
+			inserters.add(new KonstanzInserter(f));
+		}
+		return inserters;
+	}
+	
+	public ArrayList<DBInserter> insertAXESsheets() {
 		ArrayList<JSONObject> experiments = new ArrayList<>();
 		if (inDir.exists() && inDir.isDirectory()) {
 			experiments = readAXESSheets(inDir, threads);
@@ -59,7 +71,6 @@ public class InsertManager {
 		for (JSONObject experiment : experiments) {
 			AXESInserter inserter = new AXESInserter(experiment);
 			inserters.add(inserter);
-			service.submit(inserter);
 		}
 		return inserters;
 	}
@@ -93,13 +104,19 @@ public class InsertManager {
 		ArrayList<DBInserter> inserters = null;
 		switch (methodIndex) {
 			case 0:
-				inserters = inserAXESsheets();
+				inserters = insertAXESsheets();
+				break;
+			case 1:
+				inserters = insertKonstanzSheets();
 				break;
 			default:
 				Client.showErrorMessage("Invalid insertion method selected.", parent);
 				throw new IllegalStateException("Unknown insert method index: " + methodIndex);
 		}
 		
+		for (DBInserter inserter : inserters) {
+			service.submit(inserter);
+		}
 		service.shutdown();
 		Log.i("Done adding. Starting to wait.");
 		

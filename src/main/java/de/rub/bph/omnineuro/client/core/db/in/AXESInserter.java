@@ -38,7 +38,6 @@ public class AXESInserter extends DBInserter implements Runnable {
 			try {
 				individualID = executor.getIDViaName("individual", individual);
 			} catch (Throwable e) {
-				
 				long sexID = executor.getIDViaFeature("sex", "label", sex);
 				long speciesID = executor.getIDViaName("species", species);
 				

@@ -13,8 +13,8 @@ import org.apache.poi.ss.usermodel.Workbook;
 import java.io.File;
 import java.io.IOException;
 
-import static de.rub.bph.omnineuro.client.core.sheet.reader.SheetReader.EXCEL_SHEET_SUBNAME_EXPERIMENT_DATA;
-import static de.rub.bph.omnineuro.client.core.sheet.reader.SheetReader.EXCEL_SHEET_SUBNAME_METADATA;
+import static de.rub.bph.omnineuro.client.core.sheet.reader.AXESSheetReader.EXCEL_SHEET_SUBNAME_EXPERIMENT_DATA;
+import static de.rub.bph.omnineuro.client.core.sheet.reader.AXESSheetReader.EXCEL_SHEET_SUBNAME_METADATA;
 
 public class DataReaderCompat {
 
