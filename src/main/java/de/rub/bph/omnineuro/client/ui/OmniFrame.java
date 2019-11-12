@@ -249,7 +249,7 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 			return;
 		}
 		
-		SheetExporterCompatManager compatManager = new SheetExporterCompatManager(threads, dir, limitedResponseIDs, useComma);
+		SheetExporterCompatManager compatManager = new SheetExporterCompatManager(threads, dir, limitedResponseIDs, false, useComma);
 		compatManager.export();
 		
 		int taskCount = compatManager.getTaskCount();

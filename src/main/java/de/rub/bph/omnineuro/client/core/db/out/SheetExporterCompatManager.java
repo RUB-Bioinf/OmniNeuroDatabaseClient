@@ -35,9 +35,11 @@ public class SheetExporterCompatManager extends ConcurrentExecutionManager {
 	private JSONObject config;
 	private boolean useComma;
 	private ArrayList<CompoundSheetExporter> exporters;
+	private boolean includeBlinded;
 	
-	public SheetExporterCompatManager(int threads, File sourceDir, ArrayList<Long> responseIDs, boolean useComma) {
+	public SheetExporterCompatManager(int threads, File sourceDir, ArrayList<Long> responseIDs, boolean includeBlinded, boolean useComma) {
 		super(threads);
+		this.includeBlinded = includeBlinded;
 		this.useComma = useComma;
 		
 		config = ExportConfigManager.getInstance().getCurrentConfig();
@@ -72,11 +74,13 @@ public class SheetExporterCompatManager extends ConcurrentExecutionManager {
 	public void export() {
 		//TODO distinguish parameters here and add via sub functions?
 		
-		try {
-			exportEFSASheet();
-		} catch (SQLException e) {
-			Log.e(e);
-			Client.showErrorMessage("Failed to export experiment data!\nA more detailed message will be displayed in the future.", null, e);
+		if (includeBlinded) {
+			try {
+				exportEFSASheet();
+			} catch (SQLException e) {
+				Log.e(e);
+				Client.showErrorMessage("Failed to export experiment data!\nA more detailed message will be displayed in the future.", null, e);
+			}
 		}
 		
 		try {

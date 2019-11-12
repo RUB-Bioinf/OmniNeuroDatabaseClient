@@ -1,28 +1,27 @@
 package de.rub.bph.omnineuro.client.core.db.in;
 
 import de.rub.bph.omnineuro.client.core.sheet.reader.SheetReader;
-import de.rub.bph.omnineuro.client.core.sheet.reader.SheetReaderTask;
 import de.rub.bph.omnineuro.client.imported.log.Log;
 import de.rub.bph.omnineuro.client.util.WellBuilder;
-import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-import org.json.JSONException;
-import org.json.JSONObject;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.IOException;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 
 public class KonstanzInserter extends DBInserter {
 	
 	private static final long DECODED_ENDPOINT_FAILURE = -1;
 	private static final int START_ROW_INDEX = 4;
 	private File sourceFile;
+	private HashMap<String, ArrayList<String>> lookupMapDMSO;
 	
 	public KonstanzInserter(File sourceFile) {
 		this.sourceFile = sourceFile;
+		lookupMapDMSO = new HashMap<>();
 	}
 	
 	private long decodeKonstanzEndpoint(String endpointName) throws SQLException {
@@ -38,6 +37,10 @@ public class KonstanzInserter extends DBInserter {
 				return executor.getIDViaName("endpoint", "Viabillity");
 			case "neurite area":
 				return executor.getIDViaName("endpoint", "Neurite Area");
+			case "selected objects":
+				return executor.getIDViaName("endpoint", "Selected Objects");
+			case "valid objects":
+				return executor.getIDViaName("endpoint", "Valid Objects");
 			default:
 				addError("Failed to decode a database compatible endpoint from '" + endpointName + "'!");
 				return DECODED_ENDPOINT_FAILURE;
@@ -73,6 +76,8 @@ public class KonstanzInserter extends DBInserter {
 				assay = "UKN2";
 			} else if (sfName.contains("UKN5")) {
 				assay = "UKN5";
+			} else if (sfName.contains("UKN4")) {
+				assay = "UKN4";
 			} else throw new IllegalArgumentException("Failed to deduct the assay from this filename: " + sfName);
 			
 			boolean extendedEndpoints = false;
@@ -176,15 +181,19 @@ public class KonstanzInserter extends DBInserter {
 					
 					long concentrationID;
 					long controlID;
+					boolean isControl;
 					switch (wellType) {
 						case "t":
 							concentrationID = executor.insertConcentration(concentration);
+							isControl = false;
 							break;
 						case "n":
 							controlID = executor.getIDViaName("control", "Solvent control (SC)");
 							concentrationID = executor.insertConcentration(0, controlID);
+							isControl = true;
 							break;
 						case "p":
+							isControl = true;
 							controlID = executor.getIDViaName("control", "Positive control (PC)");
 							concentrationID = executor.insertConcentration(0, controlID);
 							break;
@@ -192,22 +201,43 @@ public class KonstanzInserter extends DBInserter {
 							throw new IllegalArgumentException("Could not identify well type: '" + wellType + "'");
 					}
 					
+					ArrayList<Long> experimentIDList = new ArrayList<>();
+					if (isControl) {
+						executor.deleteRow("experiment", experimentID);
+						ArrayList<String> experimentList = lookupMapDMSO.get(plateID);
+						for (String s : experimentList) {
+							long id = executor.getIDViaName("experiment", s+"#"+plateID);
+							experimentIDList.add(id);
+						}
+					} else {
+						if (!lookupMapDMSO.containsKey(plateID)) {
+							lookupMapDMSO.put(plateID, new ArrayList<>());
+						}
+						ArrayList<String> sampleIDList = lookupMapDMSO.get(plateID);
+						sampleIDList.add(sampleID);
+						lookupMapDMSO.put(plateID, sampleIDList);
+						experimentIDList.add(experimentID);
+					}
+					
 					long endpointID1 = decodeKonstanzEndpoint(endpoint1);
 					long endpointID2 = decodeKonstanzEndpoint(endpoint2);
 					long endpointID3 = decodeKonstanzEndpoint(endpoint3);
-					if (endpointID1 != DECODED_ENDPOINT_FAILURE && !Double.isNaN(response1)) {
-						executor.insertResponse(response1, timestampEndpoint, endpointID1, concentrationID, experimentID, wellID, outlierID, detectionMethodID);
-						incrementInsertedResponsesCount();
-					}
 					
-					if (endpointID2 != DECODED_ENDPOINT_FAILURE && !Double.isNaN(response2)) {
-						executor.insertResponse(response2, timestampEndpoint, endpointID2, concentrationID, experimentID, wellID, outlierID, detectionMethodID);
-						incrementInsertedResponsesCount();
-					}
-					
-					if (extendedEndpoints && endpointID3 != DECODED_ENDPOINT_FAILURE && !Double.isNaN(response3)) {
-						executor.insertResponse(response3, timestampEndpoint, endpointID3, concentrationID, experimentID, wellID, outlierID, detectionMethodID);
-						incrementInsertedResponsesCount();
+					for (long id : experimentIDList) {
+						if (endpointID1 != DECODED_ENDPOINT_FAILURE && !Double.isNaN(response1)) {
+							executor.insertResponse(response1, timestampEndpoint, endpointID1, concentrationID, id, wellID, outlierID, detectionMethodID);
+							incrementInsertedResponsesCount();
+						}
+						
+						if (endpointID2 != DECODED_ENDPOINT_FAILURE && !Double.isNaN(response2)) {
+							executor.insertResponse(response2, timestampEndpoint, endpointID2, concentrationID, id, wellID, outlierID, detectionMethodID);
+							incrementInsertedResponsesCount();
+						}
+						
+						if (extendedEndpoints && endpointID3 != DECODED_ENDPOINT_FAILURE && !Double.isNaN(response3)) {
+							executor.insertResponse(response3, timestampEndpoint, endpointID3, concentrationID, id, wellID, outlierID, detectionMethodID);
+							incrementInsertedResponsesCount();
+						}
 					}
 				} catch (Exception e) {
 					Log.e(e);
@@ -227,19 +257,4 @@ public class KonstanzInserter extends DBInserter {
 	public String getName() {
 		return sourceFile.getName();
 	}
-	
-	private class SheetHelper extends SheetReaderTask {
-		
-		public SheetHelper(Workbook workbook, String sheetName, File sourceFile) throws IOException {
-			super(workbook, sheetName, sourceFile);
-		}
-		
-		@Deprecated
-		@Override
-		public JSONObject readSheet() throws JSONException, SheetReaderException {
-			return null;
-		}
-	}
 }
-
-
