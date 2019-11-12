@@ -28,13 +28,15 @@ public class InsertManager {
 	private ArrayList<String> triviaList;
 	private int methodIndex;
 	private Component parent;
+	private boolean attemptUnblinding;
 	
-	public InsertManager(File inDir, int threads, int methodIndex, Component parent) {
+	public InsertManager(File inDir, int threads, int methodIndex, boolean attemptUnblinding, Component parent) {
 		this.threads = threads;
 		this.parent = parent;
 		this.inDir = inDir;
 		this.outDir = new File(inDir, OUT_DIR_NAME_INSERTER);
 		this.methodIndex = methodIndex;
+		this.attemptUnblinding = attemptUnblinding;
 		
 		service = Executors.newFixedThreadPool(threads);
 		errors = new ArrayList<>();
@@ -69,7 +71,7 @@ public class InsertManager {
 		
 		ArrayList<DBInserter> inserters = new ArrayList<>();
 		for (JSONObject experiment : experiments) {
-			AXESInserter inserter = new AXESInserter(experiment);
+			AXESInserter inserter = new AXESInserter(experiment, attemptUnblinding);
 			inserters.add(inserter);
 		}
 		return inserters;
@@ -134,7 +136,10 @@ public class InsertManager {
 		ArrayList<String> containsErrorList = new ArrayList<>();
 		ArrayList<String> containsNaNList = new ArrayList<>();
 		ArrayList<String> insertedResponsesList = new ArrayList<>();
+		ArrayList<String> insertedBlindedCompounds = new ArrayList<>();
 		triviaList = new ArrayList<>();
+		
+		boolean additionalBlindedCompounds = false;
 		
 		int errorNaNCount = 0;
 		int insertedResponsesCount = 0;
@@ -153,6 +158,12 @@ public class InsertManager {
 			if (inserter.hasNaNs()) {
 				containsNaNList.add(name + ";" + inserter.getNaNCount());
 				errorNaNCount += inserter.getNaNCount();
+			}
+			
+			if (inserter instanceof AXESInserter) {
+				additionalBlindedCompounds = true;
+				AXESInserter axesInserter = (AXESInserter) inserter;
+				insertedBlindedCompounds.addAll(axesInserter.getBlindingInfo());
 			}
 		}
 		
@@ -190,6 +201,10 @@ public class InsertManager {
 			manager.saveListFile(containsNaNList, new File(outDir, "contains_nan.csv"), false);
 			manager.saveListFile(insertedResponsesList, new File(outDir, "inserted_responses.csv"), false);
 			manager.saveListFile(triviaList, new File(outDir, "trivia.txt"), false);
+			
+			if (additionalBlindedCompounds) {
+				manager.saveListFile(insertedBlindedCompounds, new File(outDir, "blindedCompounds.txt"), true, false);
+			}
 		} catch (IOException e) {
 			Log.e("Failed to create insertion information file at: " + outDir.getAbsolutePath());
 		}

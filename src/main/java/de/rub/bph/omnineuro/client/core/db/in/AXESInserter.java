@@ -11,16 +11,21 @@ import org.json.JSONObject;
 import java.io.File;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 
 public class AXESInserter extends DBInserter implements Runnable {
 	
 	private JSONObject data;
 	private String name;
+	private ArrayList<String> blindingInfo;
+	private boolean attemptUnblinding;
 	
-	public AXESInserter(JSONObject data) {
+	public AXESInserter(JSONObject data, boolean attemptUnblinding) {
 		super();
+		this.attemptUnblinding = attemptUnblinding;
 		this.data = data;
+		blindingInfo = new ArrayList<>();
 		
 		name = "<Unknown>";
 		try {
@@ -49,6 +54,10 @@ public class AXESInserter extends DBInserter implements Runnable {
 		}
 		
 		return individualID;
+	}
+	
+	private void addBlindingRow(String row) {
+		blindingInfo.add(row);
 	}
 	
 	@Override
@@ -125,6 +134,42 @@ public class AXESInserter extends DBInserter implements Runnable {
 					String newCompoundName = executor.getNameViaID("compound", compoundID);
 					addError("\t\t\tBut that CAS Nr. existed in the DB and the compound was resolved as '" + newCompoundName + "'.");
 				}
+			}
+			
+			String blindedQueryResult = executor.getFeatureViaID("compound", "blinded", compoundID).toLowerCase();
+			boolean blindedCompound = (blindedQueryResult.equals("t") || blindedQueryResult.equals("true") || blindedQueryResult.equals("1"));
+			
+			if (blindedCompound) {
+				long blindingLookupID = -1;
+				String unblindedCAS = null;
+				try {
+					blindingLookupID = executor.getIDViaName("unblinded_compound_mapping", casNR);
+					unblindedCAS = executor.getFeatureViaID("unblinded_compound_mapping", "unblinded_cas_number", blindingLookupID);
+				} catch (Throwable e) {
+					Log.e(e);
+				}
+				if (blindingLookupID != -1) {
+					try {
+						String blindedName = casNR;
+						compoundID = executor.getIDViaFeature("compound", "cas_no", unblindedCAS);
+						compuntAbbreviation = executor.getFeatureViaID("compound", "abbreviation", compoundID);
+						compound = executor.getNameViaID("compound", compoundID);
+						casNR = unblindedCAS;
+						
+						addBlindingRow(blindedName + " was unblinded as " + compound + " [" + compuntAbbreviation + "]. CAS: " + casNR);
+					} catch (Throwable e) {
+						Log.e(e);
+						String error = casNR + " is a blinded compound, but failed to fetch the unblinded compound. Unblinded CAS: " + unblindedCAS + ". Reason: " + e.getClass().getSimpleName() + ": " + e.getMessage();
+						addBlindingRow(error);
+						addError(error);
+					}
+				} else {
+					String error = casNR + " is a blinded compound, but the unblinded CAS was not in the database.";
+					addBlindingRow(error);
+					addError(error);
+				}
+			} else {
+				addBlindingRow(compound + " [" + compuntAbbreviation + "] is not a blinded compound.");
 			}
 			
 			long experimentID;
@@ -238,6 +283,10 @@ public class AXESInserter extends DBInserter implements Runnable {
 	@Override
 	public String getName() {
 		return name;
+	}
+	
+	public ArrayList<String> getBlindingInfo() {
+		return new ArrayList<>(blindingInfo);
 	}
 	
 }

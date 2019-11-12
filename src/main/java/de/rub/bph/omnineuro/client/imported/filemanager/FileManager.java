@@ -77,7 +77,16 @@ public class FileManager {
 	}
 	
 	public void saveListFile(Collection<String> list, File outFile, boolean sort) throws IOException {
+		saveListFile(list, outFile, false, true);
+	}
+	
+	public void saveListFile(Collection<String> list, File outFile, boolean sort, boolean allowDuplicates) throws IOException {
 		ArrayList<String> outList = new ArrayList<>(list);
+		
+		if (!allowDuplicates) {
+			Set<String> set = new HashSet<>(outList);
+			outList = new ArrayList<>(set);
+		}
 		if (sort) Collections.sort(outList);
 		
 		StringBuilder builder = new StringBuilder();

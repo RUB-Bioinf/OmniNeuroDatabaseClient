@@ -47,6 +47,8 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 	private JCheckBox commaCB;
 	private JButton EFSAImportButton;
 	private JComboBox importMethodCB;
+	private JCheckBox unblindingCB;
+	private JCheckBox unblindCompoundsExportCB;
 	
 	public OmniFrame() {
 		setupMenuBars();
@@ -126,7 +128,8 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 		
 		long startTime = new Date().getTime();
 		
-		InsertManager insertManager = new InsertManager(dir, cores, methodIndex, this);
+		boolean attemptUnblinding = unblindingCB.isSelected();
+		InsertManager insertManager = new InsertManager(dir, cores, methodIndex, attemptUnblinding, this);
 		insertManager.insert();
 		
 		long timeTaken = new Date().getTime() - startTime;
@@ -249,7 +252,8 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 			return;
 		}
 		
-		SheetExporterCompatManager compatManager = new SheetExporterCompatManager(threads, dir, limitedResponseIDs, false, useComma);
+		boolean includeBlinded = unblindCompoundsExportCB.isSelected();
+		SheetExporterCompatManager compatManager = new SheetExporterCompatManager(threads, dir, limitedResponseIDs, includeBlinded, useComma);
 		compatManager.export();
 		
 		int taskCount = compatManager.getTaskCount();
