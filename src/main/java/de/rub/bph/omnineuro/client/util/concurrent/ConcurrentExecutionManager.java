@@ -8,16 +8,16 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class ConcurrentExecutionManager {
-
+	
 	protected ExecutorService service;
-
+	
 	protected int threads;
-
+	
 	public ConcurrentExecutionManager(int threads) {
 		this.threads = threads;
 		service = Executors.newFixedThreadPool(threads);
 	}
-
+	
 	protected void waitForTasks() {
 		Log.i("Waiting for '" + getClass().getSimpleName() + "'-tasks to finish!");
 		long start = new Date().getTime();
@@ -33,7 +33,7 @@ public class ConcurrentExecutionManager {
 		long diff = new Date().getTime() - start;
 		Log.i("Finished waiting! Execution time: " + NumberUtils.convertSecondsToHMmSs(diff) + "].");
 	}
-
+	
 	public int getThreads() {
 		return threads;
 	}

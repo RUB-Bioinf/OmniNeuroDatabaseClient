@@ -22,7 +22,7 @@ public class ExperimentDataReaderTaskV0 extends ExperimentDataReaderTask {
 
 	@Override
 	public JSONObject readEndpointValues(EndpointHeader header) throws JSONException {
-		return readEndpointValuesContinuous(header,WELL_INDEX_NOT_AVAILABLE);
+		return readEndpointValuesContinuous(header, WELL_INDEX_NOT_AVAILABLE);
 	}
 
 	@Override
@@ -76,7 +76,7 @@ public class ExperimentDataReaderTaskV0 extends ExperimentDataReaderTask {
 				throw new SheetReaderException("Endpoint lookup error! The lookup table [Expected location: " + timestampLookupManager.getDataFile().getAbsolutePath() + "] does not contain information for endpoint '" + endpointName + "' in sheet " + getFileName() + "!");
 			}
 
-			EndpointHeader header = new EndpointHeader(timestampLookupManager.getName(endpointName), i, expectedValues, timestampLookupManager.getTimestamp(endpointName), 3,null);
+			EndpointHeader header = new EndpointHeader(timestampLookupManager.getName(endpointName), i, expectedValues, timestampLookupManager.getTimestamp(endpointName), 3, null);
 			Log.i("Header added: " + header);
 			headers.add(header);
 		}

@@ -60,7 +60,7 @@ public class ExperimentDataReaderTaskV1 extends ExperimentDataReaderTask {
 			cellName = getExcelColumn(i) + (2 + detectionMethodModifier);
 			int timestamp = (int) Double.parseDouble(getValueAt(cellName));
 			
-			EndpointHeader header = new EndpointHeader(endpointName, i, expectedValues, timestamp, 4+detectionMethodModifier, detectionMethod);
+			EndpointHeader header = new EndpointHeader(endpointName, i, expectedValues, timestamp, 4 + detectionMethodModifier, detectionMethod);
 			Log.i("Header added: " + header);
 			headers.add(header);
 			
@@ -77,6 +77,6 @@ public class ExperimentDataReaderTaskV1 extends ExperimentDataReaderTask {
 	
 	@Override
 	public ArrayList<EndpointHeader> readEndpointsHeaders() throws SheetReaderException, NumberFormatException {
-		return readEndpointsHeaders(1,false);
+		return readEndpointsHeaders(1, false);
 	}
 }

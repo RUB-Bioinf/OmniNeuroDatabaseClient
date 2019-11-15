@@ -18,7 +18,7 @@ public class ExperimentDataReaderTaskV2 extends ExperimentDataReaderTask {
 	
 	@Override
 	public JSONObject readEndpointValues(EndpointHeader header) throws JSONException {
-		return readEndpointValuesContinuous(header,1);
+		return readEndpointValuesContinuous(header, 1);
 	}
 	
 	@Override
@@ -30,6 +30,6 @@ public class ExperimentDataReaderTaskV2 extends ExperimentDataReaderTask {
 			e.printStackTrace();
 			return new ArrayList<>();
 		}
-		return helperTask.readEndpointsHeaders(2,true);
+		return helperTask.readEndpointsHeaders(2, true);
 	}
 }

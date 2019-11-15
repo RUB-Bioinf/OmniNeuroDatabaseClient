@@ -57,7 +57,7 @@ public class OmniNeuroQueryExecutor extends QueryExecutor {
 	//	return insertResponse(value, timestamp, endpointID, concentrationID, experimentID, outlierTypeID,wellID);
 	//}
 	
-	public synchronized boolean insertResponse(double value, int timestamp, long endpointID, long concentrationID, long experimentID, long wellID,long outlierTypeID,long detectionMethodID) throws SQLException {
+	public synchronized boolean insertResponse(double value, int timestamp, long endpointID, long concentrationID, long experimentID, long wellID, long outlierTypeID, long detectionMethodID) throws SQLException {
 		return execute("INSERT INTO response VALUES (DEFAULT, " + value + "," + timestamp + "," + endpointID + "," + concentrationID + "," + experimentID + "," + outlierTypeID + "," + wellID + "," + detectionMethodID + ");");
 	}
 	

@@ -38,7 +38,7 @@ public class DBConnection {
 		return connection;
 	}
 	
-	public void reconnect(){
+	public void reconnect() {
 		myConnection = new DBConnection();
 	}
 	

@@ -6,10 +6,10 @@ import java.util.ArrayList;
 import java.util.Iterator;
 
 public class JSONOperator {
-
+	
 	public static ArrayList<String> getKeys(JSONObject data) {
 		ArrayList<String> list = new ArrayList<>();
-
+		
 		Iterator experimentKeys = data.keys();
 		while (experimentKeys.hasNext()) {
 			String key = experimentKeys.next().toString();
@@ -17,5 +17,5 @@ public class JSONOperator {
 		}
 		return list;
 	}
-
+	
 }

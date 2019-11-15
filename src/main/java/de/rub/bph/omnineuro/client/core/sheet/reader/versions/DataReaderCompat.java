@@ -30,6 +30,25 @@ public class DataReaderCompat {
 		Log.i("Setting up a sheet reader compat: Version " + version);
 	}
 
+	public ExperimentDataReaderTask getExperimentDataTask() throws IOException {
+		Log.i("Requesting a compat experiment data task. Version: " + version);
+		switch (version) {
+			case -1:
+				Log.e("Fatal error while reading the sheet version.");
+				return null;
+			case 0:
+				return new ExperimentDataReaderTaskV0(workbook, EXCEL_SHEET_SUBNAME_EXPERIMENT_DATA, sourceFile);
+			case 1:
+				return new ExperimentDataReaderTaskV1(workbook, EXCEL_SHEET_SUBNAME_EXPERIMENT_DATA, sourceFile);
+			case 2:
+				return new ExperimentDataReaderTaskV2(workbook, EXCEL_SHEET_SUBNAME_EXPERIMENT_DATA, sourceFile);
+			//TODO Use DataReaderTasks, other than forcing Task V2 on all versions
+			default:
+				Log.e("Sheet version read as " + getVersion() + ", but don't know how to handle it for experiment compat reader.");
+				return null;
+		}
+	}
+
 	public MetaDataReaderTask getMetaDataTask() throws IOException {
 		Log.i("Requesting a compat meta data task. Version: " + version);
 		switch (version) {
@@ -47,34 +66,15 @@ public class DataReaderCompat {
 		}
 	}
 
-	public ExperimentDataReaderTask getExperimentDataTask() throws IOException {
-		Log.i("Requesting a compat experiment data task. Version: " + version);
-		switch (version) {
-			case -1:
-				Log.e("Fatal error while reading the sheet version.");
-				return null;
-			case 0:
-				return new ExperimentDataReaderTaskV0(workbook, EXCEL_SHEET_SUBNAME_EXPERIMENT_DATA, sourceFile);
-			case 1:
-				return new ExperimentDataReaderTaskV1(workbook, EXCEL_SHEET_SUBNAME_EXPERIMENT_DATA, sourceFile);
-			case 2:
-				return new ExperimentDataReaderTaskV2(workbook, EXCEL_SHEET_SUBNAME_EXPERIMENT_DATA, sourceFile);
-				//TODO Use DataReaderTasks, other than forcing Task V2 on all versions
-			default:
-				Log.e("Sheet version read as " + getVersion() + ", but don't know how to handle it for experiment compat reader.");
-				return null;
-		}
-	}
-
-	public Workbook getWorkbook() {
-		return workbook;
-	}
-
 	public File getSourceFile() {
 		return sourceFile;
 	}
 
 	public int getVersion() {
 		return version;
+	}
+
+	public Workbook getWorkbook() {
+		return workbook;
 	}
 }

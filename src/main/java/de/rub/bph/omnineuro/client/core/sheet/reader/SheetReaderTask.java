@@ -17,7 +17,7 @@ public abstract class SheetReaderTask extends SheetReader {
 		
 		workbook.close();
 	}
-
+	
 	public abstract JSONObject readSheet() throws JSONException, SheetReaderException;
 	
 	public void addRowPair(JSONObject data, int line, boolean forceNumeric) throws SheetReaderException, JSONException {
@@ -31,5 +31,5 @@ public abstract class SheetReaderTask extends SheetReader {
 	public File getSourceFile() {
 		return sourceFile;
 	}
-
+	
 }
