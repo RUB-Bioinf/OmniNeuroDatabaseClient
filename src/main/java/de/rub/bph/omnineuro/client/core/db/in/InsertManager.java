@@ -50,7 +50,7 @@ public class InsertManager {
 		
 		ArrayList<DBInserter> inserters = new ArrayList<>();
 		for (File f : sheets) {
-			inserters.add(new KonstanzInserter(f));
+			inserters.add(new KonstanzInserter(f, attemptUnblinding));
 		}
 		return inserters;
 	}
@@ -139,8 +139,6 @@ public class InsertManager {
 		ArrayList<String> insertedBlindedCompounds = new ArrayList<>();
 		triviaList = new ArrayList<>();
 		
-		boolean additionalBlindedCompounds = false;
-		
 		int errorNaNCount = 0;
 		int insertedResponsesCount = 0;
 		
@@ -160,11 +158,7 @@ public class InsertManager {
 				errorNaNCount += inserter.getNaNCount();
 			}
 			
-			if (inserter instanceof AXESInserter) {
-				additionalBlindedCompounds = true;
-				AXESInserter axesInserter = (AXESInserter) inserter;
-				insertedBlindedCompounds.addAll(axesInserter.getBlindingInfo());
-			}
+			insertedBlindedCompounds.addAll(inserter.getBlindingInfo());
 		}
 		
 		triviaList.add("Total errors discovered: " + errors.size());
@@ -202,9 +196,7 @@ public class InsertManager {
 			manager.saveListFile(insertedResponsesList, new File(outDir, "inserted_responses.csv"), false);
 			manager.saveListFile(triviaList, new File(outDir, "trivia.txt"), false);
 			
-			if (additionalBlindedCompounds) {
-				manager.saveListFile(insertedBlindedCompounds, new File(outDir, "blindedCompounds.txt"), true, false);
-			}
+			manager.saveListFile(insertedBlindedCompounds, new File(outDir, "blindedCompounds.txt"), true, false);
 		} catch (IOException e) {
 			Log.e("Failed to create insertion information file at: " + outDir.getAbsolutePath());
 		}

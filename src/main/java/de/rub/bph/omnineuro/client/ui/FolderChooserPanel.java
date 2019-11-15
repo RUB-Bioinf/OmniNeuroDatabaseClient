@@ -14,27 +14,29 @@ import java.io.File;
 import java.io.IOException;
 
 public class FolderChooserPanel extends JPanel implements DocumentListener {
-	public static final String CACHE_IMPORT_SOURCE_DIR_FILENAME = "db_import_source_dir.cache";
+	
 	public static final String CACHE_EXPORT_DIR_FILENAME = "db_export_dir.cache";
+	public static final String CACHE_IMPORT_SOURCE_DIR_FILENAME = "db_import_source_dir.cache";
+	public static final String CACHE_OUTLIER_DIR_FILENAME = "db_outlier_source_dir.cache";
 	private JTextField textField1;
 	private JButton chooseBT;
 	private JPanel holderPL;
 	private JLabel textLB;
 	private JButton browseBT;
-
+	
 	private File cacheFile;
-
+	
 	public FolderChooserPanel(File cacheFile, String label) {
 		this("", label);
 		Log.i("Starting chooser from a (cache) file: " + cacheFile.getAbsolutePath());
-
+		
 		if (cacheFile.isDirectory()) {
 			setText(cacheFile.getAbsolutePath());
 			Log.i("Nope, it was just a basic directory. No caching needed.");
 		} else {
 			this.cacheFile = cacheFile;
 			FileManager manager = new FileManager();
-
+			
 			String s;
 			try {
 				if (!cacheFile.exists()) cacheFile.createNewFile();
@@ -45,15 +47,15 @@ public class FolderChooserPanel extends JPanel implements DocumentListener {
 				s = "";
 			}
 			setText(s);
-
+			
 			textField1.getDocument().addDocumentListener(this);
 		}
 	}
-
+	
 	public FolderChooserPanel() {
 		this("", "");
 	}
-
+	
 	public FolderChooserPanel(String dirText, String labelText) {
 		setText(dirText);
 		textLB.setText(labelText);
@@ -70,11 +72,11 @@ public class FolderChooserPanel extends JPanel implements DocumentListener {
 			}
 		});
 	}
-
+	
 	public void browseDirectory() {
 		File dir = new File(getText());
 		Log.i("Attempting to browse directory: " + dir.getAbsolutePath());
-
+		
 		if (!dir.exists()) {
 			Client.showErrorMessage("Please select a valid directory path, accessible by this device.", this);
 			return;
@@ -83,7 +85,7 @@ public class FolderChooserPanel extends JPanel implements DocumentListener {
 			Client.showErrorMessage("The selected file is not a valid folder.", this);
 			return;
 		}
-
+		
 		if (!Desktop.isDesktopSupported()) {
 			Client.showErrorMessage("This device does not support browsing a file!", this);
 			return;
@@ -96,7 +98,7 @@ public class FolderChooserPanel extends JPanel implements DocumentListener {
 			Client.showErrorMessage("Failed to browse the directory", this, e);
 		}
 	}
-
+	
 	private void chooseDirectory() {
 		JFileChooser chooser = new JFileChooser();
 		chooser.setCurrentDirectory(new File(getText()));
@@ -106,38 +108,7 @@ public class FolderChooserPanel extends JPanel implements DocumentListener {
 			setText(chooser.getSelectedFile().getAbsolutePath());
 		}
 	}
-
-	public String getText() {
-		return textField1.getText();
-	}
-
-	public void setText(String text) {
-		textField1.setText(text);
-	}
-
-	public String getLabel() {
-		return textLB.getText();
-	}
-
-	public void setLabel(String text) {
-		textLB.setText(text);
-	}
-
-	@Override
-	public void insertUpdate(DocumentEvent documentEvent) {
-		writeCache(textField1.getText());
-	}
-
-	@Override
-	public void removeUpdate(DocumentEvent documentEvent) {
-		writeCache(textField1.getText());
-	}
-
-	@Override
-	public void changedUpdate(DocumentEvent documentEvent) {
-		writeCache(textField1.getText());
-	}
-
+	
 	public void writeCache(String text) {
 		if (cacheFile == null) {
 			return;
@@ -150,5 +121,36 @@ public class FolderChooserPanel extends JPanel implements DocumentListener {
 			return;
 		}
 		Log.i("Chooser cache file: '" + cacheFile.getName() + "' written: '" + text + "'!");
+	}
+	
+	@Override
+	public void insertUpdate(DocumentEvent documentEvent) {
+		writeCache(textField1.getText());
+	}
+	
+	@Override
+	public void removeUpdate(DocumentEvent documentEvent) {
+		writeCache(textField1.getText());
+	}
+	
+	@Override
+	public void changedUpdate(DocumentEvent documentEvent) {
+		writeCache(textField1.getText());
+	}
+	
+	public String getLabel() {
+		return textLB.getText();
+	}
+	
+	public void setLabel(String text) {
+		textLB.setText(text);
+	}
+	
+	public String getText() {
+		return textField1.getText();
+	}
+	
+	public void setText(String text) {
+		textField1.setText(text);
 	}
 }

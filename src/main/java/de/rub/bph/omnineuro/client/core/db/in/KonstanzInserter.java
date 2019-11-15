@@ -19,7 +19,8 @@ public class KonstanzInserter extends DBInserter {
 	private File sourceFile;
 	private HashMap<String, ArrayList<String>> lookupMapDMSO;
 	
-	public KonstanzInserter(File sourceFile) {
+	public KonstanzInserter(File sourceFile, boolean attemptUnblinding) {
+		super(attemptUnblinding);
 		this.sourceFile = sourceFile;
 		lookupMapDMSO = new HashMap<>();
 	}
@@ -49,10 +50,8 @@ public class KonstanzInserter extends DBInserter {
 	
 	@Override
 	public void run() {
-		Log.w("Henlo, I am a Konstanz Thread. My ID: " + Thread.currentThread().getId());
-		
 		long timestampExperiment = new Date(0).getTime();
-		int timestampEndpoint = 72;
+		int timestampEndpoint = 24;
 		addError("Failed to get the timestamp (experiment, endpoint) from file: " + sourceFile.getName());
 		addError("Failed to read the individual from file: " + sourceFile.getName());
 		addError("Failed to read the detection method from file: " + sourceFile.getName());
@@ -137,7 +136,29 @@ public class KonstanzInserter extends DBInserter {
 				String experimentName = sampleID + "#" + plateID;
 				
 				// DATABASE STUFF
+				long concentrationID;
+				long controlID;
+				boolean isControl;
+				switch (wellType) {
+					case "t":
+						concentrationID = executor.insertConcentration(concentration);
+						isControl = false;
+						break;
+					case "n":
+						controlID = executor.getIDViaName("control", "Solvent control (SC)");
+						concentrationID = executor.insertConcentration(0, controlID);
+						isControl = true;
+						break;
+					case "p":
+						isControl = true;
+						controlID = executor.getIDViaName("control", "Positive control (PC)");
+						concentrationID = executor.insertConcentration(0, controlID);
+						break;
+					default:
+						throw new IllegalArgumentException("Could not identify well type: '" + wellType + "'");
+				}
 				
+				String unBlindedSampleID = sampleID;
 				try {
 					long experimentID;
 					synchronized (executor) {
@@ -161,6 +182,18 @@ public class KonstanzInserter extends DBInserter {
 								compoundID = executor.getIDViaName("compound", sampleID);
 							}
 							
+							if (attemptUnblinding) {
+								if (isControl) {
+									addBlindingRow(sampleID + " is not a blinded compound.");
+								} else {
+									CompoundHolder compoundHolder = attemptUnblinding(sampleID);
+									if (compoundHolder != null) {
+										sampleID = compoundHolder.getName();
+										compoundID = compoundHolder.getCompoundID();
+									}
+								}
+							}
+							
 							experimentID = executor.getNextSequenceTableVal("experiment");
 							executor.insertExperiment(experimentID, timestampExperiment, experimentName, projectID, workgroupID, individualID, compoundID, cellTypeID, assayID, plateFormatID);
 						}
@@ -179,34 +212,12 @@ public class KonstanzInserter extends DBInserter {
 					long outlierID = executor.getIDViaName("outlier_type", "Unchecked");
 					long detectionMethodID = executor.getIDViaName("detection_method", "Unknown");
 					
-					long concentrationID;
-					long controlID;
-					boolean isControl;
-					switch (wellType) {
-						case "t":
-							concentrationID = executor.insertConcentration(concentration);
-							isControl = false;
-							break;
-						case "n":
-							controlID = executor.getIDViaName("control", "Solvent control (SC)");
-							concentrationID = executor.insertConcentration(0, controlID);
-							isControl = true;
-							break;
-						case "p":
-							isControl = true;
-							controlID = executor.getIDViaName("control", "Positive control (PC)");
-							concentrationID = executor.insertConcentration(0, controlID);
-							break;
-						default:
-							throw new IllegalArgumentException("Could not identify well type: '" + wellType + "'");
-					}
-					
 					ArrayList<Long> experimentIDList = new ArrayList<>();
 					if (isControl) {
 						executor.deleteRow("experiment", experimentID);
 						ArrayList<String> experimentList = lookupMapDMSO.get(plateID);
 						for (String s : experimentList) {
-							long id = executor.getIDViaName("experiment", s+"#"+plateID);
+							long id = executor.getIDViaName("experiment", s + "#" + plateID);
 							experimentIDList.add(id);
 						}
 					} else {
@@ -214,7 +225,7 @@ public class KonstanzInserter extends DBInserter {
 							lookupMapDMSO.put(plateID, new ArrayList<>());
 						}
 						ArrayList<String> sampleIDList = lookupMapDMSO.get(plateID);
-						sampleIDList.add(sampleID);
+						sampleIDList.add(unBlindedSampleID);
 						lookupMapDMSO.put(plateID, sampleIDList);
 						experimentIDList.add(experimentID);
 					}

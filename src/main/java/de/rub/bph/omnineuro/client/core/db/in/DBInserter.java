@@ -10,25 +10,60 @@ import java.util.ArrayList;
 public abstract class DBInserter implements Runnable {
 	
 	protected static OmniNeuroQueryExecutor executor;
+	protected boolean attemptUnblinding;
 	private ArrayList<String> errors, errorsWoNaN;
 	private int NaNCounts;
-	
-	public int getInsertedResponsesCount() {
-		return insertedResponsesCount;
-	}
-	
+	private ArrayList<String> blindingInfo;
 	private int insertedResponsesCount;
 	
-	public DBInserter() {
+	public DBInserter(boolean attemptUnblinding) {
+		blindingInfo = new ArrayList<>();
+		this.attemptUnblinding = attemptUnblinding;
 		Connection connection = DBConnection.getDBConnection().getConnection();
 		if (executor == null) {
 			executor = new OmniNeuroQueryExecutor(connection);
 		}
+		executor.setLogEnabled(false);
 		
 		errors = new ArrayList<>();
 		errorsWoNaN = new ArrayList<>(errors);
 		NaNCounts = 0;
 		insertedResponsesCount = 0;
+	}
+	
+	protected CompoundHolder attemptUnblinding(String blindedName) {
+		long blindingLookupID = -1;
+		String unblindedCAS = null;
+		try {
+			blindingLookupID = executor.getIDViaName("unblinded_compound_mapping", blindedName);
+			unblindedCAS = executor.getFeatureViaID("unblinded_compound_mapping", "unblinded_cas_number", blindingLookupID);
+		} catch (Throwable e) {
+			Log.e(e);
+		}
+		if (blindingLookupID != -1) {
+			try {
+				long compoundID = executor.getIDViaFeature("compound", "cas_no", unblindedCAS);
+				String unblindedCompoundAbbreviation = executor.getFeatureViaID("compound", "abbreviation", compoundID);
+				String unblindedCompoundName = executor.getNameViaID("compound", compoundID);
+				
+				addBlindingRow(blindedName + " was unblinded as " + unblindedCompoundName + " [" + unblindedCompoundAbbreviation + "]. CAS: " + unblindedCAS);
+				return new CompoundHolder(unblindedCompoundName, unblindedCAS, unblindedCompoundAbbreviation, compoundID);
+			} catch (Throwable e) {
+				Log.e(e);
+				String error = blindedName + " is a blinded compound, but failed to fetch the unblinded compound. Unblinded CAS: " + unblindedCAS + ". Reason: " + e.getClass().getSimpleName() + ": " + e.getMessage();
+				addBlindingRow(error);
+				addError(error);
+			}
+		} else {
+			String error = blindedName + " is a blinded compound, but the unblinded CAS was not in the database.";
+			addBlindingRow(error);
+			addError(error);
+		}
+		return null;
+	}
+	
+	protected void addBlindingRow(String row) {
+		blindingInfo.add(row);
 	}
 	
 	protected void addError(String text) {
@@ -49,7 +84,7 @@ public abstract class DBInserter implements Runnable {
 		NaNCounts++;
 	}
 	
-	public void incrementInsertedResponsesCount(){
+	public void incrementInsertedResponsesCount() {
 		insertedResponsesCount++;
 	}
 	
@@ -65,6 +100,10 @@ public abstract class DBInserter implements Runnable {
 		return getNaNCount() != 0;
 	}
 	
+	public ArrayList<String> getBlindingInfo() {
+		return new ArrayList<>(blindingInfo);
+	}
+	
 	public ArrayList<String> getErrors() {
 		return new ArrayList<>(errors);
 	}
@@ -73,9 +112,42 @@ public abstract class DBInserter implements Runnable {
 		return new ArrayList<>(errorsWoNaN);
 	}
 	
+	public int getInsertedResponsesCount() {
+		return insertedResponsesCount;
+	}
+	
 	public int getNaNCount() {
 		return NaNCounts;
 	}
 	
 	public abstract String getName();
+	
+	public class CompoundHolder {
+		
+		private String name, cas, abbreviation;
+		private long compoundID;
+		
+		public CompoundHolder(String name, String cas, String abbreviation, long compoundID) {
+			this.name = name;
+			this.cas = cas;
+			this.abbreviation = abbreviation;
+			this.compoundID = compoundID;
+		}
+		
+		public String getAbbreviation() {
+			return abbreviation;
+		}
+		
+		public String getCas() {
+			return cas;
+		}
+		
+		public long getCompoundID() {
+			return compoundID;
+		}
+		
+		public String getName() {
+			return name;
+		}
+	}
 }

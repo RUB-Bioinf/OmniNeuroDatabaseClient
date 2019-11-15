@@ -35,7 +35,7 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 	private JPanel rootPanel;
 	private DBCredentialsPanel DBCredentialsPanel;
 	private JButton button1;
-	private FolderChooserPanel importDirChooserPanel1;
+	private FolderChooserPanel importDirChooserPanel;
 	private FolderChooserPanel exportDirChooserPanel;
 	private JSpinner threadsSP;
 	private JButton startExportButton;
@@ -49,9 +49,11 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 	private JComboBox importMethodCB;
 	private JCheckBox unblindingCB;
 	private JCheckBox unblindCompoundsExportCB;
+	private FolderChooserPanel outlierChooserPanel;
+	private JButton importOutliersBT;
 	
 	public OmniFrame() {
-		setupMenuBars();
+		//setupMenuBars();
 		add(rootPanel);
 		
 		int cores = Runtime.getRuntime().availableProcessors();
@@ -87,7 +89,7 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 		loadConfigCache();
 		new ConfigurationFileDrop().register(configurationDDPL, true);
 		
-		Log.i(getJMenuBar().toString());
+		//Log.i(getJMenuBar().toString());
 		searchForHashButton.setVisible(false);
 		pack();
 		setVisible(true);
@@ -112,7 +114,7 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 	public void startImport() {
 		Log.i("Start import pressed.");
 		int cores = (int) threadsSP.getValue();
-		File dir = new File(importDirChooserPanel1.getText());
+		File dir = new File(importDirChooserPanel.getText());
 		TimestampLookupManager.reset();
 		
 		if (!testDBConnection(true)) {
@@ -354,8 +356,9 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 	}
 	
 	private void createUIComponents() {
-		importDirChooserPanel1 = new FolderChooserPanel(new File(FolderChooserPanel.CACHE_IMPORT_SOURCE_DIR_FILENAME), "Source directory: ");
+		importDirChooserPanel = new FolderChooserPanel(new File(FolderChooserPanel.CACHE_IMPORT_SOURCE_DIR_FILENAME), "Source directory: ");
 		exportDirChooserPanel = new FolderChooserPanel(new File(FolderChooserPanel.CACHE_EXPORT_DIR_FILENAME), "Target directory: ");
+		outlierChooserPanel = new FolderChooserPanel(new File(FolderChooserPanel.CACHE_OUTLIER_DIR_FILENAME), "Outlier source directory: ");
 	}
 	
 	@Override
