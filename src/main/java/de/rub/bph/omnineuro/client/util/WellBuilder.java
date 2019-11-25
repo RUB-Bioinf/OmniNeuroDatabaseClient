@@ -1,5 +1,6 @@
 package de.rub.bph.omnineuro.client.util;
 
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -28,6 +29,20 @@ public class WellBuilder implements Comparable<WellBuilder> {
 		} else {
 			throw new IllegalArgumentException("Failed to apply well regex ['\" + WELL_REGEX + \"'] to " + text);
 		}
+	}
+	
+	@Override
+	public int hashCode() {
+		return Objects.hash(getRow(), getCol());
+	}
+	
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) return true;
+		if (!(o instanceof WellBuilder)) return false;
+		WellBuilder that = (WellBuilder) o;
+		return getCol() == that.getCol() &&
+				Objects.equals(getRow(), that.getRow());
 	}
 	
 	@Override
@@ -72,5 +87,9 @@ public class WellBuilder implements Comparable<WellBuilder> {
 	
 	public String getWellExtended() {
 		return getRow() + getColExtended();
+	}
+	
+	public String getWellShortened() {
+		return getRow() + getCol();
 	}
 }

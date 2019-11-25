@@ -6,10 +6,13 @@ import de.rub.bph.omnineuro.client.core.db.OmniNeuroQueryExecutor;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
 
 public class ResponseHolder {
 	
+	private static HashMap<Integer, Integer> holderCreationCountMap;
 	private int timestamp;
 	private long endpointID;
 	private long experimentID;
@@ -36,6 +39,22 @@ public class ResponseHolder {
 		
 		wellID = resultSet.getLong("well_id");
 		well = queryExecutor.getNameViaID("well", wellID);
+		
+		if (holderCreationCountMap == null) {
+			resetCreationCounts();
+		}
+		if (!holderCreationCountMap.containsKey(hashCode())) {
+			holderCreationCountMap.put(hashCode(), 0);
+		}
+		holderCreationCountMap.put(hashCode(), holderCreationCountMap.get(hashCode()) + 1);
+	}
+	
+	public static int getResponseHolderCreationCount(ResponseHolder holder) {
+		return holderCreationCountMap.get(holder.hashCode());
+	}
+	
+	public static void resetCreationCounts() {
+		holderCreationCountMap = new HashMap<>();
 	}
 	
 	public static ArrayList<Long> getUniqueEndpointIDs(List<ResponseHolder> holders) {
@@ -93,8 +112,27 @@ public class ResponseHolder {
 	}
 	
 	@Override
+	public int hashCode() {
+		return Objects.hash(getTimestamp(), getEndpointID(), getExperimentID(), getResponse(), getWellID(), getConcentrationHolder());
+	}
+	
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) return true;
+		if (!(o instanceof ResponseHolder)) return false;
+		ResponseHolder holder = (ResponseHolder) o;
+		return getTimestamp() == holder.getTimestamp() &&
+				getEndpointID() == holder.getEndpointID() &&
+				getExperimentID() == holder.getExperimentID() &&
+				Double.compare(holder.getResponse(), getResponse()) == 0 &&
+				getWellID() == holder.getWellID() &&
+				getConcentrationHolder().equals(holder.getConcentrationHolder());
+	}
+	
+	@Override
 	public String toString() {
-		return "Response handler for " + getConcentrationDescription() + " [Control status: " + isControl() + "], endpoint: " + getEndpointName() + " at " + getTimestamp() + "h from well " + getWell() + ". Response value: " + getResponse();
+		return "Response handler for " + getConcentrationDescription() + " [Control status: " + isControl() + "], endpoint: " + getEndpointName() + " at " + getTimestamp() + "h from well " + getWell() + " in experiment " + getExperimentName() +
+				". Response value: " + getResponse() + ". Hash: " + hashCode()+" [Created "+getCreationCount()+" times].";
 	}
 	
 	public double getConcentration() {
@@ -111,6 +149,10 @@ public class ResponseHolder {
 	
 	public long getConcentrationID() {
 		return getConcentrationHolder().getId();
+	}
+	
+	public int getCreationCount() {
+		return getResponseHolderCreationCount(this);
 	}
 	
 	public long getEndpointID() {
@@ -151,5 +193,9 @@ public class ResponseHolder {
 	
 	public boolean isControl() {
 		return getConcentrationHolder().isControl();
+	}
+	
+	public boolean isUniquelyCreated() {
+		return getCreationCount() == 1;
 	}
 }

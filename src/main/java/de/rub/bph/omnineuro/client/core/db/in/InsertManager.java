@@ -12,10 +12,12 @@ import org.json.JSONObject;
 import java.awt.*;
 import java.io.File;
 import java.io.IOException;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import static de.rub.bph.omnineuro.client.core.AXESSheetReaderManager.CSV_FILE_EXTENSION;
 import static de.rub.bph.omnineuro.client.ui.OmniFrame.OUT_DIR_NAME_INSERTER;
 import static de.rub.bph.omnineuro.client.ui.OmniFrame.OUT_DIR_NAME_STATISTICS;
 
@@ -31,16 +33,48 @@ public class InsertManager {
 	private boolean attemptUnblinding;
 	
 	public InsertManager(File inDir, int threads, int methodIndex, boolean attemptUnblinding, Component parent) {
+		this(inDir, threads, methodIndex, attemptUnblinding, parent, OUT_DIR_NAME_INSERTER);
+	}
+	
+	public InsertManager(File inDir, int threads, int methodIndex, boolean attemptUnblinding, Component parent, String outDirName) {
 		this.threads = threads;
 		this.parent = parent;
 		this.inDir = inDir;
-		this.outDir = new File(inDir, OUT_DIR_NAME_INSERTER);
+		this.outDir = new File(inDir, outDirName);
 		this.methodIndex = methodIndex;
 		this.attemptUnblinding = attemptUnblinding;
 		
 		service = Executors.newFixedThreadPool(threads);
 		errors = new ArrayList<>();
 		errorsWoNaN = new ArrayList<>(errors);
+	}
+	
+	public ArrayList<DBInserter> insertOutlierSheets() {
+		String[] csvFileExtension = new String[]{CSV_FILE_EXTENSION};
+		AXESSheetReaderManager readerManager = new AXESSheetReaderManager(inDir, threads, csvFileExtension);
+		ArrayList<File> sheets = readerManager.discoverFiles();
+		ArrayList<DBInserter> inserters = new ArrayList<>();
+		Log.i("Discovered " + sheets.size() + " outlier sheets.");
+		
+		Log.i("Preprocessing. Marking all experiments as plausible.");
+		DBConnection connection = DBConnection.getDBConnection();
+		OmniNeuroQueryExecutor executor = new OmniNeuroQueryExecutor(connection.getConnection());
+		try {
+			long confirmedPlausibleID = executor.getIDViaName("outlier_type", "Confirmed Plausible");
+			long uncheckedOutlier = executor.getIDViaName("outlier_type", "Unchecked");
+			
+			String query = "UPDATE response set outlier_type_id = " + confirmedPlausibleID + " WHERE response.outlier_type_id = " + uncheckedOutlier + ";";
+			executor.execute(query);
+		} catch (SQLException e) {
+			Log.e(e);
+			errors.add("Fatal error: " + e.getMessage());
+			return inserters;
+		}
+		
+		for (File f : sheets) {
+			inserters.add(new OutlierInserter(f));
+		}
+		return inserters;
 	}
 	
 	public ArrayList<DBInserter> insertKonstanzSheets() {
@@ -110,6 +144,9 @@ public class InsertManager {
 				break;
 			case 1:
 				inserters = insertKonstanzSheets();
+				break;
+			case 2:
+				inserters = insertOutlierSheets();
 				break;
 			default:
 				Client.showErrorMessage("Invalid insertion method selected.", parent);

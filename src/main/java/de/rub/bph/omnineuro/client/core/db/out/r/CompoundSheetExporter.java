@@ -222,6 +222,35 @@ public class CompoundSheetExporter extends SheetExporter {
 		return data;
 	}
 	
+	private ArrayList<ResponseHolder> removeDuplicateResponseHolders() {
+		Log.i("Checking " + responseHolders.size() + " for uniqueness.");
+		ArrayList<ResponseHolder> uniqueHolders = new ArrayList<>();
+		ArrayList<ResponseHolder> duplicateHolders = new ArrayList<>();
+		
+		for (ResponseHolder holder : responseHolders) {
+			if (holder.isUniquelyCreated()) {
+				uniqueHolders.add(holder);
+			} else {
+				duplicateHolders.add(holder);
+			}
+		}
+		Log.i("In the first round, " + duplicateHolders.size() + " holders were uniquely fetched, but " + duplicateHolders.size() + " were duplicates!");
+		
+		ArrayList<Integer> knownHashesList = new ArrayList<>();
+		for (ResponseHolder holder : duplicateHolders) {
+			int hash = holder.hashCode();
+			if (!knownHashesList.contains(hash)) {
+				knownHashesList.add(hash);
+				uniqueHolders.add(holder);
+				addError("Response duplicate detected: " + holder.getWell() + " at " + holder.getTimestamp() + "h at endpoint '" + holder.getEndpointName() + "' has value " + holder.getResponse() + " " + holder.getCreationCount() + " times for concentration '" + holder.getConcentrationDescription()+"'. Reduced to 1.");
+			} else {
+				Log.i("Sanity check. Are these lines the same: [" + hash + "] -> " + holder.toString());
+			}
+		}
+		
+		return uniqueHolders;
+	}
+	
 	@Override
 	public void run() {
 		try {
@@ -238,6 +267,7 @@ public class CompoundSheetExporter extends SheetExporter {
 				responseHolders.add(holder);
 			}
 			Log.i("Holders created for " + getCompoundAbbreviation() + ": " + responseHolders.size());
+			responseHolders = removeDuplicateResponseHolders();
 			
 			ArrayList<String> uniqueConcentrations = ResponseHolder.getUniqueConcentrations(responseHolders);
 			Log.i("Unique concentrations: " + uniqueConcentrations);

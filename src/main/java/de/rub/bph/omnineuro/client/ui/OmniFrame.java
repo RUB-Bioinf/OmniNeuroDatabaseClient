@@ -5,6 +5,7 @@ import de.rub.bph.omnineuro.client.config.ExportConfigManager;
 import de.rub.bph.omnineuro.client.core.db.DBConnection;
 import de.rub.bph.omnineuro.client.core.db.OmniNeuroQueryExecutor;
 import de.rub.bph.omnineuro.client.core.db.in.InsertManager;
+import de.rub.bph.omnineuro.client.core.db.out.ResponseHolder;
 import de.rub.bph.omnineuro.client.core.db.out.ResponseIDLimiter;
 import de.rub.bph.omnineuro.client.core.db.out.SheetExporterCompatManager;
 import de.rub.bph.omnineuro.client.imported.filemanager.FileManager;
@@ -74,6 +75,7 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 		resetDatabaseButton.addActionListener(actionEvent -> resetDatabase());
 		configurationEditorButton.addActionListener(actionEvent -> actionOpenConfigWindow());
 		button1.addActionListener(actionEvent -> startImport());
+		importOutliersBT.addActionListener(e -> startOutlierImport());
 		searchForHashButton.addActionListener(actionEvent -> {
 			ExportConfigManager configManager1 = ExportConfigManager.getInstance();
 			try {
@@ -109,6 +111,28 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 		menuBar.setVisible(true);
 		setJMenuBar(menuBar);
 		repaint();
+	}
+	
+	public void startOutlierImport() {
+		Log.i("Outlier import pressed.");
+		int cores = (int) threadsSP.getValue();
+		File dir = new File(outlierChooserPanel.getText());
+		
+		if (!testDBConnection(true)) {
+			Client.showErrorMessage("Failed to connect to the database.\nPlease run diagnostics and try again.\nCan't import anything to the DB if a connection can't be established.", this);
+			return;
+		} else {
+			Log.i("Connection to the DB is possible. Starting import process.");
+		}
+		
+		long startTime = new Date().getTime();
+		int methodID = importMethodCB.getItemCount();
+		InsertManager insertManager = new InsertManager(dir, cores, methodID, false, this, "outliers");
+		insertManager.insert();
+		
+		long timeTaken = new Date().getTime() - startTime;
+		String msg = "Job done. Execution time: " + NumberUtils.convertSecondsToHMmSs(timeTaken) + ".";
+		Client.showInfoMessage(msg, this);
 	}
 	
 	public void startImport() {
@@ -201,6 +225,7 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 	
 	public void requestExport() {
 		long startTime = new Date().getTime();
+		ResponseHolder.resetCreationCounts();
 		FileManager fileManager = new FileManager();
 		ExportConfigManager configManager = ExportConfigManager.getInstance();
 		boolean useComma = commaCB.isSelected();

@@ -3,6 +3,7 @@ package de.rub.bph.omnineuro.client.core.db.out;
 import de.rub.bph.omnineuro.client.core.db.OmniNeuroQueryExecutor;
 
 import java.sql.SQLException;
+import java.util.Objects;
 
 public class ConcentrationHolder {
 	
@@ -23,6 +24,21 @@ public class ConcentrationHolder {
 			controlName = executor.getNameViaID("control", controlID);
 			controlAcronym = executor.getFeatureViaID("control", "acronym", controlID);
 		}
+	}
+	
+	@Override
+	public int hashCode() {
+		return Objects.hash(getId(), getControlID(), getValue());
+	}
+	
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) return true;
+		if (!(o instanceof ConcentrationHolder)) return false;
+		ConcentrationHolder that = (ConcentrationHolder) o;
+		return getId() == that.getId() &&
+				getControlID() == that.getControlID() &&
+				Double.compare(that.getValue(), getValue()) == 0;
 	}
 	
 	public String getControlAcronym() {

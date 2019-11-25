@@ -69,6 +69,10 @@ public class KonstanzInserter extends DBInserter {
 			int rowCount = reader.getContinuousRowEntries("A", START_ROW_INDEX);
 			Log.i(sourceFile.getName() + " has " + rowCount + " entries.");
 			
+			long confirmedOutlierID = executor.getIDViaName("outlier_type", "Confirmed Outlier");
+			long confirmedPlausibleID = executor.getIDViaName("outlier_type", "Confirmed Plausible");
+			long uncheckedOutlierID = executor.getIDViaName("outlier_type", "Unchecked");
+			
 			String sfName = sourceFile.getName();
 			String assay;
 			if (sfName.contains("UKN2")) {
@@ -105,6 +109,18 @@ public class KonstanzInserter extends DBInserter {
 				
 				String wellType = reader.getValueAt("E" + i);
 				String wellQuality = reader.getValueAt("F" + i);
+				
+				long outlierID = confirmedOutlierID;
+				try {
+					int wellQualityNumeric = (int) Double.parseDouble(wellQuality);
+					if (wellQualityNumeric == 1) {
+						outlierID = confirmedPlausibleID;
+					}
+				} catch (Exception e) {
+					Log.e(e);
+					addError("Failed to determine outlier status from entry at F" + i + ": '" + wellQuality + "'. Response marked as unchecked! Error: " + e.getClass().getName() + ": " + e.getMessage());
+					outlierID = uncheckedOutlierID;
+				}
 				
 				double concentration = Double.NaN;
 				double response1 = Double.NaN;
@@ -209,7 +225,6 @@ public class KonstanzInserter extends DBInserter {
 							wellID = executor.getIDViaName("well", wellName);
 						}
 					}
-					long outlierID = executor.getIDViaName("outlier_type", "Unchecked");
 					long detectionMethodID = executor.getIDViaName("detection_method", "Unknown");
 					
 					ArrayList<Long> experimentIDList = new ArrayList<>();

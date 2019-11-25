@@ -17,15 +17,20 @@ import static de.rub.bph.omnineuro.client.core.sheet.reader.AXESSheetReader.JSON
 public class AXESSheetReaderManager extends ConcurrentExecutionManager {
 	
 	public static final String EXCEL_FILE_EXTENSION = "xlsx";
+	public static final String CSV_FILE_EXTENSION = "csv";
 	public static final String[] DEFAULT_ALLOWED_EXTENSIONS = new String[]{EXCEL_FILE_EXTENSION};
 	public static final String JSON_FILE_OUTDIRNAME = "json";
 	private File sourceDir;
 	private FileNameExtensionFilter filter;
 	
 	public AXESSheetReaderManager(File sourceDir, int threads) {
+		this(sourceDir, threads, DEFAULT_ALLOWED_EXTENSIONS);
+	}
+	
+	public AXESSheetReaderManager(File sourceDir, int threads, String[] allowedExtensions) {
 		super(threads);
 		this.sourceDir = sourceDir;
-		setFilter(new FileNameExtensionFilter("Excel Sheets", DEFAULT_ALLOWED_EXTENSIONS));
+		setFilter(new FileNameExtensionFilter("Allowed files", allowedExtensions));
 	}
 	
 	public ArrayList<JSONObject> startReading() {
