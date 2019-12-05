@@ -31,7 +31,7 @@ public class TimedEndpointBuilder implements Comparable<TimedEndpointBuilder> {
 			
 			return new TimedEndpointBuilder(part, value);
 		} else {
-			throw new IllegalArgumentException("Failed to apply well regex ['" + TIMED_ENDPOINT_REGEX + "'] to " + buildString);
+			throw new IllegalArgumentException("Failed to apply well regex ['" + TIMED_ENDPOINT_REGEX + "'] to '" + buildString+"'");
 		}
 	}
 	

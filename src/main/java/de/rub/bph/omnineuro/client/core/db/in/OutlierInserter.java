@@ -86,7 +86,7 @@ public class OutlierInserter extends DBInserter {
 						incrementInsertedResponsesCount();
 					}
 				} catch (Throwable e) {
-					Log.e(e);
+					Log.e("Error in line " + lineCount + " of file " + sourceFile.getName(), e);
 					addError("Error in line " + lineCount + ": " + e.getClass().getSimpleName() + ": " + e.getMessage());
 				}
 				line = reader.readLine();

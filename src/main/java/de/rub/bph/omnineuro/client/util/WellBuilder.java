@@ -27,7 +27,7 @@ public class WellBuilder implements Comparable<WellBuilder> {
 			
 			return new WellBuilder(part, value);
 		} else {
-			throw new IllegalArgumentException("Failed to apply well regex ['\" + WELL_REGEX + \"'] to " + text);
+			throw new IllegalArgumentException("Failed to apply well regex ['\" + WELL_REGEX + \"'] to '" + text+"'");
 		}
 	}
 	

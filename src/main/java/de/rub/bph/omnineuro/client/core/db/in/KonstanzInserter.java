@@ -42,6 +42,22 @@ public class KonstanzInserter extends DBInserter {
 				return executor.getIDViaName("endpoint", "Selected Objects");
 			case "valid objects":
 				return executor.getIDViaName("endpoint", "Valid Objects");
+			case "valid objects UKN4":
+				return executor.getIDViaName("endpoint", "Valid Objects UKN4");
+			case "selected objects UKN4":
+				return executor.getIDViaName("endpoint", "Selected Objects UKN4");
+			case "valid objects UKN5":
+				return executor.getIDViaName("endpoint", "Valid Objects UKN5");
+			case "selected objects UKN5":
+				return executor.getIDViaName("endpoint", "Selected Objects UKN5");
+			case "Migration UKN2":
+				return executor.getIDViaName("endpoint", "Migration UKN2");
+			case "Viability UKN2":
+				return executor.getIDViaName("endpoint", "Viability UKN2");
+			case "neurite area UKN5":
+				return executor.getIDViaName("endpoint", "Neurite Area UKN5");
+			case "neurite area UKN4":
+				return executor.getIDViaName("endpoint", "Neurite Area UKN4");
 			default:
 				addError("Failed to decode a database compatible endpoint from '" + endpointName + "'!");
 				return DECODED_ENDPOINT_FAILURE;
