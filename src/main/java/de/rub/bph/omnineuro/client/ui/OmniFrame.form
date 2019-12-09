@@ -3,7 +3,7 @@
   <grid id="27dc6" binding="rootPanel" layout-manager="GridLayoutManager" row-count="6" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
     <margin top="0" left="0" bottom="0" right="0"/>
     <constraints>
-      <xy x="20" y="20" width="505" height="939"/>
+      <xy x="20" y="20" width="505" height="949"/>
     </constraints>
     <properties/>
     <border type="none"/>
@@ -233,21 +233,34 @@
           <grid row="4" column="0" row-span="1" col-span="2" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
         </constraints>
         <properties/>
-        <border type="none" title="Outliers"/>
+        <border type="none" title="Other HT Actions"/>
         <children>
-          <nested-form id="eaac9" form-file="de/rub/bph/omnineuro/client/ui/FolderChooserPanel.form" binding="outlierChooserPanel" custom-create="true">
+          <nested-form id="eaac9" form-file="de/rub/bph/omnineuro/client/ui/FolderChooserPanel.form" binding="otherChooserPanel" custom-create="true">
             <constraints>
               <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
             </constraints>
           </nested-form>
-          <component id="a7e6a" class="javax.swing.JButton" binding="importOutliersBT">
+          <grid id="58005" layout-manager="FlowLayout" hgap="5" vgap="5" flow-align="1">
             <constraints>
-              <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="0" indent="0" use-parent-layout="false"/>
+              <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
             </constraints>
-            <properties>
-              <text value="Import outlier sheets"/>
-            </properties>
-          </component>
+            <properties/>
+            <border type="none"/>
+            <children>
+              <component id="a7e6a" class="javax.swing.JButton" binding="importOutliersBT">
+                <constraints/>
+                <properties>
+                  <text value="Import outlier sheets"/>
+                </properties>
+              </component>
+              <component id="f50ce" class="javax.swing.JButton" binding="fixEPAConcentrationsButton" default-binding="true">
+                <constraints/>
+                <properties>
+                  <text value="Fix EPA Concentrations"/>
+                </properties>
+              </component>
+            </children>
+          </grid>
         </children>
       </grid>
     </children>

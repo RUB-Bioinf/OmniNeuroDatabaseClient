@@ -50,8 +50,9 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 	private JComboBox importMethodCB;
 	private JCheckBox unblindingCB;
 	private JCheckBox unblindCompoundsExportCB;
-	private FolderChooserPanel outlierChooserPanel;
+	private FolderChooserPanel otherChooserPanel;
 	private JButton importOutliersBT;
+	private JButton fixEPAConcentrationsButton;
 	
 	public OmniFrame() {
 		//setupMenuBars();
@@ -76,6 +77,7 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 		configurationEditorButton.addActionListener(actionEvent -> actionOpenConfigWindow());
 		button1.addActionListener(actionEvent -> startImport());
 		importOutliersBT.addActionListener(e -> startOutlierImport());
+		fixEPAConcentrationsButton.addActionListener(e -> startEPAFix());
 		searchForHashButton.addActionListener(actionEvent -> {
 			ExportConfigManager configManager1 = ExportConfigManager.getInstance();
 			try {
@@ -113,10 +115,32 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 		repaint();
 	}
 	
+	public void startEPAFix(){
+		Log.i("EPA fix pressed.");
+		int cores = (int) threadsSP.getValue();
+		File dir = new File(otherChooserPanel.getText());
+		
+		if (!testDBConnection(true)) {
+			Client.showErrorMessage("Failed to connect to the database.\nPlease run diagnostics and try again.\nCan't import anything to the DB if a connection can't be established.", this);
+			return;
+		} else {
+			Log.i("Connection to the DB is possible. Starting EPA fix process.");
+		}
+		
+		long startTime = new Date().getTime();
+		int methodID = importMethodCB.getItemCount()+1;
+		InsertManager insertManager = new InsertManager(dir, cores, methodID, false, this, "EPA-Fix");
+		insertManager.insert();
+		
+		long timeTaken = new Date().getTime() - startTime;
+		String msg = "Job done. Execution time: " + NumberUtils.convertSecondsToHMmSs(timeTaken) + ".";
+		Client.showInfoMessage(msg, this);
+	}
+	
 	public void startOutlierImport() {
 		Log.i("Outlier import pressed.");
 		int cores = (int) threadsSP.getValue();
-		File dir = new File(outlierChooserPanel.getText());
+		File dir = new File(otherChooserPanel.getText());
 		
 		if (!testDBConnection(true)) {
 			Client.showErrorMessage("Failed to connect to the database.\nPlease run diagnostics and try again.\nCan't import anything to the DB if a connection can't be established.", this);
@@ -383,7 +407,7 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 	private void createUIComponents() {
 		importDirChooserPanel = new FolderChooserPanel(new File(FolderChooserPanel.CACHE_IMPORT_SOURCE_DIR_FILENAME), "Source directory: ");
 		exportDirChooserPanel = new FolderChooserPanel(new File(FolderChooserPanel.CACHE_EXPORT_DIR_FILENAME), "Target directory: ");
-		outlierChooserPanel = new FolderChooserPanel(new File(FolderChooserPanel.CACHE_OUTLIER_DIR_FILENAME), "Outlier source directory: ");
+		otherChooserPanel = new FolderChooserPanel(new File(FolderChooserPanel.CACHE_OUTLIER_DIR_FILENAME), "Others source directory: ");
 	}
 	
 	@Override

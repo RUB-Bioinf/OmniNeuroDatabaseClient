@@ -18,6 +18,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import static de.rub.bph.omnineuro.client.core.AXESSheetReaderManager.CSV_FILE_EXTENSION;
+import static de.rub.bph.omnineuro.client.core.AXESSheetReaderManager.EXCEL_FILE_EXTENSION;
 import static de.rub.bph.omnineuro.client.ui.OmniFrame.OUT_DIR_NAME_INSERTER;
 import static de.rub.bph.omnineuro.client.ui.OmniFrame.OUT_DIR_NAME_STATISTICS;
 
@@ -47,6 +48,19 @@ public class InsertManager {
 		service = Executors.newFixedThreadPool(threads);
 		errors = new ArrayList<>();
 		errorsWoNaN = new ArrayList<>(errors);
+	}
+	
+	public ArrayList<DBInserter> fixEPAErrors() {
+		String[] csvFileExtension = new String[]{EXCEL_FILE_EXTENSION};
+		AXESSheetReaderManager readerManager = new AXESSheetReaderManager(inDir, threads, csvFileExtension);
+		ArrayList<File> sheets = readerManager.discoverFiles();
+		ArrayList<DBInserter> inserters = new ArrayList<>();
+		Log.i("Discovered " + sheets.size() + " EFSA fix sheets.");
+		
+		for (File f : sheets) {
+			inserters.add(new EFSAConcentrationFixer(f));
+		}
+		return inserters;
 	}
 	
 	public ArrayList<DBInserter> insertOutlierSheets() {
@@ -147,6 +161,9 @@ public class InsertManager {
 				break;
 			case 2:
 				inserters = insertOutlierSheets();
+				break;
+			case 3:
+				inserters = fixEPAErrors();
 				break;
 			default:
 				Client.showErrorMessage("Invalid insertion method selected.", parent);
