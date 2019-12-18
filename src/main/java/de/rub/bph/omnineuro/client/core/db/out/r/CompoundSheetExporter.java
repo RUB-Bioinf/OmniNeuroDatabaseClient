@@ -42,7 +42,7 @@ public class CompoundSheetExporter extends SheetExporter {
 		Log.i("Compound " + getCompoundAbbreviation() + " has " + responseIDs.size() + " responses in the DB.");
 	}
 	
-	public StringBuilder buildCSV() {
+	public StringBuilder buildCSV(boolean separatePerAssay) {
 		StringBuilder builder = new StringBuilder();
 		builder.append("Experiment ID;");
 		builder.append(getCompoundName());
@@ -53,6 +53,18 @@ public class CompoundSheetExporter extends SheetExporter {
 		ArrayList<String> allExperimentNames = ResponseHolder.getUniqueExperimentNames(responseHolders);
 		ArrayList<Integer> allTimestamps = ResponseHolder.getUniqueTimestamps(responseHolders);
 		ArrayList<String> allWells = ResponseHolder.getUniqueWells(responseHolders);
+		ArrayList<String> allAssays = ResponseHolder.getUniqueAssays(responseHolders);
+		
+		if (separatePerAssay) {
+			Collections.sort(allAssays);
+			ArrayList<String> tempList = new ArrayList<>(allEndpoints);
+			allEndpoints = new ArrayList<>();
+			for (String s : tempList) {
+				for (String assay : allAssays) {
+					allEndpoints.add(s + " (" + assay + ")");
+				}
+			}
+		}
 		
 		allConcentrations.sort((s, t1) -> {
 			if (s == null) s = "<Null>";
@@ -93,12 +105,42 @@ public class CompoundSheetExporter extends SheetExporter {
 				builder.append(e).append(" [").append(t).append("h];");
 			}
 		}
+		
 		String firstRow = builder.toString();
 		firstRow = firstRow.substring(0, firstRow.length() - 1);
+		
+		//If an endpoint has only 1 assay, then the assay notion is removed
+		if (separatePerAssay) {
+			ArrayList<String> singleEndpoints = new ArrayList<>();
+			ArrayList<String> multipleEndpoints = new ArrayList<>();
+			
+			String[] endpointParts = firstRow.split(";");
+			for (String s : endpointParts) {
+				if (singleEndpoints.contains(s)) {
+					multipleEndpoints.add(s);
+				} else {
+					singleEndpoints.add(s);
+				}
+			}
+			
+			for (String endpoint : multipleEndpoints) {
+				String s = endpoint;
+				for (String assay : allAssays) {
+					s = s.replace(assay, "");
+				}
+				s = s.replace("()", "");
+				while (s.contains("  ")) {
+					s = s.replace("  ", " ");
+				}
+				
+				firstRow = firstRow.replace(endpoint, s);
+			}
+		}
+		
 		builder = new StringBuilder(firstRow);
 		builder.append("\n");
 		
-		HashMap<String, HashMap<String, HashMap<String, HashMap<String, HashMap<Integer, ArrayList<Double>>>>>> holderMap = remapResponseHolders(responseHolders);
+		HashMap<String, HashMap<String, HashMap<String, HashMap<String, HashMap<Integer, ArrayList<Double>>>>>> holderMap = remapResponseHolders(responseHolders, separatePerAssay);
 		Log.v("Remapped data: " + holderMap);
 		
 		int concentrationIndex = 0;
@@ -191,7 +233,7 @@ public class CompoundSheetExporter extends SheetExporter {
 	/**
 	 * Data structure: Experiment Name -> Concentration -> Well -> Endpoint name -> Timestamp -> List of Responses
 	 */
-	public HashMap<String, HashMap<String, HashMap<String, HashMap<String, HashMap<Integer, ArrayList<Double>>>>>> remapResponseHolders(List<ResponseHolder> holders) {
+	public HashMap<String, HashMap<String, HashMap<String, HashMap<String, HashMap<Integer, ArrayList<Double>>>>>> remapResponseHolders(List<ResponseHolder> holders, boolean separatePerAssay) {
 		HashMap<String, HashMap<String, HashMap<String, HashMap<String, HashMap<Integer, ArrayList<Double>>>>>> data = new HashMap<>();
 		
 		for (ResponseHolder holder : holders) {
@@ -199,8 +241,13 @@ public class CompoundSheetExporter extends SheetExporter {
 			String name = holder.getExperimentName();
 			String endpoint = holder.getEndpointName();
 			String well = holder.getWell();
+			String assay = holder.getAssayName();
 			int timestamp = holder.getTimestamp();
 			double response = holder.getResponse();
+			
+			if (separatePerAssay) {
+				endpoint = endpoint + " (" + assay + ")";
+			}
 			
 			if (!data.containsKey(name)) data.put(name, new HashMap<>());
 			HashMap<String, HashMap<String, HashMap<String, HashMap<Integer, ArrayList<Double>>>>> nameMap = data.get(name);
@@ -242,7 +289,7 @@ public class CompoundSheetExporter extends SheetExporter {
 			if (!knownHashesList.contains(hash)) {
 				knownHashesList.add(hash);
 				uniqueHolders.add(holder);
-				addError("Response duplicate detected: " + holder.getWell() + " at " + holder.getTimestamp() + "h at endpoint '" + holder.getEndpointName() + "' has value " + holder.getResponse() + " " + holder.getCreationCount() + " times for concentration '" + holder.getConcentrationDescription()+"'. Reduced to 1.");
+				addError("Response duplicate detected: " + holder.getWell() + " at " + holder.getTimestamp() + "h at endpoint '" + holder.getEndpointName() + "' has value " + holder.getResponse() + " " + holder.getCreationCount() + " times for concentration '" + holder.getConcentrationDescription() + "'. Reduced to 1.");
 			} else {
 				Log.i("Sanity check. Are these lines the same: [" + hash + "] -> " + holder.toString());
 			}
@@ -272,7 +319,10 @@ public class CompoundSheetExporter extends SheetExporter {
 			ArrayList<String> uniqueConcentrations = ResponseHolder.getUniqueConcentrations(responseHolders);
 			Log.i("Unique concentrations: " + uniqueConcentrations);
 			
-			StringBuilder fileContents = buildCSV();
+			boolean separatePerAssay = false;
+			//TODO make this a parameter
+			
+			StringBuilder fileContents = buildCSV(separatePerAssay);
 			FileManager fileManager = new FileManager();
 			fileManager.writeFile(outFile, fileContents.toString());
 			

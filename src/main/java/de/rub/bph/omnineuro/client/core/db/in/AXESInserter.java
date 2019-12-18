@@ -74,6 +74,11 @@ public class AXESInserter extends DBInserter implements Runnable {
 			String sex = metaDataGeneral.getString("Sex");
 			String workgroup = metaDataGeneral.getString("Department"); //Workgroup under department? Yep. This is intentional.
 			
+			if (casNR.equals("00-00-0") || casNR.equals("??-??-??")) {
+				addError("Cas Nr. was " + casNR + ". This got fixed by a workaround. This should be fixed or you create technical debt.");
+				casNR = "??-??-?";
+			}
+			
 			Date date = new Date(0);
 			String platingDate = metaDataGeneral.getString("Plating date (ddMONjj)");
 			try {
@@ -162,6 +167,11 @@ public class AXESInserter extends DBInserter implements Runnable {
 				int timestamp = endpointData.getInt("timestamp");
 				String detectionMethod = endpointData.getString("detectionMethod");
 				JSONObject responses = endpointData.getJSONObject("responses");
+				
+				if (endpoint.equals("Cytotoxicity")) {
+					endpoint = endpoint + " (" + assay + ")";
+					addError("The cytotox endpoint has been by a workaround. This leads to technical debt if not fixed!");
+				}
 				
 				long endpointID;
 				try {

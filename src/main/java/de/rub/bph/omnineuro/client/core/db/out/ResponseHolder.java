@@ -16,6 +16,8 @@ public class ResponseHolder {
 	private int timestamp;
 	private long endpointID;
 	private long experimentID;
+	private long assayID;
+	private String assayName;
 	private String endpointName;
 	private String experimentName;
 	private String well;
@@ -32,6 +34,9 @@ public class ResponseHolder {
 		
 		experimentID = resultSet.getLong("experiment_id");
 		experimentName = queryExecutor.getNameViaID("experiment", experimentID);
+		
+		assayID = Long.parseLong(queryExecutor.getFeatureViaID("experiment", "assay_id", experimentID));
+		assayName = queryExecutor.getNameViaID("assay", assayID);
 		
 		long concentrationID = resultSet.getLong("concentration_id");
 		concentrationHolder = new ConcentrationHolder(concentrationID, queryExecutor);
@@ -84,6 +89,15 @@ public class ResponseHolder {
 		return list;
 	}
 	
+	public static ArrayList<String> getUniqueAssays(List<ResponseHolder> holders) {
+		ArrayList<String> list = new ArrayList<>();
+		for (ResponseHolder h : holders) {
+			String s = h.getAssayName();
+			if (!list.contains(s)) list.add(s);
+		}
+		return list;
+	}
+	
 	public static ArrayList<String> getUniqueEndpointNames(List<ResponseHolder> holders) {
 		ArrayList<String> list = new ArrayList<>();
 		for (ResponseHolder h : holders) {
@@ -123,6 +137,7 @@ public class ResponseHolder {
 		ResponseHolder holder = (ResponseHolder) o;
 		return getTimestamp() == holder.getTimestamp() &&
 				getEndpointID() == holder.getEndpointID() &&
+				getAssayID() == holder.getAssayID() &&
 				getExperimentID() == holder.getExperimentID() &&
 				Double.compare(holder.getResponse(), getResponse()) == 0 &&
 				getWellID() == holder.getWellID() &&
@@ -131,8 +146,16 @@ public class ResponseHolder {
 	
 	@Override
 	public String toString() {
-		return "Response handler for " + getConcentrationDescription() + " [Control status: " + isControl() + "], endpoint: " + getEndpointName() + " at " + getTimestamp() + "h from well " + getWell() + " in experiment " + getExperimentName() +
-				". Response value: " + getResponse() + ". Hash: " + hashCode()+" [Created "+getCreationCount()+" times].";
+		return "Response handler for " + getConcentrationDescription() + " [Control status: " + isControl() + "], endpoint: " + getEndpointName() + " at " + getTimestamp() + "h from well " + getWell() + " in experiment " + getExperimentName() + " from " + getAssayName() +
+				". Response value: " + getResponse() + ". Hash: " + hashCode() + " [Created " + getCreationCount() + " times].";
+	}
+	
+	public long getAssayID() {
+		return assayID;
+	}
+	
+	public String getAssayName() {
+		return assayName;
 	}
 	
 	public double getConcentration() {
