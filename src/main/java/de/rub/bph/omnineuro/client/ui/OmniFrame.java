@@ -5,9 +5,11 @@ import de.rub.bph.omnineuro.client.config.ExportConfigManager;
 import de.rub.bph.omnineuro.client.core.db.DBConnection;
 import de.rub.bph.omnineuro.client.core.db.OmniNeuroQueryExecutor;
 import de.rub.bph.omnineuro.client.core.db.in.InsertManager;
-import de.rub.bph.omnineuro.client.core.db.out.ResponseHolder;
 import de.rub.bph.omnineuro.client.core.db.out.ResponseIDLimiter;
+import de.rub.bph.omnineuro.client.core.db.out.ResponseSheetExporterCompatManager;
 import de.rub.bph.omnineuro.client.core.db.out.SheetExporterCompatManager;
+import de.rub.bph.omnineuro.client.core.db.out.holder.ResponseHolder;
+import de.rub.bph.omnineuro.client.core.db.out.r.CompoundExperimentSheetExporter;
 import de.rub.bph.omnineuro.client.imported.filemanager.FileManager;
 import de.rub.bph.omnineuro.client.imported.log.Log;
 import de.rub.bph.omnineuro.client.util.CodeHasher;
@@ -53,6 +55,7 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 	private FolderChooserPanel otherChooserPanel;
 	private JButton importOutliersBT;
 	private JButton fixEPAConcentrationsButton;
+	private JTabbedPane exportMethodTBP;
 	
 	public OmniFrame() {
 		//setupMenuBars();
@@ -65,12 +68,6 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 		DBCredentialsPanel.addActionListener(this);
 		DBCredentialsPanel.addTextListener(this);
 		addWindowListener(this);
-		
-		setTitle("OmniNeuro [Release " + Client.VERSION + "]");
-		setDefaultCloseOperation(EXIT_ON_CLOSE);
-		pack();
-		setMinimumSize(getMinimumSize());
-		setLocationRelativeTo(null);
 		
 		startExportButton.addActionListener(actionEvent -> requestExport());
 		resetDatabaseButton.addActionListener(actionEvent -> resetDatabase());
@@ -95,7 +92,12 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 		
 		//Log.i(getJMenuBar().toString());
 		searchForHashButton.setVisible(false);
+		setTitle("OmniNeuro [Release " + Client.VERSION + "]");
+		setDefaultCloseOperation(EXIT_ON_CLOSE);
 		pack();
+		setMinimumSize(getMinimumSize());
+		setSize(getMinimumSize());
+		setLocationRelativeTo(null);
 		setVisible(true);
 	}
 	
@@ -115,7 +117,7 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 		repaint();
 	}
 	
-	public void startEPAFix(){
+	public void startEPAFix() {
 		Log.i("EPA fix pressed.");
 		int cores = (int) threadsSP.getValue();
 		File dir = new File(otherChooserPanel.getText());
@@ -128,7 +130,7 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 		}
 		
 		long startTime = new Date().getTime();
-		int methodID = importMethodCB.getItemCount()+1;
+		int methodID = importMethodCB.getItemCount() + 1;
 		InsertManager insertManager = new InsertManager(dir, cores, methodID, false, this, "EPA-Fix");
 		insertManager.insert();
 		
@@ -252,7 +254,9 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 		ResponseHolder.resetCreationCounts();
 		FileManager fileManager = new FileManager();
 		ExportConfigManager configManager = ExportConfigManager.getInstance();
+		
 		boolean useComma = commaCB.isSelected();
+		int exportMethod = exportMethodTBP.getSelectedIndex();
 		
 		if (!testDBConnection()) {
 			Log.i("Connection to the database failed. Can't export if there's no connection available.");
@@ -264,6 +268,7 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 			Client.showErrorMessage("No export limiter configuration set. That's required to do, if you want to export anything.", this);
 			return;
 		}
+		OmniNeuroQueryExecutor executor = new OmniNeuroQueryExecutor(DBConnection.getDBConnection().getConnection());
 		
 		int threads = (int) threadsSP.getValue();
 		File dir = new File(exportDirChooserPanel.getText());
@@ -274,9 +279,7 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 			dir.mkdirs();
 		}
 		
-		OmniNeuroQueryExecutor executor = new OmniNeuroQueryExecutor(DBConnection.getDBConnection().getConnection());
 		ArrayList<Long> responseIDs;
-		
 		try {
 			responseIDs = executor.getIDs("response");
 		} catch (SQLException e) {
@@ -304,9 +307,25 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 		}
 		
 		boolean includeBlinded = unblindCompoundsExportCB.isSelected();
-		SheetExporterCompatManager compatManager = new SheetExporterCompatManager(threads, dir, limitedResponseIDs, includeBlinded, useComma);
-		compatManager.export();
+		SheetExporterCompatManager compatManager = null;
+		switch (exportMethod) {
+			case 0:
+				compatManager = new ResponseSheetExporterCompatManager(threads, dir, limitedResponseIDs, includeBlinded, useComma);
+				break;
+			case 1:
+				try {
+					compatManager = new CompoundExperimentSheetExporter(threads, dir, limitedResponseIDs);
+				} catch (SQLException e) {
+					e.printStackTrace();
+					Log.e(e);
+					Client.showErrorMessage("Failed to initiate the export.", this, e);
+				}
+				break;
+			default:
+				throw new IllegalStateException("Invalid method selection index: " + exportMethod);
+		}
 		
+		compatManager.export();
 		int taskCount = compatManager.getTaskCount();
 		ArrayList<String> errors = compatManager.getErrors();
 		File outDir = compatManager.getSourceDir();
@@ -321,7 +340,7 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 		
 		long duration = new Date().getTime() - startTime;
 		String formattedTimeTaken = NumberUtils.convertSecondsToHMmSs(duration);
-		Client.showInfoMessage("Job done. Execution time: " + formattedTimeTaken + "\n\nErrors: " + errors.size() + " in " + taskCount + " sheets.", this);
+		Client.showInfoMessage("Job done. Execution time: " + formattedTimeTaken + "\n\nErrors: " + errors.size() + " in " + taskCount + " tasks.", this);
 	}
 	
 	public void resetDatabase() {

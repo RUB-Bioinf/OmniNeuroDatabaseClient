@@ -2,6 +2,7 @@ package de.rub.bph.omnineuro.client.core.db.in;
 
 import de.rub.bph.omnineuro.client.core.db.DBConnection;
 import de.rub.bph.omnineuro.client.core.db.OmniNeuroQueryExecutor;
+import de.rub.bph.omnineuro.client.core.db.out.holder.CompoundHolder;
 import de.rub.bph.omnineuro.client.imported.log.Log;
 
 import java.sql.Connection;
@@ -47,7 +48,7 @@ public abstract class DBInserter implements Runnable {
 				String unblindedCompoundName = executor.getNameViaID("compound", compoundID);
 				
 				addBlindingRow(blindedName + " was unblinded as " + unblindedCompoundName + " [" + unblindedCompoundAbbreviation + "]. CAS: " + unblindedCAS);
-				return new CompoundHolder(unblindedCompoundName, unblindedCAS, unblindedCompoundAbbreviation, compoundID);
+				return new CompoundHolder(unblindedCompoundName, unblindedCAS, unblindedCompoundAbbreviation, compoundID, false);
 			} catch (Throwable e) {
 				Log.e(e);
 				String error = blindedName + " is a blinded compound, but failed to fetch the unblinded compound. Unblinded CAS: " + unblindedCAS + ". Reason: " + e.getClass().getSimpleName() + ": " + e.getMessage();
@@ -122,32 +123,4 @@ public abstract class DBInserter implements Runnable {
 	
 	public abstract String getName();
 	
-	public class CompoundHolder {
-		
-		private String name, cas, abbreviation;
-		private long compoundID;
-		
-		public CompoundHolder(String name, String cas, String abbreviation, long compoundID) {
-			this.name = name;
-			this.cas = cas;
-			this.abbreviation = abbreviation;
-			this.compoundID = compoundID;
-		}
-		
-		public String getAbbreviation() {
-			return abbreviation;
-		}
-		
-		public String getCas() {
-			return cas;
-		}
-		
-		public long getCompoundID() {
-			return compoundID;
-		}
-		
-		public String getName() {
-			return name;
-		}
-	}
 }

@@ -1,5 +1,6 @@
 package de.rub.bph.omnineuro.client.core.db.in;
 
+import de.rub.bph.omnineuro.client.core.db.out.holder.CompoundHolder;
 import de.rub.bph.omnineuro.client.core.sheet.reader.SheetReader;
 import de.rub.bph.omnineuro.client.imported.log.Log;
 import de.rub.bph.omnineuro.client.util.WellBuilder;

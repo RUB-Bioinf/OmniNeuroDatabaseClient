@@ -1,4 +1,4 @@
-package de.rub.bph.omnineuro.client.core.db.out;
+package de.rub.bph.omnineuro.client.core.db.out.holder;
 
 
 import de.rub.bph.omnineuro.client.core.db.OmniNeuroQueryExecutor;

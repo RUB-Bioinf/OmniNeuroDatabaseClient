@@ -2,8 +2,8 @@ package de.rub.bph.omnineuro.client.core.db.out.r;
 
 import de.rub.bph.omnineuro.client.core.db.DBConnection;
 import de.rub.bph.omnineuro.client.core.db.OmniNeuroQueryExecutor;
-import de.rub.bph.omnineuro.client.core.db.out.ResponseHolder;
-import de.rub.bph.omnineuro.client.core.db.out.SheetExporter;
+import de.rub.bph.omnineuro.client.core.db.out.ResponseExporter;
+import de.rub.bph.omnineuro.client.core.db.out.holder.ResponseHolder;
 import de.rub.bph.omnineuro.client.imported.filemanager.FileManager;
 import de.rub.bph.omnineuro.client.imported.log.Log;
 import de.rub.bph.omnineuro.client.util.WellBuilder;
@@ -17,7 +17,7 @@ import java.util.List;
 
 import static de.rub.bph.omnineuro.client.util.WellBuilder.WELL_REGEX;
 
-public class CompoundSheetExporter extends SheetExporter {
+public class CompoundSheetExporter extends ResponseExporter {
 	
 	protected long compoundID;
 	protected String compoundName, compoundAbbreviation;

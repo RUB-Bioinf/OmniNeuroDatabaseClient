@@ -2,9 +2,9 @@ package de.rub.bph.omnineuro.client.core.db.out.efsa;
 
 import de.rub.bph.omnineuro.client.core.db.DBConnection;
 import de.rub.bph.omnineuro.client.core.db.OmniNeuroQueryExecutor;
-import de.rub.bph.omnineuro.client.core.db.out.ConcentrationHolder;
-import de.rub.bph.omnineuro.client.core.db.out.ResponseHolder;
-import de.rub.bph.omnineuro.client.core.db.out.SheetExporter;
+import de.rub.bph.omnineuro.client.core.db.out.ResponseExporter;
+import de.rub.bph.omnineuro.client.core.db.out.holder.ConcentrationHolder;
+import de.rub.bph.omnineuro.client.core.db.out.holder.ResponseHolder;
 import de.rub.bph.omnineuro.client.imported.filemanager.FileManager;
 import de.rub.bph.omnineuro.client.imported.log.Log;
 import de.rub.bph.omnineuro.client.util.WellBuilder;
@@ -17,7 +17,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 
-public class BlindedCompoundsExporter extends SheetExporter {
+public class BlindedCompoundsExporter extends ResponseExporter {
 	
 	protected OmniNeuroQueryExecutor queryExecutor;
 	private ArrayList<ResponseHolder> responseHolders;

@@ -10,15 +10,13 @@ public abstract class SheetExporter implements Runnable {
 	
 	protected File targetDir;
 	protected DBConnection connection;
-	protected ArrayList<Long> responseIDs;
 	protected boolean useComma;
 	protected ArrayList<String> errorList;
 	
-	public SheetExporter(File targetDir, DBConnection connection, ArrayList<Long> responseIDs, boolean useComma) {
+	public SheetExporter(File targetDir, DBConnection connection, boolean useComma) {
 		this.targetDir = targetDir;
 		this.useComma = useComma;
 		this.connection = connection;
-		this.responseIDs = responseIDs;
 		
 		errorList = new ArrayList<>();
 	}
@@ -34,10 +32,6 @@ public abstract class SheetExporter implements Runnable {
 	
 	public ArrayList<String> getErrors() {
 		return new ArrayList<>(errorList);
-	}
-	
-	public ArrayList<Long> getResponseIDs() {
-		return responseIDs;
 	}
 	
 	public File getTargetDir() {

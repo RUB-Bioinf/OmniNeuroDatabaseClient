@@ -81,6 +81,10 @@ public class FileManager {
 	}
 	
 	public void saveListFile(Collection<String> list, File outFile, boolean sort, boolean allowDuplicates) throws IOException {
+		if (list==null){
+			list = new ArrayList<>();
+			list.add("null");
+		}
 		ArrayList<String> outList = new ArrayList<>(list);
 		
 		if (!allowDuplicates) {

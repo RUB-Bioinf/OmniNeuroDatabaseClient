@@ -112,6 +112,10 @@ public class QueryExecutor {
 		return executeQuery("SELECT * FROM " + tableName + " where id = " + id);
 	}
 	
+	public synchronized ResultSet getFeaturesViaID(String tableName, String columnName, long id) throws SQLException {
+		return executeQuery("SELECT " + columnName + " FROM " + tableName + " where id = " + id);
+	}
+	
 	public synchronized long getLongMin(String tableName, String featureName) throws SQLException {
 		return extractLongFeature(executeQuery("SELECT min(" + featureName + ") FROM " + tableName + ";"), "min").get(0);
 	}
