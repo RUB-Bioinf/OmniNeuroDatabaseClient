@@ -57,6 +57,11 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 	private JButton fixEPAConcentrationsButton;
 	private JTabbedPane exportMethodTBP;
 	
+	/**
+	 * Main frame of the UI.
+	 * If IntelliJ fails to attach the rootPanel, look here: https://i.imgur.com/HpeUaUE.png
+	 * Change the gradle compiler to IntelliJ IDEA for run and tests!
+	 */
 	public OmniFrame() {
 		//setupMenuBars();
 		add(rootPanel);
