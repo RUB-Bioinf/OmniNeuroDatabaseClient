@@ -8,6 +8,7 @@ import de.rub.bph.omnineuro.client.core.db.in.InsertManager;
 import de.rub.bph.omnineuro.client.core.db.out.ResponseIDLimiter;
 import de.rub.bph.omnineuro.client.core.db.out.ResponseSheetExporterCompatManager;
 import de.rub.bph.omnineuro.client.core.db.out.SheetExporterCompatManager;
+import de.rub.bph.omnineuro.client.core.db.out.compact_experiment.CompactExperimentSheetExporter;
 import de.rub.bph.omnineuro.client.core.db.out.holder.ResponseHolder;
 import de.rub.bph.omnineuro.client.core.db.out.r.CompoundExperimentSheetExporter;
 import de.rub.bph.omnineuro.client.imported.filemanager.FileManager;
@@ -320,6 +321,15 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 			case 1:
 				try {
 					compatManager = new CompoundExperimentSheetExporter(threads, dir, limitedResponseIDs);
+				} catch (SQLException e) {
+					e.printStackTrace();
+					Log.e(e);
+					Client.showErrorMessage("Failed to initiate the export.", this, e);
+				}
+				break;
+			case 2:
+				try {
+					compatManager = new CompactExperimentSheetExporter(threads, dir);
 				} catch (SQLException e) {
 					e.printStackTrace();
 					Log.e(e);

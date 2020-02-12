@@ -14,6 +14,8 @@ import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import static de.rub.bph.omnineuro.client.core.sheet.reader.ExperimentDataReaderTask.ENDPOINT_DOUBLE_INDICATOR;
+
 public class AXESInserter extends DBInserter implements Runnable {
 	
 	private JSONObject data;
@@ -76,7 +78,8 @@ public class AXESInserter extends DBInserter implements Runnable {
 			String workgroup = metaDataGeneral.getString("Department"); //Workgroup under department? Yep. This is intentional.
 			
 			if (casNR.equals("00-00-0") || casNR.equals("??-??-??")) {
-				addError("Cas Nr. was " + casNR + ". This got fixed by a workaround. This should be fixed or you create technical debt.");
+				addError("Cas Nr. was " + casNR + ". This got fixed by a workaround. This should be fixed or you create technical debt.", true);
+				//FIXME Technical debt detected!
 				casNR = "??-??-?";
 			}
 			
@@ -169,9 +172,13 @@ public class AXESInserter extends DBInserter implements Runnable {
 				String detectionMethod = endpointData.getString("detectionMethod");
 				JSONObject responses = endpointData.getJSONObject("responses");
 				
+				String endpointDoubleIndicator = String.valueOf(ENDPOINT_DOUBLE_INDICATOR);
+				endpoint = endpoint.replace(endpointDoubleIndicator, "");
+				
 				if (endpoint.equals("Cytotoxicity")) {
 					endpoint = endpoint + " (" + assay + ")";
-					addError("The cytotox endpoint has been by a workaround. This leads to technical debt if not fixed!");
+					addError("The cytotox endpoint has been adjusted by a workaround in the code! This leads to technical debt if not fixed!", true);
+					//FIXME Technical debt detected!
 				}
 				
 				long endpointID;
@@ -224,17 +231,13 @@ public class AXESInserter extends DBInserter implements Runnable {
 					
 					for (int i = 0; i < results.length(); i++) {
 						JSONObject response = results.getJSONObject(i);
-						double result = response.getDouble("value");
-						
-						boolean nan = Double.isNaN(result);
-						if (nan) {
-							incrementNaNCount();
-						}
-						
 						long wellID = wellNotAvailableID;
+						String currentWell = "<well unknown>";
+						
 						if (response.has("well")) {
 							synchronized (executor) {
 								String well = response.getString("well");
+								currentWell = well;
 								try {
 									wellID = executor.getIDViaName("well", well);
 								} catch (Throwable e2) {
@@ -243,6 +246,20 @@ public class AXESInserter extends DBInserter implements Runnable {
 									wellID = executor.getIDViaName("well", well);
 								}
 							}
+						}
+						
+						double result;
+						try {
+							result = response.getDouble("value");
+						} catch (JSONException e) {
+							String s = response.getString("value");
+							addError("The  " + endpoint + " at " + timestamp + " in " + experimentName + " at concentration " + concentration + " in " + currentWell + " is an invalid value: '" + s + "'. Skipping this response.");
+							continue;
+						}
+						
+						boolean nan = Double.isNaN(result);
+						if (nan) {
+							incrementNaNCount();
 						}
 						
 						try {

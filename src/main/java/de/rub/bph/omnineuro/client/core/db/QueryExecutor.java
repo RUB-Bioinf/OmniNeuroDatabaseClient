@@ -57,7 +57,14 @@ public class QueryExecutor {
 	}
 	
 	public synchronized ArrayList<String> getColumn(String tableName, String columnName) throws SQLException {
-		ResultSet set = executeQuery("SELECT " + columnName + " FROM " + tableName + ";");
+		return getColumn(tableName, columnName, false);
+	}
+	
+	public synchronized ArrayList<String> getColumn(String tableName, String columnName, boolean distinct) throws SQLException {
+		String distinctText = "";
+		if (distinct) distinctText = "DISTINCT";
+		
+		ResultSet set = executeQuery("SELECT " + distinctText + " " + columnName + " FROM " + tableName + ";");
 		return extractStringFeature(set, columnName);
 	}
 	

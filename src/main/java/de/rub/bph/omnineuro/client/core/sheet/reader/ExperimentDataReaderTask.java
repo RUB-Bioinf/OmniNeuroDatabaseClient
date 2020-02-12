@@ -14,6 +14,7 @@ import java.util.ArrayList;
 public abstract class ExperimentDataReaderTask extends SheetReaderTask {
 	
 	public static final String CELL_VALUE_ZERO = "0.0";
+	public static final char ENDPOINT_DOUBLE_INDICATOR = '§';
 	public static final int WELL_INDEX_NOT_AVAILABLE = -1;
 	private int sheetVersion;
 	private String sheetName;
@@ -136,6 +137,10 @@ public abstract class ExperimentDataReaderTask extends SheetReaderTask {
 			endpoint.put("detectionMethod", detectionMethod);
 			endpoint.put("responses", readEndpointValues(header));
 			
+			if (endpoints.has(name)) {
+				//If that endpoint already exists, it is altered real quick
+				name = name + ENDPOINT_DOUBLE_INDICATOR;
+			}
 			endpoints.put(name, endpoint);
 		}
 		
