@@ -18,7 +18,11 @@ public abstract class MetaDataReaderTask extends SheetReaderTask {
 	public static final String JSON_METADATA_TYPE_COMMENTS = "Comments";
 	public static final String JSON_METADATA_TYPE_CONTROLS = "Controls";
 	public static final String JSON_METADATA_TYPE_OPERATION_PROCEDURES = "OperationProcedures";
+	public static final String JSON_METADATA_TYPE_PASSAGES = "Passages";
+	public static final String JSON_METADATA_TYPE_PASSAGES_DATES = "Passages-Dates";
+	public static final String JSON_METADATA_TYPE_PASSAGES_P = "Passages-P";
 	public static final String JSON_METADATA_TYPE_REAGENTS = "Reagents";
+	public static final String JSON_METADATA_TYPE_SOLVENTS = "Solvents";
 	
 	public MetaDataReaderTask(Workbook workbook, String name, File sourceFile) throws IOException {
 		super(workbook, name, sourceFile);
@@ -30,7 +34,11 @@ public abstract class MetaDataReaderTask extends SheetReaderTask {
 	}
 	
 	public JSONObject readContinuous(int start, JSONObject data) throws JSONException {
-		return readRows(start, getContinuousRowEntries("A", start), data);
+		return readContinuous(start, new JSONObject(), "A");
+	}
+	
+	public JSONObject readContinuous(int start, JSONObject data, String startKey) throws JSONException {
+		return readRows(start, start + getContinuousRowEntries(startKey, start), data);
 	}
 	
 	public JSONObject readRows(int start, int end) throws JSONException {
@@ -38,8 +46,12 @@ public abstract class MetaDataReaderTask extends SheetReaderTask {
 	}
 	
 	public JSONObject readRows(int start, int end, JSONObject input) throws JSONException {
+		return readRows(start, end, input, "A", "B");
+	}
+	
+	public JSONObject readRows(int start, int end, JSONObject input, String keyChar, String valueChar) throws JSONException {
 		if (input == null) {
-			return readRows(start, end);
+			return readRows(start, end, new JSONObject(), keyChar, valueChar);
 		}
 		
 		JSONArray errors;
@@ -56,10 +68,11 @@ public abstract class MetaDataReaderTask extends SheetReaderTask {
 			data = new JSONObject();
 		}
 		
-		for (int i = start; i < end + 1; i++) {
+		for (int i = 0; i < end - start + 1; i++) {
 			try {
-				addRowPair(data, i, false);
+				addRowPair(data, i + start, false, keyChar, valueChar);
 			} catch (Exception e) {
+				Log.e(e);
 				errors.put(e.getMessage());
 			}
 		}
@@ -83,19 +96,49 @@ public abstract class MetaDataReaderTask extends SheetReaderTask {
 	
 	public abstract JSONObject readMetaDataGeneral() throws JSONException;
 	
+	public abstract JSONObject readPassages() throws JSONException;
+	
+	public abstract JSONObject readSolvent() throws JSONException;
+	
 	@Override
 	public JSONObject readSheet() throws JSONException {
 		JSONObject data = new JSONObject();
 		
 		try {
 			data.put(JSON_METADATA_TYPE_CONTROLS, readMetaDataControls());
-			data.put(JSON_METADATA_TYPE_REAGENTS, readMetaDataReagents());
-			data.put(JSON_METADATA_TYPE_OPERATION_PROCEDURES, readMetaDataOperationProcedures());
-			data.put(JSON_METADATA_TYPE_COMMENTS, readMetaDataComments());
-		} catch (Exception e) {
-			Log.e("Failed to generate secondary metadata JSON!", e);
+		} catch (Throwable e) {
+			Log.e("Failed to read control metadata JSON!", e);
 		}
-		data.put("General", readMetaDataGeneral());
+		try {
+			data.put(JSON_METADATA_TYPE_REAGENTS, readMetaDataReagents());
+		} catch (Throwable e) {
+			Log.e("Failed to read reagents metadata JSON!", e);
+		}
+		try {
+			data.put(JSON_METADATA_TYPE_OPERATION_PROCEDURES, readMetaDataOperationProcedures());
+		} catch (Throwable e) {
+			Log.e("Failed to read operation procedures metadata JSON!", e);
+		}
+		try {
+			data.put(JSON_METADATA_TYPE_COMMENTS, readMetaDataComments());
+		} catch (Throwable e) {
+			Log.e("Failed to read comments metadata JSON!", e);
+		}
+		try {
+			data.put(JSON_METADATA_TYPE_PASSAGES, readPassages());
+		} catch (Throwable e) {
+			Log.e("Failed to read passage metadata JSON!", e);
+		}
+		try {
+			data.put(JSON_METADATA_TYPE_SOLVENTS, readSolvent());
+		} catch (Throwable e) {
+			Log.e("Failed to read solvent metadata JSON!", e);
+		}
+		try {
+			data.put("General", readMetaDataGeneral());
+		} catch (Throwable e) {
+			Log.e("Failed to read general metadata JSON!", e);
+		}
 		
 		return data;
 	}

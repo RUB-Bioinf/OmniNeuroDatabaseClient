@@ -64,6 +64,9 @@ public class AXESInserter extends DBInserter implements Runnable {
 			String comment = metaData.getString("Comments");
 			
 			JSONObject metaDataGeneral = metaData.getJSONObject("General").getJSONObject("Data");
+			JSONObject metaDataSolvent = metaData.getJSONObject("Solvents").getJSONObject("Data");
+			JSONObject metaDataPassages = metaData.getJSONObject("Passages").getJSONObject("Data");
+			
 			String projectName = metaDataGeneral.getString("Project");
 			String assay = metaDataGeneral.getString("Assay");
 			String experimentName = metaDataGeneral.getString("ExperimentID");
@@ -76,6 +79,25 @@ public class AXESInserter extends DBInserter implements Runnable {
 			String plateFormat = metaDataGeneral.getString("Plateformat");
 			String sex = metaDataGeneral.getString("Sex");
 			String workgroup = metaDataGeneral.getString("Department"); //Workgroup under department? Yep. This is intentional.
+			
+			String controlPlateID = "?";
+			if (metaDataGeneral.has("control Plate ID")) {
+				controlPlateID = metaDataGeneral.getString("control Plate ID");
+			}
+			
+			String solvent = metaDataSolvent.getString("Solvent");
+			solvent = solvent.toUpperCase().trim();
+			double solventConcentration = -1;
+			if (metaDataSolvent.has("Solvent conc.*")) {
+				solventConcentration = metaDataSolvent.getDouble("Solvent conc.*");
+			}
+			
+			long solventID = -1;
+			try {
+				solventID = executor.getIDViaName("solvent", solvent);
+			} catch (Throwable e) {
+				addError("The solvent '" + solvent + "', is not in the database!");
+			}
 			
 			if (casNR.equals("00-00-0") || casNR.equals("??-??-??")) {
 				addError("Cas Nr. was " + casNR + ". This got fixed by a workaround. This should be fixed or you create technical debt.", true);
@@ -136,6 +158,15 @@ public class AXESInserter extends DBInserter implements Runnable {
 				}
 			}
 			
+			if (metaDataGeneral.has("Molecular weight")) {
+				NumberUtils numberUtils = new NumberUtils();
+				String molecularWeight = metaDataGeneral.getString("Molecular weight");
+				if (numberUtils.isNumeric(molecularWeight)) {
+					double weight = Double.parseDouble(molecularWeight);
+					executor.updateTable("compound", "molecular_weight", String.valueOf(weight), compoundID);
+				}
+			}
+			
 			String blindedQueryResult = executor.getFeatureViaID("compound", "blinded", compoundID).toLowerCase();
 			boolean blindedCompound = (blindedQueryResult.equals("t") || blindedQueryResult.equals("true") || blindedQueryResult.equals("1"));
 			
@@ -156,7 +187,21 @@ public class AXESInserter extends DBInserter implements Runnable {
 			long experimentID;
 			synchronized (executor) {
 				experimentID = executor.getNextSequenceTableVal("experiment");
-				executor.insertExperiment(experimentID, date.getTime(), experimentName, projectID, workgroupID, individualID, compoundID, cellTypeID, assayID, plateformatID);
+				executor.insertExperiment(experimentID, date.getTime(), experimentName, projectID, workgroupID, individualID, compoundID, cellTypeID, assayID, plateformatID, solventID, solventConcentration, controlPlateID);
+			}
+			
+			for (String passageP : JSONOperator.getKeys(metaDataPassages)) {
+				try {
+					int p = (int) Double.parseDouble(passageP);
+					String passageDate = metaDataPassages.getString(passageP);
+					DateInterpreter interpreter = new DateInterpreter(passageDate);
+					
+					long passageDateValue = interpreter.interpretDate().getTime();
+					executor.insertPassage(experimentID, passageDateValue, p);
+				} catch (Throwable e) {
+					Log.e(e);
+					addError("Failed to insert passage '" + passageP + "' for " + experimentName + ". Reason: " + e.getMessage());
+				}
 			}
 			
 			executor.insertComment(comment, experimentID);

@@ -59,6 +59,9 @@ public class SheetReader {
 	
 	public String getValueAt(String cellName, boolean forceNumeric) throws SheetReaderTask.SheetReaderException {
 		Row row = getRow(cellName);
+		FormulaEvaluator evaluator = workbook.getCreationHelper().createFormulaEvaluator();
+		//evaluator.setIgnoreMissingWorkbooks(true);
+		
 		if (row == null) {
 			throw new SheetReaderTask.SheetReaderException("(row is null)-Error fetching cell data at " + cellName + "'! Looks like the row is not available!");
 		}
@@ -82,13 +85,46 @@ public class SheetReader {
 					try {
 						return String.valueOf(cell.getNumericCellValue());
 					} catch (Exception e) {
+						//try {
+						//	CellValue formulaValue = evaluator.evaluate(cell);
+						//	return String.valueOf(formulaValue.getNumberValue());
+						//} catch (Throwable e2) {
+						//	return "NaN";
+						//}
 						return "NaN";
 					}
 				} else {
 					try {
 						return cell.getStringCellValue();
 					} catch (Exception e) {
-						throw new SheetReaderTask.SheetReaderException("Cannot get a STRING value from a ERROR formula cell at " + cellName + "!");
+						try {
+							CellValue formulaValue = evaluator.evaluate(cell);
+							String cellValString = null;
+							switch (formulaValue.getCellTypeEnum()) {
+								case FORMULA:
+									cellValString = formulaValue.getStringValue();
+									break;
+								case NUMERIC:
+									cellValString = String.valueOf(formulaValue.getNumberValue());
+									break;
+								case BOOLEAN:
+									cellValString = String.valueOf(formulaValue.getBooleanValue());
+									break;
+								case STRING:
+									cellValString = String.valueOf(formulaValue.getStringValue());
+									break;
+								default:
+									Log.w("Unknown result of formula " + cell.getCellFormula() + " in " + cellName + ": " + formulaValue.getCellTypeEnum());
+							}
+							
+							if (cellValString == null || cellValString.length() == 0 || cellValString.equals("null")) {
+								throw new IllegalArgumentException("Failed to evaluate formula: " + cell.getCellFormula());
+							}
+							Log.i("Successfully evaluated formula: " + cell.getCellFormula() + " to " + cellValString);
+							return cellValString;
+						} catch (Throwable e2) {
+							throw new SheetReaderTask.SheetReaderException("Cannot get a STRING value from a ERROR formula cell at " + cellName + ". Failed to evaluate formula: '" + cell.getCellFormula() + "'!");
+						}
 					}
 				}
 			case BLANK:

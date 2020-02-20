@@ -1,5 +1,6 @@
 package de.rub.bph.omnineuro.client.core.sheet.data;
 
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
@@ -9,11 +10,39 @@ public class DateInterpreter {
 	
 	//Date format expected: ddMONjj
 	
+	private static HashMap<String, Integer> monthMap;
 	private String input;
-	private HashMap<String, Integer> monthMap;
 	
 	public DateInterpreter(String input) {
 		this.input = input;
+	}
+	
+	public static DateInterpreter parseDate(long date) {
+		return DateInterpreter.parseDate(new Date(date));
+	}
+	
+	public static DateInterpreter parseDate(Date date) {
+		SimpleDateFormat sdfDay = new SimpleDateFormat("dd");
+		SimpleDateFormat sdfMon = new SimpleDateFormat("MM");
+		SimpleDateFormat sdfYear = new SimpleDateFormat("yy");
+		
+		String monthPart = sdfMon.format(date);
+		
+		String finalMonth = null;
+		int mon = Integer.parseInt(monthPart) - 1;
+		for (String s : monthMap.keySet()) {
+			if (monthMap.get(s) == mon) {
+				finalMonth = s.toUpperCase();
+			}
+		}
+		if (finalMonth == null) throw new IllegalArgumentException("Failed to parse date: " + date);
+		
+		String input = sdfDay.format(date) + finalMonth + sdfYear.format(date);
+		return new DateInterpreter(input);
+	}
+	
+	public static void initMonthMap() {
+		if (monthMap != null) return;
 		
 		monthMap = new HashMap<>();
 		monthMap.put("jan", 0);
@@ -53,6 +82,9 @@ public class DateInterpreter {
 		return interpretCalender().getTime();
 	}
 	
+	public String getBaseDate() {
+		return getDD() + getMON() + getYY();
+	}
 	
 	public String getDD() {
 		return input.substring(0, 2);

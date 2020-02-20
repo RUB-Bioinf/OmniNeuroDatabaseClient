@@ -61,4 +61,16 @@ public class SheetVersionReader extends MetaDataReaderTask {
 	public JSONObject readMetaDataGeneral() throws JSONException {
 		return null;
 	}
+	
+	@Override
+	public JSONObject readPassages() throws JSONException {
+		//TODO implement
+		return null;
+	}
+	
+	@Override
+	public JSONObject readSolvent() throws JSONException {
+		//TODO implement
+		return null;
+	}
 }
