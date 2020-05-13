@@ -14,7 +14,7 @@ import java.util.ArrayList;
 public abstract class ExperimentDataReaderTask extends SheetReaderTask {
 	
 	public static final String CELL_VALUE_ZERO = "0.0";
-	public static final char ENDPOINT_DOUBLE_INDICATOR = '§';
+	public static final char ENDPOINT_DOUBLE_INDICATOR = '\u00a7';
 	public static final int WELL_INDEX_NOT_AVAILABLE = -1;
 	private int sheetVersion;
 	private String sheetName;

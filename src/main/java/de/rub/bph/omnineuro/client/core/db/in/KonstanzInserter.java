@@ -53,6 +53,7 @@ public class KonstanzInserter extends DBInserter {
 				return executor.getIDViaName("endpoint", "Selected Objects UKN5");
 			case "Migration UKN2":
 				return executor.getIDViaName("endpoint", "Migration UKN2");
+			case "Viabilty UKN2":
 			case "Viability UKN2":
 				return executor.getIDViaName("endpoint", "Viability UKN2");
 			case "neurite area UKN5":
