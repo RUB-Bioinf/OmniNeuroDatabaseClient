@@ -82,7 +82,7 @@ public class KonstanzInserter extends DBInserter {
 			workbook.setActiveSheet(0);
 			
 			int rowIndex = START_ROW_INDEX;
-			SheetReader reader = new SheetReader(workbook);
+			SheetReader reader = new SheetReader(sourceFile, workbook);
 			int rowCount = reader.getContinuousRowEntries("A", START_ROW_INDEX);
 			Log.i(sourceFile.getName() + " has " + rowCount + " entries.");
 			

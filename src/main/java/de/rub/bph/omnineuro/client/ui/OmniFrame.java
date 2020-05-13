@@ -294,22 +294,40 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 			return;
 		}
 		
-		ArrayList<Long> limitedResponseIDs;
+		ArrayList<Long> limitedResponseIDs = new ArrayList<>();
+		boolean useLimiterConfig;
 		JSONObject limiters = configManager.getCurrentConfig();
-		try {
-			ResponseIDLimiter limiter = new ResponseIDLimiter(responseIDs, limiters);
-			limitedResponseIDs = limiter.applyAllLimiters();
-		} catch (Throwable e) {
-			Log.e(e);
-			Client.showErrorMessage("Failed to apply limiters and configuration to the database!", this, e);
-			return;
+		switch (exportMethod) {
+			case 0:
+			case 1:
+				useLimiterConfig = true;
+				break;
+			case 2:
+				useLimiterConfig = false;
+				break;
+			default:
+				throw new IllegalStateException("Invalid method selection index: " + exportMethod);
 		}
-		Log.i("After running the limiters, " + responseIDs.size() + " has been reduced to " + limitedResponseIDs.size() + ".");
 		
-		if (limitedResponseIDs.isEmpty()) {
-			Client.showErrorMessage("No responses to export. The database has " + responseIDs.size() + " responses, but after " +
-					"applying the limiters, none were left.", this);
-			return;
+		if (useLimiterConfig) {
+			Log.w("This export will use limiters. Applying them now!");
+			try {
+				ResponseIDLimiter limiter = new ResponseIDLimiter(responseIDs, limiters);
+				limitedResponseIDs = limiter.applyAllLimiters();
+			} catch (Throwable e) {
+				Log.e(e);
+				Client.showErrorMessage("Failed to apply limiters and configuration to the database!", this, e);
+				return;
+			}
+			Log.i("After running the limiters, " + responseIDs.size() + " has been reduced to " + limitedResponseIDs.size() + ".");
+			
+			if (limitedResponseIDs.isEmpty()) {
+				Client.showErrorMessage("No responses to export. The database has " + responseIDs.size() + " responses, but after " +
+						"applying the limiters, none were left.", this);
+				return;
+			}
+		} else {
+			Log.w("This type export does not support limiters. None will be applied!");
 		}
 		
 		boolean includeBlinded = unblindCompoundsExportCB.isSelected();

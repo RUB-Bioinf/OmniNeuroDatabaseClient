@@ -80,6 +80,11 @@ public class AXESInserter extends DBInserter implements Runnable {
 			String sex = metaDataGeneral.getString("Sex");
 			String workgroup = metaDataGeneral.getString("Department"); //Workgroup under department? Yep. This is intentional.
 			
+			if (compound.equals("0.0")) {
+				//If there was no compound meta data sheet provided, the formula evaluator returns '0.0'. That's an error.
+				throw new IllegalStateException("Failed to read the meta data sheet containing the compound for " + experimentName + "!");
+			}
+			
 			String controlPlateID = "?";
 			if (metaDataGeneral.has("control Plate ID")) {
 				controlPlateID = metaDataGeneral.getString("control Plate ID");
@@ -99,6 +104,7 @@ public class AXESInserter extends DBInserter implements Runnable {
 				addError("The solvent '" + solvent + "', is not in the database!");
 			}
 			
+			casNR = casNR.trim();
 			if (casNR.equals("00-00-0") || casNR.equals("??-??-??")) {
 				addError("Cas Nr. was " + casNR + ". This got fixed by a workaround. This should be fixed or you create technical debt.", true);
 				//FIXME Technical debt detected!
@@ -161,7 +167,7 @@ public class AXESInserter extends DBInserter implements Runnable {
 			if (metaDataGeneral.has("Molecular weight")) {
 				NumberUtils numberUtils = new NumberUtils();
 				String molecularWeight = metaDataGeneral.getString("Molecular weight");
-				if (numberUtils.isNumeric(molecularWeight)) {
+				if (numberUtils.isNumeric(molecularWeight) && !molecularWeight.toLowerCase().equals("nan")) {
 					double weight = Double.parseDouble(molecularWeight);
 					executor.updateTable("compound", "molecular_weight", String.valueOf(weight), compoundID);
 				}
@@ -298,7 +304,10 @@ public class AXESInserter extends DBInserter implements Runnable {
 							result = response.getDouble("value");
 						} catch (JSONException e) {
 							String s = response.getString("value");
-							addError("The  " + endpoint + " at " + timestamp + " in " + experimentName + " at concentration " + concentration + " in " + currentWell + " is an invalid value: '" + s + "'. Skipping this response.");
+							if (s == null) {
+								s = "";
+							}
+							addError("The  " + endpoint + " at " + timestamp + " in " + experimentName + " at concentration " + concentration + " in " + currentWell + " is an invalid value: '" + s + "'. Skipping this response.", s.length() == 0);
 							continue;
 						}
 						
@@ -320,7 +329,7 @@ public class AXESInserter extends DBInserter implements Runnable {
 			}
 		} catch (Throwable e) {
 			Log.e("Failed to insert Experiment: " + getName(), e);
-			addError("Failed to insert Experiment " + getName() + " into the database! Error Type: " + e.getClass().getSimpleName() + ". Reason: '" + e.getMessage() + "'");
+			addError(" == FATAL ERROR! == Failed to insert Experiment " + getName() + " into the database! Error Type: " + e.getClass().getSimpleName() + ". Reason: '" + e.getMessage() + "'");
 		}
 		Log.i("Finished inserting responses for " + getName() + ". Count: " + getInsertedResponsesCount());
 	}

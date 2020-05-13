@@ -76,6 +76,9 @@ public class OutlierInserter extends DBInserter {
 						if (endpointName.equals("Viability")) {
 							endpointName = "Viabillity";
 						}
+						if (endpointName.equals("Percent Mean Migration Distance all Neurons")) {
+							endpointName = "Percent Mean Migration Distance all neurons";
+						}
 						
 						long wellID = executor.getIDViaName("well", wellBuilder.getWellShortened());
 						long endpointID = executor.getIDViaName("endpoint", endpointName);
@@ -84,6 +87,7 @@ public class OutlierInserter extends DBInserter {
 						Log.v("Query: " + query);
 						executor.execute(query);
 						incrementInsertedResponsesCount();
+						Log.i(experimentName + " on well " + wellBuilder.getWellExtended() + " is now an outlier.");
 					}
 				} catch (Throwable e) {
 					Log.e("Error in line " + lineCount + " of file " + sourceFile.getName(), e);
