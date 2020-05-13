@@ -1,5 +1,7 @@
 package de.rub.bph.omnineuro.client.core.db.out.compact_experiment;
 
+import de.rub.bph.omnineuro.client.Client;
+import de.rub.bph.omnineuro.client.config.ExportConfigManager;
 import de.rub.bph.omnineuro.client.core.db.DBConnection;
 import de.rub.bph.omnineuro.client.core.db.OmniNeuroQueryExecutor;
 import de.rub.bph.omnineuro.client.core.db.out.SheetExporterCompatManager;
@@ -7,6 +9,9 @@ import de.rub.bph.omnineuro.client.core.db.out.holder.ConcentrationHolder;
 import de.rub.bph.omnineuro.client.core.sheet.data.DateInterpreter;
 import de.rub.bph.omnineuro.client.imported.filemanager.FileManager;
 import de.rub.bph.omnineuro.client.imported.log.Log;
+import de.rub.bph.omnineuro.client.util.WellBuilder;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import java.io.File;
 import java.io.IOException;
@@ -47,6 +52,54 @@ public class CompactExperimentSheetExporter extends SheetExporterCompatManager {
 		ArrayList<String> outTextLines = new ArrayList<>();
 		FileManager fileManager = new FileManager();
 		service = Executors.newFixedThreadPool(threads);
+		
+		ExportConfigManager configManager = ExportConfigManager.getInstance();
+		JSONObject config = configManager.getCurrentConfig();
+		
+		ArrayList<String> allowedCompounds = new ArrayList<>();
+		ArrayList<String> includedCompounds = new ArrayList<>();
+		try {
+			allowedCompounds = queryExecutor.getColumn("compound", "name");
+		} catch (SQLException ex) {
+			ex.printStackTrace();
+			Client.showSQLErrorMessage(ex, null);
+			return;
+		}
+		if (config.has("limiters")) {
+			try {
+				JSONArray compoundLimiters = config.getJSONObject("limiters").getJSONObject("compound").getJSONArray("data");
+				allowedCompounds.clear();
+				for (int i = 0; i < compoundLimiters.length(); i++) {
+					allowedCompounds.add(compoundLimiters.getString(i));
+				}
+			} catch (Throwable e) {
+				e.printStackTrace();
+			}
+		}
+		Collections.sort(allowedCompounds);
+		Log.i("List of allowed compounds in this export (Count: " + allowedCompounds.size() + "): " + allowedCompounds);
+		
+		ArrayList<Long> allowedOutlierStatus = new ArrayList<>();
+		try {
+			allowedOutlierStatus = queryExecutor.getIDs("outlier_type");
+		} catch (SQLException ex) {
+			ex.printStackTrace();
+			Client.showSQLErrorMessage(ex, null);
+			return;
+		}
+		if (config.has("limiters")) {
+			try {
+				JSONArray compoundLimiters = config.getJSONObject("limiters").getJSONObject("outlier_type").getJSONArray("data");
+				allowedOutlierStatus.clear();
+				for (int i = 0; i < compoundLimiters.length(); i++) {
+					allowedOutlierStatus.add(queryExecutor.getIDViaName("outlier_type", compoundLimiters.getString(i)));
+				}
+			} catch (Throwable e) {
+				e.printStackTrace();
+			}
+		}
+		Collections.sort(allowedOutlierStatus);
+		Log.i("List of allowed outlier states in this export (Count: " + allowedOutlierStatus.size() + "): " + allowedOutlierStatus);
 		
 		try {
 			ArrayList<String> experimentNames = queryExecutor.getColumn("experiment", "name");
@@ -151,6 +204,11 @@ public class CompactExperimentSheetExporter extends SheetExporterCompatManager {
 				}
 				
 				long platingDate = Long.parseLong(set.getString(2));
+				String compoundName = set.getString(8);
+				if (!allowedCompounds.contains(compoundName)) {
+					Log.i("Experiment " + experimentName + " has compound " + compoundName + ". That's not in the configuration. Skipping.");
+					continue;
+				}
 				
 				metaDataBuilder.append(set.getString(1) + ";");
 				metaDataBuilder.append(DateInterpreter.parseDate(platingDate).getBaseDate() + ";");
@@ -200,9 +258,13 @@ public class CompactExperimentSheetExporter extends SheetExporterCompatManager {
 						"  AND well.id = well_id\n" +
 						"  and experiment.name = '" + experimentName + "'";
 				ArrayList<String> wellList = queryExecutor.extractStringFeature(queryExecutor.executeQuery(query), "name");
-				Collections.sort(wellList);
+				wellList = WellBuilder.sortWellList(wellList);
 				
-				CompactExperimentSheetRunner sheetRunner = new CompactExperimentSheetRunner(metaDataBuilder.toString(), experimentName, endpointNames, timestamps, queryExecutor, wellList);
+				if (!includedCompounds.contains(compoundName)) {
+					includedCompounds.add(compoundName);
+				}
+				
+				CompactExperimentSheetRunner sheetRunner = new CompactExperimentSheetRunner(metaDataBuilder.toString(), experimentName, endpointNames, timestamps, queryExecutor, wellList, allowedOutlierStatus);
 				runnerList.add(sheetRunner);
 				service.submit(sheetRunner);
 			}
@@ -212,6 +274,9 @@ public class CompactExperimentSheetExporter extends SheetExporterCompatManager {
 		}
 		
 		Collections.sort(runnerList);
+		Collections.sort(includedCompounds);
+		Log.i("These " + includedCompounds.size() + " will be used in the export: " + includedCompounds);
+		
 		service.shutdown();
 		while (!service.isTerminated()) {
 			int terminatedCount = 0;
@@ -236,9 +301,12 @@ public class CompactExperimentSheetExporter extends SheetExporterCompatManager {
 			}
 		}
 		
+		Log.i("Waiting finished. Merging CSV lines.");
 		for (CompactExperimentSheetRunner runner : runnerList) {
 			outTextLines.addAll(runner.getResultRows());
 		}
+		
+		Log.i("All done. Writing to file system: " + outFile.getAbsolutePath());
 		try {
 			fileManager.saveListFile(outTextLines, outFile, false);
 		} catch (IOException e) {
@@ -263,6 +331,7 @@ public class CompactExperimentSheetExporter extends SheetExporterCompatManager {
 		private String experimentName;
 		private ArrayList<String> endpointNames;
 		private ArrayList<String> timestamps;
+		private ArrayList<Long> allowedOutlierStates;
 		private OmniNeuroQueryExecutor queryExecutor;
 		private ArrayList<String> wellList;
 		private String metadataText;
@@ -270,16 +339,20 @@ public class CompactExperimentSheetExporter extends SheetExporterCompatManager {
 		
 		private ArrayList<String> resultRows;
 		
-		public CompactExperimentSheetRunner(String metadataText, String experimentName, ArrayList<String> endpointNames, ArrayList<String> timestamps, OmniNeuroQueryExecutor queryExecutor, ArrayList<String> wellList) {
+		public CompactExperimentSheetRunner(String metadataText, String experimentName, ArrayList<String> endpointNames, ArrayList<String> timestamps, OmniNeuroQueryExecutor queryExecutor, ArrayList<String> wellList, ArrayList<Long> allowedOutlierStates) {
 			this.experimentName = experimentName;
 			this.metadataText = metadataText;
 			this.endpointNames = endpointNames;
 			this.timestamps = timestamps;
 			this.queryExecutor = queryExecutor;
 			this.wellList = wellList;
+			this.allowedOutlierStates = allowedOutlierStates;
 			terminated = false;
-			
 			resultRows = new ArrayList<>();
+			
+			if (allowedOutlierStates.isEmpty()) {
+				throw new IllegalArgumentException("Cannot run the export. No allowed outlier states are defined.");
+			}
 		}
 		
 		@Override
@@ -313,6 +386,15 @@ public class CompactExperimentSheetExporter extends SheetExporterCompatManager {
 								Log.v(logText);
 							}
 							
+							StringBuilder outlierConditionalBuilder = new StringBuilder();
+							for (int i = 0; i < allowedOutlierStates.size(); i++) {
+								if (i != 0) {
+									outlierConditionalBuilder.append(" OR ");
+								}
+								outlierConditionalBuilder.append("response.outlier_type_id = ");
+								outlierConditionalBuilder.append(allowedOutlierStates.get(i));
+							}
+							
 							String query = "SELECT response.value,concentration.id\n" +
 									"from response,\n" +
 									"     well,\n" +
@@ -320,6 +402,7 @@ public class CompactExperimentSheetExporter extends SheetExporterCompatManager {
 									"     concentration,\n" +
 									"     experiment\n" +
 									"where well.id = response.well_id\n" +
+									"  AND (" + outlierConditionalBuilder.toString() + ")\n" +
 									"  AND endpoint.id = response.endpoint_id\n" +
 									"  AND experiment.id = response.experiment_id\n" +
 									"  AND concentration.id = response.concentration_id\n" +

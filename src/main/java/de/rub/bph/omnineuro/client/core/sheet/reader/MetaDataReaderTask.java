@@ -72,6 +72,9 @@ public abstract class MetaDataReaderTask extends SheetReaderTask {
 			try {
 				addRowPair(data, i + start, false, keyChar, valueChar);
 			} catch (Exception e) {
+				if (e.getClass() == NullPointerException.class) {
+					errors.put("Special Null pointer error! Something while reading went internally very wrong!");
+				}
 				Log.e(e);
 				errors.put(e.getMessage());
 			}

@@ -64,7 +64,7 @@ public abstract class ExperimentDataReaderTask extends SheetReaderTask {
 			
 			try {
 				value = getValueAt(cell, true);
-			} catch (SheetReaderException e) {
+			} catch (Throwable e) {
 				Log.e("Failed to read response in " + cell + " for experiment " + getFileName(), e);
 				value = "NaN";
 			}

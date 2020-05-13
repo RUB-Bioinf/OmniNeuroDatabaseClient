@@ -1,5 +1,7 @@
 package de.rub.bph.omnineuro.client.util;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -27,8 +29,23 @@ public class WellBuilder implements Comparable<WellBuilder> {
 			
 			return new WellBuilder(part, value);
 		} else {
-			throw new IllegalArgumentException("Failed to apply well regex ['\" + WELL_REGEX + \"'] to '" + text+"'");
+			throw new IllegalArgumentException("Failed to apply well regex ['\" + WELL_REGEX + \"'] to '" + text + "'");
 		}
+	}
+	
+	public static ArrayList<String> sortWellList(ArrayList<String> inputList) throws IllegalArgumentException {
+		ArrayList<WellBuilder> wellList = new ArrayList<>();
+		ArrayList<String> outList = new ArrayList<>();
+		
+		for (String well : inputList) {
+			wellList.add(convertWell(well));
+		}
+		Collections.sort(wellList);
+		
+		for (WellBuilder builder : wellList) {
+			outList.add(builder.getWellShortened());
+		}
+		return outList;
 	}
 	
 	@Override

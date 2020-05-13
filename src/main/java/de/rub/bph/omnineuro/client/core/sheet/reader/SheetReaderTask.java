@@ -9,10 +9,8 @@ import java.io.IOException;
 
 public abstract class SheetReaderTask extends SheetReader {
 	
-	protected File sourceFile;
-	
 	public SheetReaderTask(Workbook workbook, String sheetName, File sourceFile) throws IOException {
-		super(workbook, sheetName);
+		super(sourceFile, workbook, sheetName);
 		this.sourceFile = sourceFile;
 		
 		workbook.close();
@@ -26,14 +24,6 @@ public abstract class SheetReaderTask extends SheetReader {
 	
 	public void addRowPair(JSONObject data, int line, boolean forceNumeric, String keyChar, String valueChar) throws SheetReaderException, JSONException {
 		data.put(getValueAt(keyChar + line, false), getValueAt(valueChar + line, forceNumeric));
-	}
-	
-	public String getFileName() {
-		return getSourceFile().getName();
-	}
-	
-	public File getSourceFile() {
-		return sourceFile;
 	}
 	
 }

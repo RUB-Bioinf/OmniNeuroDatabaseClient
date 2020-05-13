@@ -5,6 +5,7 @@ import de.rub.bph.omnineuro.client.core.AXESSheetReaderManager;
 import de.rub.bph.omnineuro.client.core.ExperimentReaderStatistics;
 import de.rub.bph.omnineuro.client.core.db.DBConnection;
 import de.rub.bph.omnineuro.client.core.db.OmniNeuroQueryExecutor;
+import de.rub.bph.omnineuro.client.core.sheet.reader.versions.meta.ExternalMetadata;
 import de.rub.bph.omnineuro.client.imported.filemanager.FileManager;
 import de.rub.bph.omnineuro.client.imported.log.Log;
 import org.json.JSONObject;
@@ -104,6 +105,16 @@ public class InsertManager {
 	}
 	
 	public ArrayList<DBInserter> insertAXESsheets() {
+		ExternalMetadata metadata = ExternalMetadata.getInstance();
+		
+		for (int i = 0; i < 10; i++)
+			try {
+				metadata.init();
+			} catch (Throwable e) {
+				Client.showErrorMessage("Failed to read external meta data sheet.!", parent, e);
+				return null;
+			}
+		
 		ArrayList<JSONObject> experiments = new ArrayList<>();
 		if (inDir.exists() && inDir.isDirectory()) {
 			experiments = readAXESSheets(inDir, threads);
@@ -170,9 +181,14 @@ public class InsertManager {
 				throw new IllegalStateException("Unknown insert method index: " + methodIndex);
 		}
 		
-		for (DBInserter inserter : inserters) {
-			service.submit(inserter);
+		if (inserters != null) {
+			for (DBInserter inserter : inserters) {
+				service.submit(inserter);
+			}
+		} else {
+			return;
 		}
+		
 		service.shutdown();
 		Log.i("Done adding. Starting to wait.");
 		

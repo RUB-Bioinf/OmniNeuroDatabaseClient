@@ -63,7 +63,7 @@ public class AXESSheetReader extends JSONOperator implements Runnable {
 		// SHEET VERSION & COMPAT
 		
 		try {
-			SheetVersionReader reader = new SheetVersionReader(workbook);
+			SheetVersionReader reader = new SheetVersionReader(workbook, sourceFile);
 			sheetVersion = reader.readVersion();
 		} catch (Exception e) {
 			Log.e("IO Exception during check for sheet version!", e);
@@ -98,7 +98,7 @@ public class AXESSheetReader extends JSONOperator implements Runnable {
 			experiment.put(JSON_ENTRY_EXPERIMENTDATA, experimentDataReader.readSheet());
 			experiment.put(JSON_ENTRY_SOURCEFILE, getSourceFile().getAbsolutePath());
 			experiment.put(EXCEL_SHEET_SUBNAME_SHEET_VERSION, getSheetVersion());
-		} catch (Exception e) {
+		} catch (Throwable e) {
 			e.printStackTrace();
 			Log.e("FATAL ERROR! Failed to resolve meta data!", e);
 			return;

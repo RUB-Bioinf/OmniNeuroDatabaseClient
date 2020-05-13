@@ -28,7 +28,7 @@ public class EFSAConcentrationFixer extends DBInserter {
 		
 		try {
 			XSSFWorkbook workbook = new XSSFWorkbook(sourceFile);
-			SheetReader reader = new SheetReader(workbook, 0);
+			SheetReader reader = new SheetReader(sourceFile, workbook, 0);
 			
 			int rowCount = reader.getContinuousRowEntries("A", START_ROW_INDEX);
 			Log.i(sourceFile.getName() + " has " + rowCount + " entries.");

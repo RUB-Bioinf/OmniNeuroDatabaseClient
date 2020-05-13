@@ -6,14 +6,15 @@ import org.apache.poi.ss.usermodel.Workbook;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.File;
 import java.io.IOException;
 
 import static de.rub.bph.omnineuro.client.core.sheet.reader.AXESSheetReader.EXCEL_SHEET_SUBNAME_METADATA;
 
 public class SheetVersionReader extends MetaDataReaderTask {
 	
-	public SheetVersionReader(Workbook workbook) throws IOException {
-		super(workbook, EXCEL_SHEET_SUBNAME_METADATA, null);
+	public SheetVersionReader(Workbook workbook, File sourceFile) throws IOException {
+		super(workbook, EXCEL_SHEET_SUBNAME_METADATA, sourceFile);
 	}
 	
 	public int readVersion() {

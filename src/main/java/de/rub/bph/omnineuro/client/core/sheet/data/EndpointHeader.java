@@ -1,5 +1,7 @@
 package de.rub.bph.omnineuro.client.core.sheet.data;
 
+import java.util.Objects;
+
 public class EndpointHeader {
 	
 	private String name;
@@ -64,5 +66,35 @@ public class EndpointHeader {
 	
 	public void setTimestamp(int timestamp) {
 		this.timestamp = timestamp;
+	}
+	
+	@Override
+	public int hashCode() {
+		return Objects.hash(getName(), getColumnIndex(), getExpectedValues(), getTimestamp(), getRowIndex(), getDetectionMethod());
+	}
+	
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) return true;
+		if (o == null || getClass() != o.getClass()) return false;
+		EndpointHeader that = (EndpointHeader) o;
+		return getColumnIndex() == that.getColumnIndex() &&
+				getExpectedValues() == that.getExpectedValues() &&
+				getTimestamp() == that.getTimestamp() &&
+				getRowIndex() == that.getRowIndex() &&
+				Objects.equals(getName(), that.getName()) &&
+				Objects.equals(getDetectionMethod(), that.getDetectionMethod());
+	}
+	
+	@Override
+	public String toString() {
+		return "EndpointHeader{" +
+				"name='" + name + '\'' +
+				", columnIndex=" + columnIndex +
+				", rowIndex=" + rowIndex +
+				", expectedValues=" + expectedValues +
+				", timestamp=" + timestamp +
+				", detectionMethod='" + detectionMethod + '\'' +
+				'}';
 	}
 }

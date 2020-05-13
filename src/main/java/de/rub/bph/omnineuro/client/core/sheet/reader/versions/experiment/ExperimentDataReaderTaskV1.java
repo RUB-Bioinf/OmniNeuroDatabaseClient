@@ -29,7 +29,7 @@ public class ExperimentDataReaderTaskV1 extends ExperimentDataReaderTask {
 			String endpointName;
 			
 			try {
-				endpointName = getValueAt(cellName, false);
+				endpointName = getValueAt(cellName, false, true, false);
 			} catch (SheetReaderException e) {
 				Log.e("Failed to retrieve value in cell: " + cellName);
 				continue;
@@ -42,7 +42,7 @@ public class ExperimentDataReaderTaskV1 extends ExperimentDataReaderTask {
 			}
 			
 			if (endpointName.equals("") || endpointName.equals("NaN")) {
-				Log.i("Last entry found in: " + cellName + ". Entry read: '" + endpointName + "'.");
+				Log.i("Last entry found in: " + cellName + ". Entry read: '" + endpointName + "'. All headers so far: " + headers);
 				break;
 			}
 			
