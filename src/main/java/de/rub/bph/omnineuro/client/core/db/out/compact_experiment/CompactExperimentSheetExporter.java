@@ -135,20 +135,37 @@ public class CompactExperimentSheetExporter extends SheetExporterCompatManager {
 			endpointNames.remove("Mean Migration Distance all neurons");
 			endpointNames.remove("Average Subneuritelength per Nucleus limited");
 			 */
+			
 			endpointNames = new ArrayList<>();
-			endpointNames.add("Proliferation (BrdU)");
-			endpointNames.add("Proliferation Area");
-			endpointNames.add("Viabillity");
-			endpointNames.add("Viabillity of Proliferation");
-			endpointNames.add("Mean Migration Distance all Oligodendrocytes");
-			endpointNames.add("Skeleton Neurons");
-			endpointNames.add("Migration");
-			endpointNames.add("Number Nuclei");
-			endpointNames.add("Migration Distance");
-			endpointNames.add("Skeleton Oligos");
-			endpointNames.add("Mean Migration Distance all neurons");
-			endpointNames.add("Cytotoxicity (NPC1ab)");
-			endpointNames.add("Cytotoxicity (NPC2-5)");
+			
+			//IUF Endpoints
+			//endpointNames.add("Proliferation (BrdU)");
+			//endpointNames.add("Proliferation Area");
+			//endpointNames.add("Viabillity");
+			//endpointNames.add("Viabillity of Proliferation");
+			//endpointNames.add("Mean Migration Distance all Oligodendrocytes");
+			//endpointNames.add("Skeleton Neurons");
+			//endpointNames.add("Migration");
+			//endpointNames.add("Number Nuclei");
+			//endpointNames.add("Migration Distance");
+			//endpointNames.add("Skeleton Oligos");
+			//endpointNames.add("Mean Migration Distance all neurons");
+			//endpointNames.add("Cytotoxicity (NPC1ab)");
+			//endpointNames.add("Cytotoxicity (NPC2-5)");
+			
+			//Konstanz Endpoints
+			endpointNames.add("Viability UKN2");
+			endpointNames.add("Migration UKN2");
+			endpointNames.add("Neurite Area UKN5");
+			endpointNames.add("Valid Objects UKN4");
+			endpointNames.add("Selected Objects UKN5");
+			endpointNames.add("Selected Objects UKN4");
+			endpointNames.add("Neurite Area");
+			endpointNames.add("Selected Objects");
+			endpointNames.add("Valid Objects");
+			endpointNames.add("Valid Objects UKN5");
+			endpointNames.add("Neurite Area UKN4");
+			endpointNames.add("Viabilty UKN2");
 			
 			StringBuilder headerBuilder = new StringBuilder();
 			headerBuilder.append("ExperimentID;Plating date (ddMONjj);Assay;Species;Cell type;Individual;Date (ddMONjj)/passage 0;P;Date (ddMONjj)/passage 1;P;control Plate ID;" +
@@ -349,6 +366,7 @@ public class CompactExperimentSheetExporter extends SheetExporterCompatManager {
 			this.allowedOutlierStates = allowedOutlierStates;
 			terminated = false;
 			resultRows = new ArrayList<>();
+			Thread.currentThread().setName("CompactExperimentSheetRunner [" + experimentName + "]");
 			
 			if (allowedOutlierStates.isEmpty()) {
 				throw new IllegalArgumentException("Cannot run the export. No allowed outlier states are defined.");
@@ -385,6 +403,7 @@ public class CompactExperimentSheetExporter extends SheetExporterCompatManager {
 							} else {
 								Log.v(logText);
 							}
+							Thread.currentThread().setName("CompactExperimentSheetRunner - " + logText);
 							
 							StringBuilder outlierConditionalBuilder = new StringBuilder();
 							for (int i = 0; i < allowedOutlierStates.size(); i++) {

@@ -61,7 +61,7 @@ public class KonstanzInserter extends DBInserter {
 			case "neurite area UKN4":
 				return executor.getIDViaName("endpoint", "Neurite Area UKN4");
 			default:
-				addError("Failed to decode a database compatible endpoint from '" + endpointName + "'!");
+				addError("FATAL ERROR! Failed to decode a database compatible endpoint from '" + endpointName + "'!");
 				return DECODED_ENDPOINT_FAILURE;
 		}
 	}
@@ -70,10 +70,10 @@ public class KonstanzInserter extends DBInserter {
 	public void run() {
 		long timestampExperiment = new Date(0).getTime();
 		int timestampEndpoint = 24;
-		addError("Failed to get the timestamp (experiment, endpoint) from file: " + sourceFile.getName());
-		addError("Failed to read the individual from file: " + sourceFile.getName());
-		addError("Failed to read the detection method from file: " + sourceFile.getName());
-		addError("Failed to get workgroup name for " + sourceFile.getName());
+		addError("TODO later: get the timestamp (experiment, endpoint) from file: " + sourceFile.getName());
+		addError("TODO later: read the individual from file: " + sourceFile.getName());
+		addError("TODO later: read the detection method from file: " + sourceFile.getName());
+		addError("TODO later: get workgroup name for " + sourceFile.getName());
 		
 		int cachedRow = -1;
 		String cachedWell = "<None>";
@@ -210,10 +210,14 @@ public class KonstanzInserter extends DBInserter {
 							long compoundID;
 							try {
 								compoundID = executor.getIDViaName("compound", sampleID);
-							} catch (Exception ex) {
-								//ex.printStackTrace();
-								executor.insertCompound(sampleID, sampleID, sampleID, true);
-								compoundID = executor.getIDViaName("compound", sampleID);
+							} catch (Exception exx) {
+								try {
+									compoundID = executor.getIDViaFeature("compound", "abbreviation", sampleID);
+								} catch (Exception ex) {
+									//ex.printStackTrace();
+									executor.insertCompound(sampleID, sampleID, sampleID, true);
+									compoundID = executor.getIDViaName("compound", sampleID);
+								}
 							}
 							
 							if (attemptUnblinding) {
@@ -290,7 +294,7 @@ public class KonstanzInserter extends DBInserter {
 					}
 				} catch (Exception e) {
 					Log.e(e);
-					addError("Error prevented " + sfName + " caused on row " + i + " to be inserted into the experiment: " + e.getMessage());
+					addError("FATAL Error! " + sfName + ": Error on row " + i + " to be inserted into the experiment: " + e.getMessage());
 					continue;
 				}
 				Log.i("Successfully inserted row " + i + " from file: " + sfName);
