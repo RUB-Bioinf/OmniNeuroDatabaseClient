@@ -57,7 +57,7 @@ public class AXESSheetReaderManager extends ConcurrentExecutionManager {
 			AXESSheetReader reader = new AXESSheetReader(f, outDir);
 			
 			readers.add(reader);
-			service.submit(reader);
+			submitTask(reader);
 		}
 		
 		waitForTasks();
@@ -120,6 +120,11 @@ public class AXESSheetReaderManager extends ConcurrentExecutionManager {
 			}
 		}
 		return list;
+	}
+	
+	@Override
+	protected void onWaitUpdate() {
+	
 	}
 	
 	public FileNameExtensionFilter getFilter() {

@@ -111,6 +111,11 @@ public class QueryExecutor {
 		throw new IllegalStateException("Table '" + tableName + "' does not contain id " + id + "!");
 	}
 	
+	public synchronized String getFeatureViaFeature(String tableName, String sourceColumn, String targetColumn, String feature) throws SQLException, IllegalStateException {
+		long id = getIDViaFeature(tableName, sourceColumn, feature);
+		return getFeatureViaID(tableName, targetColumn, id);
+	}
+	
 	public synchronized String getNameViaID(String tableName, long id) throws SQLException, IllegalStateException {
 		return getFeatureViaID(tableName, "name", id);
 	}
@@ -291,5 +296,13 @@ public class QueryExecutor {
 		this.logEnabled = logEnabled;
 	}
 	
+	public synchronized boolean isExecutableQuery(String query) {
+		try {
+			executeQuery(query);
+		} catch (SQLException e) {
+			return false;
+		}
+		return true;
+	}
 	
 }

@@ -331,6 +331,7 @@ public class CompoundSheetExporter extends ResponseExporter {
 			addError("Failed to create " + getCompoundAbbreviation() + " ['" + getCompoundName() + "'] export file because of an " + e.getClass().getSimpleName() + "-Error!");
 			Log.e(e);
 		}
+		setFinished();
 	}
 	
 	public String getCompoundAbbreviation() {

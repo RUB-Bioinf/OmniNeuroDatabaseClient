@@ -8,6 +8,8 @@ import de.rub.bph.omnineuro.client.core.db.OmniNeuroQueryExecutor;
 import de.rub.bph.omnineuro.client.core.sheet.reader.versions.meta.ExternalMetadata;
 import de.rub.bph.omnineuro.client.imported.filemanager.FileManager;
 import de.rub.bph.omnineuro.client.imported.log.Log;
+import de.rub.bph.omnineuro.client.util.TimeUtils;
+import de.rub.bph.omnineuro.client.util.concurrent.TimedRunnable;
 import org.json.JSONObject;
 
 import java.awt.*;
@@ -15,6 +17,8 @@ import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -198,7 +202,20 @@ public class InsertManager {
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
-			Log.i("Still waiting for threads to finish...");
+			
+			ArrayList<TimedRunnable> timedRunnableList = new ArrayList<>();
+			int finishedCount = 0;
+			for (DBInserter in : inserters) {
+				if (in.isFinished()) finishedCount++;
+				TimedRunnable tr = in;
+				timedRunnableList.add(tr);
+			}
+			
+			long etaTime = TimedRunnable.calculateETA(timedRunnableList, inserters.size() - finishedCount, getThreads() / -3);
+			Date etaDate = new Date(new Date().getTime() + etaTime);
+			String etaText = new TimeUtils().formatAbsolute(etaDate, 3, 0);
+			
+			Log.i("Still waiting for inserter threads to finish: " + finishedCount + " / " + inserters.size() + ". ETA: " + etaText);
 		}
 		Log.i("Done waiting.");
 		
@@ -207,10 +224,12 @@ public class InsertManager {
 		ArrayList<String> containsNaNList = new ArrayList<>();
 		ArrayList<String> insertedResponsesList = new ArrayList<>();
 		ArrayList<String> insertedBlindedCompounds = new ArrayList<>();
+		ArrayList<String> konstanzCasList = new ArrayList<>();
 		triviaList = new ArrayList<>();
 		
 		int errorNaNCount = 0;
 		int insertedResponsesCount = 0;
+		konstanzCasList.add("Source;Sample ID;Plate ID;Read CAS;Existed in the DB;Database Compound;Database Abbreviation;Same DB Name");
 		
 		for (DBInserter inserter : inserters) {
 			String name = inserter.getName();
@@ -229,6 +248,14 @@ public class InsertManager {
 			}
 			
 			insertedBlindedCompounds.addAll(inserter.getBlindingInfo());
+			
+			if (inserter instanceof KonstanzInserter) {
+				KonstanzInserter ki = (KonstanzInserter) inserter;
+				
+				ArrayList<String> temp = new ArrayList<>(ki.getCASRows());
+				Collections.sort(temp);
+				konstanzCasList.addAll(temp);
+			}
 		}
 		
 		triviaList.add("Total errors discovered: " + errors.size());
@@ -265,6 +292,7 @@ public class InsertManager {
 			manager.saveListFile(containsNaNList, new File(outDir, "contains_nan.csv"), false);
 			manager.saveListFile(insertedResponsesList, new File(outDir, "inserted_responses.csv"), false);
 			manager.saveListFile(triviaList, new File(outDir, "trivia.txt"), false);
+			manager.saveListFile(konstanzCasList, new File(outDir, "konstanz_cas.csv"), false);
 			
 			manager.saveListFile(insertedBlindedCompounds, new File(outDir, "blindedCompounds.txt"), true, false);
 		} catch (IOException e) {

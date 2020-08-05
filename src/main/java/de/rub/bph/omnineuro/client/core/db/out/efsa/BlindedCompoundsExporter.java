@@ -53,27 +53,45 @@ public class BlindedCompoundsExporter extends ResponseExporter {
 	}
 	
 	private String getRow(String name, String well) throws SQLException {
-		String query = "SELECT response.id, response.value, compound.name, concentration.id, endpoint.id, experiment.name, compound.abbreviation, individual.name, assay.name FROM assay, individual, compound, response,experiment,well,endpoint, concentration WHERE\n" +
+		String query = "SELECT response.id, response.value, compound.name, concentration.id, endpoint.id, experiment.name, compound.abbreviation, individual.name, assay.name, response.timestamp FROM assay, individual, compound, response,experiment,well,endpoint, concentration WHERE\n" +
 				"assay.id = experiment.assay_id AND individual.id = experiment.individual_id AND response.experiment_id = experiment.id AND response.well_id = well.id AND response.endpoint_id = endpoint.id AND experiment.compound_id = compound.id AND\n" +
 				" response.concentration_id = concentration.id\n" +
-				" AND (endpoint.id = 4 OR endpoint.id = 1 OR endpoint.id = 2) AND response.timestamp = 72 AND experiment.name = '" + name + "' AND well.name = '" + well + "' ORDER BY endpoint_id;";
+				" AND (endpoint.id = 17 OR endpoint.id = 20 OR endpoint.id = 23 OR endpoint.id = 49 OR endpoint.id = 19 OR\n" +
+				"       endpoint.id = 16 OR endpoint.id = 15 OR endpoint.id = 54 OR endpoint.id = 22 OR endpoint.id = 51 OR\n" +
+				"       endpoint.id = 4 OR endpoint.id = 1 OR endpoint.id = 2) AND (response.timestamp = 72 OR response.timestamp = 120) AND experiment.name = '" + name + "' AND well.name = '" + well + "' ORDER BY endpoint_id;";
 		ResultSet set = queryExecutor.executeQuery(query);
 		
 		if (!set.next()) {
-			Log.i(name + " for " + well + " had no responses. Skipping.");
+			Log.v(name + " for " + well + " had no responses. Skipping.");
 			return null;
 		}
 		
 		String compoundName, experimentName;
 		long concentrationID;
-		String viabilityResponse = ";";
-		String proliferationResponse = ";";
-		String proliferationAreaResponse = ";";
+		
+		String viabilityResponse72 = ";";
+		String proliferationResponse72 = ";";
+		String proliferationAreaResponse72 = ";";
+		String migration72 = ";";
+		String migrationDistance120 = ";";
+		String meanMigrationDistanceAllNeurons120 = ";";
+		String meanMigrationDistanceAllOligodendrocytes120 = ";";
+		String numberNuclei120 = ";";
+		String skeletonNeurons120 = ";";
+		String totalSubneuritelengthPerNucleusLimited120 = ";";
+		String meanNeuriteAreaWoNuclei120 = ";";
+		String skeletonOligos120 = ";";
+		String cytotoxicityNPC25_72 = ";";
+		String cytotoxicityNPC25_120 = ";";
+		String viabillity120 = ";";
+		
 		String individualName;
 		String compoundAbbreviation;
 		String assayName;
+		int timestamp;
 		
 		do {
+			timestamp = set.getInt(10);
 			assayName = set.getString(9);
 			individualName = set.getString(8);
 			compoundAbbreviation = set.getString(7);
@@ -84,14 +102,46 @@ public class BlindedCompoundsExporter extends ResponseExporter {
 			double responseValue = set.getDouble(2);
 			long responseID = set.getLong(1);
 			
-			if (endpointID == 1) {
-				proliferationResponse = responseValue + ";";
-			} else if (endpointID == 2) {
-				proliferationAreaResponse = responseValue + ";";
-			} else if (endpointID == 4) {
-				viabilityResponse = responseValue + ";";
+			if (timestamp == 72) {
+				if (endpointID == 1) {
+					proliferationResponse72 = responseValue + ";";
+				} else if (endpointID == 2) {
+					proliferationAreaResponse72 = responseValue + ";";
+				} else if (endpointID == 4) {
+					viabilityResponse72 = responseValue + ";";
+				} else if (endpointID == 17) {
+					migration72 = responseValue + ";";
+				} else if (endpointID == 51) {
+					cytotoxicityNPC25_72 = responseValue + ";";
+				} else {
+					throw new IllegalStateException("Invalid endpoint ID for " + experimentName + " at " + well + " at " + timestamp + "! Endpoint ID " + endpointID + " was unexpected.");
+				}
+			} else if (timestamp == 120) {
+				if (endpointID == 20) {
+					migrationDistance120 = responseValue + ";";
+				} else if (endpointID == 23) {
+					meanMigrationDistanceAllNeurons120 = responseValue + ";";
+				} else if (endpointID == 49) {
+					meanMigrationDistanceAllOligodendrocytes120 = responseValue + ";";
+				} else if (endpointID == 19) {
+					numberNuclei120 = responseValue + ";";
+				} else if (endpointID == 16) {
+					skeletonNeurons120 = responseValue + ";";
+				} else if (endpointID == 15) {
+					totalSubneuritelengthPerNucleusLimited120 = responseValue + ";";
+				} else if (endpointID == 54) {
+					meanNeuriteAreaWoNuclei120 = responseValue + ";";
+				} else if (endpointID == 22) {
+					skeletonOligos120 = responseValue + ";";
+				} else if (endpointID == 51) {
+					cytotoxicityNPC25_120 = responseValue + ";";
+				} else if (endpointID == 4) {
+					viabillity120 = responseValue + ";";
+				} else {
+					throw new IllegalStateException("Invalid endpoint ID for " + experimentName + " at " + well + " at " + timestamp + "! Endpoint ID " + endpointID + " was unexpected.");
+				}
 			} else {
-				throw new IllegalStateException("Wow, you ripped a hole in the fabric of the universe! Response ID " + endpointID + " was returned, but how is that possible??");
+				throw new IllegalStateException("Received an illegal timestamp for " + experimentName + " at " + well + ": " + timestamp);
 			}
 		} while (set.next());
 		
@@ -138,7 +188,6 @@ public class BlindedCompoundsExporter extends ResponseExporter {
 			if (acronym == null) {
 				throw new IllegalStateException("Concentration of control with id " + concentrationID + " has no Acronym!");
 			}
-			
 			switch (acronym) {
 				case "SC":
 					wellType = "n";
@@ -165,9 +214,22 @@ public class BlindedCompoundsExporter extends ResponseExporter {
 		row.append("1;");
 		row.append(concentrationHolder.getDescription() + ";");
 		
-		row.append(viabilityResponse);
-		row.append(proliferationResponse);
-		row.append(proliferationAreaResponse);
+		row.append(migration72);
+		row.append(migrationDistance120);
+		row.append(meanMigrationDistanceAllNeurons120);
+		row.append(meanMigrationDistanceAllOligodendrocytes120);
+		row.append(numberNuclei120);
+		row.append(skeletonNeurons120);
+		row.append(totalSubneuritelengthPerNucleusLimited120);
+		row.append(meanNeuriteAreaWoNuclei120);
+		row.append(skeletonOligos120);
+		row.append(cytotoxicityNPC25_72);
+		row.append(cytotoxicityNPC25_120);
+		row.append(viabillity120);
+		
+		row.append(viabilityResponse72);
+		row.append(proliferationResponse72);
+		row.append(proliferationAreaResponse72);
 		
 		row.append(experimentName + "_??_" + assayName + "_" + individualName);
 		
@@ -212,6 +274,10 @@ public class BlindedCompoundsExporter extends ResponseExporter {
 			}
 		});
 		
+		File outFile = new File(targetDir, "blindCompounds.csv");
+		File outErrors = new File(targetDir, "errors.txt");
+		FileManager fileManager = new FileManager();
+		
 		int count = 0;
 		int combinedVals = uniqueNames.size() * uniqueWells.size();
 		int fivePercent = (int) (combinedVals * .05);
@@ -231,14 +297,17 @@ public class BlindedCompoundsExporter extends ResponseExporter {
 				}
 				
 				if (count % fivePercent == 0) {
-					Log.i("Row: " + count + "/" + combinedVals + " -> " + (int) (((double) count / (double) combinedVals) * 100) + "%");
+					Log.i("Row: " + count + " / " + combinedVals + " -> " + (int) (((double) count / (double) combinedVals) * 100) + "%");
+				}
+				
+				try {
+					fileManager.writeFile(outFile, builder.toString());
+				} catch (IOException e) {
+					Log.e(e);
 				}
 			}
 		}
 		
-		File outFile = new File(targetDir, "blindCompounds.csv");
-		File outErrors = new File(targetDir, "errors.txt");
-		FileManager fileManager = new FileManager();
 		try {
 			fileManager.writeFile(outFile, builder.toString());
 			fileManager.saveListFile(errorList, outErrors);
@@ -248,8 +317,23 @@ public class BlindedCompoundsExporter extends ResponseExporter {
 	}
 	
 	public static String getFileHeader() {
-		return "spid;apid;rowi;coli;wllt;wllq;conc;rval;rval;rval;srcf\n" +
+		return "spid;apid;rowi;coli;wllt;wllq;conc;rval;rval;rval;rval;rval;rval;rval;rval;rval;rval;rval;rval;rval;rval;rval;srcf\n" +
 				"sample ID from source plate;Unique plate ID (no repeated plates across assay endpoint);row index;column index;well type;well quality;concentration (µM);raw value of response;raw value of response;raw value of response;source file name\n" +
-				";;;;;;;Viability 72h;Proliferation (BrdU);Proliferation Area;\n";
+				";;;;;;;" +
+				"Migration [72h];" +
+				"Migration Distance [120h];" +
+				"Mean Migration Distance all neurons [120h];" +
+				"Mean Migration Distance all Oligodendrocytes [120h];" +
+				"Number Nuclei [120h];" +
+				"Skeleton Neurons [120h];" +
+				"Total Subneuritelength per Nucleus limited [120h];" +
+				"Mean Neurite Area wo Nuclei [120h];" +
+				"Skeleton Oligos [120h];" +
+				"Cytotoxicity (NPC2-5) [72h];" +
+				"Cytotoxicity (NPC2-5) [120h];" +
+				"Viabillity [120h];" +
+				"Viability [72h];" +
+				"Proliferation (BrdU) [72h];" +
+				"Proliferation Area [72h];\n";
 	}
 }

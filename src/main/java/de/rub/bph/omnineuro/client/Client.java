@@ -4,10 +4,12 @@ import de.rub.bph.omnineuro.client.core.sheet.data.DateInterpreter;
 import de.rub.bph.omnineuro.client.imported.log.Log;
 import de.rub.bph.omnineuro.client.ui.DialogFrame;
 import de.rub.bph.omnineuro.client.ui.OmniFrame;
+import de.rub.bph.omnineuro.client.util.TimeUtils;
 
 import javax.swing.*;
 import java.awt.*;
 import java.sql.SQLException;
+import java.util.Date;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -29,6 +31,7 @@ public class Client {
 			DateInterpreter.initMonthMap();
 			
 			new OmniFrame();
+			Log.i("Current time: " + new TimeUtils().formatAbsolute(new Date(), 0, 0));
 		});
 	}
 	

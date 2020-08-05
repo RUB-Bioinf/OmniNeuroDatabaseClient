@@ -14,7 +14,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.concurrent.Executors;
 
 public class ResponseSheetExporterCompatManager extends SheetExporterCompatManager {
 	
@@ -37,7 +36,6 @@ public class ResponseSheetExporterCompatManager extends SheetExporterCompatManag
 		
 		modifySourceDirBasedOnConfig(config);
 		
-		service = Executors.newFixedThreadPool(threads);
 		connection = DBConnection.getDBConnection();
 		queryExecutor = new OmniNeuroQueryExecutor(connection.getConnection());
 	}
@@ -96,7 +94,7 @@ public class ResponseSheetExporterCompatManager extends SheetExporterCompatManag
 			
 			CompoundSheetExporter exporter = new CompoundSheetExporter(targetDir, connection, id, compoundResponseMap.get(id), useComma);
 			exporterList.add(exporter);
-			service.submit(exporter);
+			submitTask(exporter);
 		}
 		
 		return exporterList;

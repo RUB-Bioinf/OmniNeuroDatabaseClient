@@ -332,6 +332,7 @@ public class AXESInserter extends DBInserter implements Runnable {
 			addError(" == FATAL ERROR! == Failed to insert Experiment " + getName() + " into the database! Error Type: " + e.getClass().getSimpleName() + ". Reason: '" + e.getMessage() + "'");
 		}
 		Log.i("Finished inserting responses for " + getName() + ". Count: " + getInsertedResponsesCount());
+		setFinished();
 	}
 	
 	@Override

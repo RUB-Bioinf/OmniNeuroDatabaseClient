@@ -4,11 +4,12 @@ import de.rub.bph.omnineuro.client.core.db.DBConnection;
 import de.rub.bph.omnineuro.client.core.db.OmniNeuroQueryExecutor;
 import de.rub.bph.omnineuro.client.core.db.out.holder.CompoundHolder;
 import de.rub.bph.omnineuro.client.imported.log.Log;
+import de.rub.bph.omnineuro.client.util.concurrent.TimedRunnable;
 
 import java.sql.Connection;
 import java.util.ArrayList;
 
-public abstract class DBInserter implements Runnable {
+public abstract class DBInserter extends TimedRunnable {
 	
 	protected static OmniNeuroQueryExecutor executor;
 	protected boolean attemptUnblinding;

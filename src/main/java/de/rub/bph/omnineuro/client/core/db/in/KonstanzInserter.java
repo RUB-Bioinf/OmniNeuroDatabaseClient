@@ -19,11 +19,13 @@ public class KonstanzInserter extends DBInserter {
 	private static final int START_ROW_INDEX = 4;
 	private File sourceFile;
 	private HashMap<String, ArrayList<String>> lookupMapDMSO;
+	private ArrayList<String> casOutRows;
 	
 	public KonstanzInserter(File sourceFile, boolean attemptUnblinding) {
 		super(attemptUnblinding);
 		this.sourceFile = sourceFile;
 		lookupMapDMSO = new HashMap<>();
+		casOutRows = new ArrayList<>();
 	}
 	
 	private long decodeKonstanzEndpoint(String endpointName) throws SQLException {
@@ -66,6 +68,10 @@ public class KonstanzInserter extends DBInserter {
 		}
 	}
 	
+	protected void addCASRow(String row) {
+		casOutRows.add(row);
+	}
+	
 	@Override
 	public void run() {
 		long timestampExperiment = new Date(0).getTime();
@@ -81,6 +87,7 @@ public class KonstanzInserter extends DBInserter {
 			FileInputStream excelFile = new FileInputStream(sourceFile);
 			XSSFWorkbook workbook = new XSSFWorkbook(excelFile);
 			workbook.setActiveSheet(0);
+			String CASCol = "K";
 			
 			int rowIndex = START_ROW_INDEX;
 			SheetReader reader = new SheetReader(sourceFile, workbook);
@@ -109,9 +116,11 @@ public class KonstanzInserter extends DBInserter {
 			if (reader.hasValueAt("J3")) {
 				extendedEndpoints = true;
 				endpoint3 = reader.getValueAt("J3");
+				CASCol = "L";
 			}
 			
-			for (int i = START_ROW_INDEX; i < rowCount; i++) {
+			int rowTarget = rowCount + START_ROW_INDEX;
+			for (int i = START_ROW_INDEX; i < rowTarget; i++) {
 				cachedRow = i;
 				cachedWell = "<Unknown>";
 				
@@ -119,14 +128,34 @@ public class KonstanzInserter extends DBInserter {
 				String sampleID = reader.getValueAt("A" + i);
 				String plateID = reader.getValueAt("B" + i);
 				
-				String wellRow = reader.getValueAt("C" + i);
-				int wellCol = (int) Double.parseDouble(reader.getValueAt("D" + i, true));
-				WellBuilder wellBuilder = new WellBuilder(wellRow, wellCol);
-				String wellName = wellBuilder.getWellExtended();
+				boolean hasWell = true;
+				String wellName;
+				try {
+					String wellRow = reader.getValueAt("C" + i);
+					int wellCol = (int) Double.parseDouble(reader.getValueAt("D" + i, true));
+					WellBuilder wellBuilder = new WellBuilder(wellRow, wellCol);
+					wellName = wellBuilder.getWellExtended();
+				} catch (Exception e) {
+					hasWell = false;
+					wellName = "Z" + cachedRow;
+					CASCol = "J";
+				}
 				cachedWell = wellName;
 				
 				String wellType = reader.getValueAt("E" + i);
 				String wellQuality = reader.getValueAt("F" + i);
+				
+				String CAS = null;
+				try {
+					String CASCell = CASCol + i;
+					CAS = reader.getValueAt(CASCell, false).trim();
+					Log.v("Cas at " + CASCell + " found: " + CAS);
+					if (CAS.equals("") || CAS.equals("NaN")) CAS = null;
+				} catch (Exception e) {
+					Log.e("Failed to read the CAS Number. But that's okay, switching to 'No CAS Mode.'", e);
+					CAS = null;
+				}
+				boolean CASMode = CAS != null;
 				
 				long outlierID = confirmedOutlierID;
 				try {
@@ -155,10 +184,12 @@ public class KonstanzInserter extends DBInserter {
 				} catch (Exception e) {
 					addError("Failed to the response to " + endpoint1 + " at H" + i + ". Error: " + e.getMessage());
 				}
-				try {
-					response2 = Double.parseDouble(reader.getValueAt("I" + i, true));
-				} catch (Exception e) {
-					addError("Failed to the response to " + endpoint2 + " at I" + i + ". Error: " + e.getMessage());
+				if (hasWell) {
+					try {
+						response2 = Double.parseDouble(reader.getValueAt("I" + i, true));
+					} catch (Exception e) {
+						addError("Failed to the response to " + endpoint2 + " at I" + i + ". Error: " + e.getMessage());
+					}
 				}
 				if (extendedEndpoints) {
 					try {
@@ -208,21 +239,62 @@ public class KonstanzInserter extends DBInserter {
 							long workgroupID = 3;
 							
 							long compoundID;
-							try {
-								compoundID = executor.getIDViaName("compound", sampleID);
-							} catch (Exception exx) {
+							if (CASMode) {
+								boolean foundCas;
 								try {
-									compoundID = executor.getIDViaFeature("compound", "abbreviation", sampleID);
-								} catch (Exception ex) {
-									//ex.printStackTrace();
-									executor.insertCompound(sampleID, sampleID, sampleID, true);
+									//Let's see if that CAS exists in the DB as a registered compound
+									compoundID = executor.getIDViaFeature("compound", "cas_no", CAS);
+									foundCas = true;
+								} catch (Exception exx) {
+									try {
+										String unblindedCAS = executor.getFeatureViaFeature("unblinded_compound_mapping", "name", "unblinded_cas_number", CAS);
+										addBlindingRow("Blinded entry: " + CAS + " was unblinded to: " + unblindedCAS);
+										compoundID = executor.getIDViaFeature("compound", "cas_no", unblindedCAS);
+										attemptUnblinding = false;
+										foundCas = true;
+									} catch (Exception exxx) {
+										//What if the CAS does not exists in the DB, but the Compound name?
+										String actualCAS = null;
+										try {
+											long actualID = executor.getIDViaName("compound", sampleID);
+											actualCAS = executor.getFeatureViaID("compound", "cas_no", actualID);
+										} catch (Exception exxxx) {
+											// all good. nvm.
+										}
+										if (actualCAS != null) {
+											String outRowExtra = sfName + ";" + sampleID + ";" + plateID + ";" + CAS + ";DUPLICATE;;;;DUPLICATE COMPOUND NAME BUT DIFFERENT CAS:;" + actualCAS;
+											addCASRow(outRowExtra);
+										}
+										
+										//So our CAS was not in the DB and not in the unblinded mapping. Let's insert it as a new compound then.
+										executor.insertCompound(sampleID, CAS, sampleID, true);
+										foundCas = false;
+										compoundID = executor.getIDViaName("compound", sampleID);
+									}
+								}
+								
+								String casName = executor.getNameViaID("compound", compoundID);
+								String abbreviation = executor.getFeatureViaID("compound", "abbreviation", compoundID);
+								boolean equals = casName.equals(sampleID);
+								String outRow = sfName + ";" + sampleID + ";" + plateID + ";" + CAS + ";" + String.valueOf(foundCas).toUpperCase() + ";" + casName + ";" + abbreviation + ";" + String.valueOf(equals).toUpperCase();
+								addCASRow(outRow);
+							} else {
+								try {
 									compoundID = executor.getIDViaName("compound", sampleID);
+								} catch (Exception exx) {
+									try {
+										compoundID = executor.getIDViaFeature("compound", "abbreviation", sampleID);
+									} catch (Exception ex) {
+										//ex.printStackTrace();
+										executor.insertCompound(sampleID, sampleID, sampleID, true);
+										compoundID = executor.getIDViaName("compound", sampleID);
+									}
 								}
 							}
 							
 							if (attemptUnblinding) {
 								if (isControl) {
-									addBlindingRow(sampleID + " is not a blinded compound.");
+									addBlindingRow(sampleID + " [Line " + i + "] is not a blinded compound. It's a control.");
 								} else {
 									CompoundHolder compoundHolder = attemptUnblinding(sampleID);
 									if (compoundHolder != null) {
@@ -240,7 +312,7 @@ public class KonstanzInserter extends DBInserter {
 							experimentID = executor.getNextSequenceTableVal("experiment");
 							executor.insertExperiment(experimentID, timestampExperiment, experimentName, projectID, workgroupID, individualID, compoundID, cellTypeID, assayID, plateFormatID, solventID, solventConcentration, controlPlateID);
 						}
-						Log.i("Experiment ID extracted: " + experimentID);
+						Log.v("Experiment ID extracted: " + experimentID);
 					}
 					
 					long wellID;
@@ -295,19 +367,26 @@ public class KonstanzInserter extends DBInserter {
 				} catch (Exception e) {
 					Log.e(e);
 					addError("FATAL Error! " + sfName + ": Error on row " + i + " to be inserted into the experiment: " + e.getMessage());
+					addCASRow(sfName + ";" + sampleID + ";" + plateID + ";FATAL ERROR on row " + i);
 					continue;
 				}
-				Log.i("Successfully inserted row " + i + " from file: " + sfName);
+				Log.v("Successfully inserted row " + i + " from file: " + sfName);
 			}
 			workbook.close();
 		} catch (Throwable e) {
 			Log.e("Fatal Error in sheet " + sourceFile.getName(), e);
 			addError("Fatal Error in: " + sourceFile.getName() + ". Type: " + e.getClass().getSimpleName() + ": '" + e.getMessage() + "'! Last known row: " + cachedRow + ". Last known well: " + cachedWell);
 		}
+		
+		setFinished();
 	}
 	
 	@Override
 	public String getName() {
 		return sourceFile.getName();
+	}
+	
+	public ArrayList<String> getCASRows() {
+		return new ArrayList<>(casOutRows);
 	}
 }

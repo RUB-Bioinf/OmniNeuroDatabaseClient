@@ -2,11 +2,12 @@ package de.rub.bph.omnineuro.client.core.db.out;
 
 import de.rub.bph.omnineuro.client.core.db.DBConnection;
 import de.rub.bph.omnineuro.client.imported.log.Log;
+import de.rub.bph.omnineuro.client.util.concurrent.TimedRunnable;
 
 import java.io.File;
 import java.util.ArrayList;
 
-public abstract class SheetExporter implements Runnable {
+public abstract class SheetExporter extends TimedRunnable {
 	
 	protected File targetDir;
 	protected DBConnection connection;
