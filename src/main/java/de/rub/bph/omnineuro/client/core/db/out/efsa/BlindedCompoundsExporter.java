@@ -58,7 +58,8 @@ public class BlindedCompoundsExporter extends ResponseExporter {
 				" response.concentration_id = concentration.id\n" +
 				" AND (endpoint.id = 17 OR endpoint.id = 20 OR endpoint.id = 23 OR endpoint.id = 49 OR endpoint.id = 19 OR\n" +
 				"       endpoint.id = 16 OR endpoint.id = 15 OR endpoint.id = 54 OR endpoint.id = 22 OR endpoint.id = 51 OR\n" +
-				"       endpoint.id = 4 OR endpoint.id = 1 OR endpoint.id = 2) AND (response.timestamp = 72 OR response.timestamp = 120) AND experiment.name = '" + name + "' AND well.name = '" + well + "' ORDER BY endpoint_id;";
+				"       endpoint.id = 4 OR endpoint.id = 1 OR endpoint.id = 2 OR endpoint.id = 8) " +
+				" AND (response.timestamp = 72 OR response.timestamp = 120) AND experiment.name = '" + name + "' AND well.name = '" + well + "' ORDER BY endpoint_id;";
 		ResultSet set = queryExecutor.executeQuery(query);
 		
 		if (!set.next()) {
@@ -121,7 +122,7 @@ public class BlindedCompoundsExporter extends ResponseExporter {
 					migrationDistance120 = responseValue + ";";
 				} else if (endpointID == 23) {
 					meanMigrationDistanceAllNeurons120 = responseValue + ";";
-				} else if (endpointID == 49) {
+				} else if (endpointID == 8) {
 					meanMigrationDistanceAllOligodendrocytes120 = responseValue + ";";
 				} else if (endpointID == 19) {
 					numberNuclei120 = responseValue + ";";

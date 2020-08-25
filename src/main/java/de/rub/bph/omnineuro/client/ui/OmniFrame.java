@@ -8,6 +8,7 @@ import de.rub.bph.omnineuro.client.core.db.in.InsertManager;
 import de.rub.bph.omnineuro.client.core.db.out.ResponseIDLimiter;
 import de.rub.bph.omnineuro.client.core.db.out.ResponseSheetExporterCompatManager;
 import de.rub.bph.omnineuro.client.core.db.out.SheetExporterCompatManager;
+import de.rub.bph.omnineuro.client.core.db.out.assay_distribution.AssayDistributionSheetExporter;
 import de.rub.bph.omnineuro.client.core.db.out.compact_experiment.CompactExperimentSheetExporter;
 import de.rub.bph.omnineuro.client.core.db.out.holder.ResponseHolder;
 import de.rub.bph.omnineuro.client.core.db.out.r.CompoundExperimentSheetExporter;
@@ -305,6 +306,9 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 			case 2:
 				useLimiterConfig = false;
 				break;
+			case 3:
+				useLimiterConfig = false;
+				break;
 			default:
 				throw new IllegalStateException("Invalid method selection index: " + exportMethod);
 		}
@@ -348,6 +352,15 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 			case 2:
 				try {
 					compatManager = new CompactExperimentSheetExporter(threads, dir);
+				} catch (SQLException e) {
+					e.printStackTrace();
+					Log.e(e);
+					Client.showErrorMessage("Failed to initiate the export.", this, e);
+				}
+				break;
+			case 3:
+				try {
+					compatManager = new AssayDistributionSheetExporter(threads, dir);
 				} catch (SQLException e) {
 					e.printStackTrace();
 					Log.e(e);

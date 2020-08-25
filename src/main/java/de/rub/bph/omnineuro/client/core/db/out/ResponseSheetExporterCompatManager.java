@@ -107,9 +107,10 @@ public class ResponseSheetExporterCompatManager extends SheetExporterCompatManag
 		if (includeBlinded) {
 			try {
 				exportEFSASheet();
-			} catch (SQLException e) {
+			} catch (Exception e) {
 				Log.e(e);
 				Client.showErrorMessage("Failed to export experiment data!\nA more detailed message will be displayed in the future.", null, e);
+				return;
 			}
 		}
 		

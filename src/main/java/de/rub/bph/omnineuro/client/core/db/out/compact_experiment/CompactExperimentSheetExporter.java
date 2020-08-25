@@ -111,61 +111,36 @@ public class CompactExperimentSheetExporter extends SheetExporterCompatManager {
 			Collections.sort(timestamps);
 			Log.i("Experiments found in the DB: " + Arrays.toString(experimentNames.toArray()));
 			
-			/*
-			endpointNames.remove("Viability UKN2");
-			endpointNames.remove("Migration UKN2");
-			endpointNames.remove("Neurite Area UKN5");
-			endpointNames.remove("Valid Objects UKN4");
-			endpointNames.remove("Selected Objects UKN5");
-			endpointNames.remove("Selected Objects UKN4");
-			endpointNames.remove("Valid Objects UKN5");
-			endpointNames.remove("Neurite Area UKN4");
-			endpointNames.remove("Neuronal Density Ring 1");
-			endpointNames.remove("Neuronal Density Ring 2");
-			endpointNames.remove("Neuronal Density Ring 3");
-			endpointNames.remove("Neuronal Density Ring 4");
-			endpointNames.remove("Neuronal Density Ring 5");
-			endpointNames.remove("Neuronal Density Ring 6");
-			endpointNames.remove("Neuronal Density Ring 7");
-			endpointNames.remove("Neuronal Density Ring 8");
-			endpointNames.remove("Neuronal Density Ring 9");
-			endpointNames.remove("Neuronal Density Ring 10");
-			endpointNames.remove("Mean Subneurite Count limited");
-			endpointNames.remove("Skeleton Oligos");
-			endpointNames.remove("Mean Migration Distance all neurons");
-			endpointNames.remove("Average Subneuritelength per Nucleus limited");
-			 */
-			
 			endpointNames = new ArrayList<>();
 			
 			//IUF Endpoints
-			//endpointNames.add("Proliferation (BrdU)");
-			//endpointNames.add("Proliferation Area");
-			//endpointNames.add("Viabillity");
-			//endpointNames.add("Viabillity of Proliferation");
-			//endpointNames.add("Mean Migration Distance all Oligodendrocytes");
-			//endpointNames.add("Skeleton Neurons");
-			//endpointNames.add("Migration");
-			//endpointNames.add("Number Nuclei");
-			//endpointNames.add("Migration Distance");
-			//endpointNames.add("Skeleton Oligos");
-			//endpointNames.add("Mean Migration Distance all neurons");
-			//endpointNames.add("Cytotoxicity (NPC1ab)");
-			//endpointNames.add("Cytotoxicity (NPC2-5)");
+			endpointNames.add("Proliferation (BrdU)");
+			endpointNames.add("Proliferation Area");
+			endpointNames.add("Viabillity");
+			endpointNames.add("Viabillity of Proliferation");
+			endpointNames.add("Mean Migration Distance all Oligodendrocytes");
+			endpointNames.add("Skeleton Neurons");
+			endpointNames.add("Migration");
+			endpointNames.add("Number Nuclei");
+			endpointNames.add("Migration Distance");
+			endpointNames.add("Skeleton Oligos");
+			endpointNames.add("Mean Migration Distance all neurons");
+			endpointNames.add("Cytotoxicity (NPC1ab)");
+			endpointNames.add("Cytotoxicity (NPC2-5)");
 			
 			//Konstanz Endpoints
-			endpointNames.add("Viability UKN2");
-			endpointNames.add("Migration UKN2");
-			endpointNames.add("Neurite Area UKN5");
-			endpointNames.add("Valid Objects UKN4");
-			endpointNames.add("Selected Objects UKN5");
-			endpointNames.add("Selected Objects UKN4");
-			endpointNames.add("Neurite Area");
-			endpointNames.add("Selected Objects");
-			endpointNames.add("Valid Objects");
-			endpointNames.add("Valid Objects UKN5");
-			endpointNames.add("Neurite Area UKN4");
-			endpointNames.add("Viabilty UKN2");
+			// endpointNames.add("Viability UKN2");
+			// endpointNames.add("Migration UKN2");
+			// endpointNames.add("Neurite Area UKN5");
+			// endpointNames.add("Valid Objects UKN4");
+			// endpointNames.add("Selected Objects UKN5");
+			// endpointNames.add("Selected Objects UKN4");
+			// endpointNames.add("Neurite Area");
+			// endpointNames.add("Selected Objects");
+			// endpointNames.add("Valid Objects");
+			// endpointNames.add("Valid Objects UKN5");
+			// endpointNames.add("Neurite Area UKN4");
+			// endpointNames.add("Viabilty UKN2");
 			
 			StringBuilder headerBuilder = new StringBuilder();
 			headerBuilder.append("ExperimentID;Plating date (ddMONjj);Assay;Species;Cell type;Individual;Date (ddMONjj)/passage 0;P;Date (ddMONjj)/passage 1;P;control Plate ID;" +

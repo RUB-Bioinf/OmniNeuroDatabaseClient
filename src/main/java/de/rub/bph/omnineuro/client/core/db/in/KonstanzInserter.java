@@ -128,6 +128,17 @@ public class KonstanzInserter extends DBInserter {
 				String sampleID = reader.getValueAt("A" + i);
 				String plateID = reader.getValueAt("B" + i);
 				
+				for (int j = 0; j < 99; j++) {
+					// Extrawurst for UKN 4.
+					// Sometimes UKN4 plateID contains the plate number. That has to be removed.
+					// Example of undesireable plate: UKN4_PreProject_Acet_plate 1_N1
+					String plate = "_plate " + j;
+					if (plateID.contains(plate)) {
+						addError("Warning! '" + plateID + "' contained plate ID in the experiment. Deleting '" + plate + "'!");
+						plateID = plateID.replace(plate, "");
+					}
+				}
+				
 				boolean hasWell = true;
 				String wellName;
 				try {
@@ -156,6 +167,17 @@ public class KonstanzInserter extends DBInserter {
 					CAS = null;
 				}
 				boolean CASMode = CAS != null;
+				
+				if (CASMode) {
+					// Extrawurst for 'Paraquat dichloride hydrate'.
+					// Konstanz used CAS: 1910-42-5
+					// IUF CAS: 75365-73-0
+					// TODO this is technical debt
+					if (CAS.equals("1910-42-5") || sampleID.toLowerCase().trim().equals("paraquat dichloride hydrate")) {
+						CAS = "75365-73-0";
+						addError("Technical debt. Replaced PARAQ CAS to match DB.");
+					}
+				}
 				
 				long outlierID = confirmedOutlierID;
 				try {
@@ -267,6 +289,7 @@ public class KonstanzInserter extends DBInserter {
 										}
 										
 										//So our CAS was not in the DB and not in the unblinded mapping. Let's insert it as a new compound then.
+										addError("This compound was not found in the DB! Name: '" + sampleID + "'. CAS: " + CAS);
 										executor.insertCompound(sampleID, CAS, sampleID, true);
 										foundCas = false;
 										compoundID = executor.getIDViaName("compound", sampleID);
@@ -328,7 +351,11 @@ public class KonstanzInserter extends DBInserter {
 					
 					ArrayList<Long> experimentIDList = new ArrayList<>();
 					if (isControl) {
-						executor.deleteRow("experiment", experimentID);
+						if (!experimentName.startsWith("Narciclasine#UKN4_PreProject_Narci_plate")) {
+							// Hier eine Extrawurst, weil auf der selben plate als compound und auch als kontrolle verwendet wurde
+							//TODO this should be discussed and deleted! Technical debt gedetected!!
+							executor.deleteRow("experiment", experimentID);
+						}
 						ArrayList<String> experimentList = lookupMapDMSO.get(plateID);
 						for (String s : experimentList) {
 							long id = executor.getIDViaName("experiment", s + "#" + plateID);
