@@ -1,5 +1,6 @@
 package de.rub.bph.omnineuro.client.core.db.in;
 
+import de.rub.bph.omnineuro.client.core.db.QueryExecutor;
 import de.rub.bph.omnineuro.client.core.db.out.holder.CompoundHolder;
 import de.rub.bph.omnineuro.client.core.sheet.data.DateInterpreter;
 import de.rub.bph.omnineuro.client.imported.log.Log;
@@ -21,6 +22,11 @@ public class AXESInserter extends DBInserter implements Runnable {
 	private JSONObject data;
 	private String name;
 	
+	public static final String INVALID_INDIVIDUAL_NAME = "<unknown individual>";
+	public static final String INVALID_MUTATION_NAME = "<unknown mutation>";
+	public static final String INVALID_SEX_NAME = "undefined";
+	public static final String INVALID_SPECIES_NAME = "unknown";
+	
 	public AXESInserter(JSONObject data, boolean attemptUnblinding) {
 		super(attemptUnblinding);
 		this.data = data;
@@ -34,24 +40,19 @@ public class AXESInserter extends DBInserter implements Runnable {
 		}
 	}
 	
-	private synchronized long getIndividualID(String individual, String sex, String species) throws JSONException, SQLException {
-		long individualID;
+	private synchronized long getMutationID(String mutation) throws SQLException {
+		long mutationID;
 		
 		synchronized (executor) {
 			try {
-				individualID = executor.getIDViaName("individual", individual);
+				mutationID = executor.getIDViaName("mutation", mutation);
 			} catch (Throwable e) {
-				long sexID = executor.getIDViaFeature("sex", "label", sex);
-				long speciesID = executor.getIDViaName("species", species);
-				
-				individualID = executor.getNextSequenceTableVal("individual");
-				executor.insertIndividual(individualID, individual, sexID, speciesID);
-				Log.i("New individual inserted into the database. Name: '" + individual + "'. ID: " + individualID);
-				addError("Warning. Individual '" + individual + "' was not in the database. It has been added. Species: " + species + ". Sex: " + sex);
+				mutationID = executor.getNextSequenceTableVal("mutation");
+				executor.insertMutation(mutationID, mutation);
 			}
 		}
 		
-		return individualID;
+		return mutationID;
 	}
 	
 	@Override
@@ -70,15 +71,23 @@ public class AXESInserter extends DBInserter implements Runnable {
 			String projectName = metaDataGeneral.getString("Project");
 			String assay = metaDataGeneral.getString("Assay");
 			String experimentName = metaDataGeneral.getString("ExperimentID");
-			String individual = metaDataGeneral.getString("Individual");
 			String compound = metaDataGeneral.getString("Compound");
 			String casNR = metaDataGeneral.getString("CAS No.");
-			String compuntAbbreviation = metaDataGeneral.getString("Compound abbreviation");
+			String compoundAbbreviation = metaDataGeneral.getString("Compound abbreviation");
 			String cellType = metaDataGeneral.getString("Cell type");
 			String species = metaDataGeneral.getString("Species");
 			String plateFormat = metaDataGeneral.getString("Plateformat");
 			String sex = metaDataGeneral.getString("Sex");
 			String workgroup = metaDataGeneral.getString("Department"); //Workgroup under department? Yep. This is intentional.
+			
+			String individual = null;
+			String mutation = null;
+			if (metaDataGeneral.has("Individual")) {
+				individual = metaDataGeneral.getString("Individual");
+			}
+			if (metaDataGeneral.has("Mutation")) {
+				mutation = metaDataGeneral.getString("Mutation");
+			}
 			
 			if (compound.equals("0.0")) {
 				//If there was no compound meta data sheet provided, the formula evaluator returns '0.0'. That's an error.
@@ -92,9 +101,13 @@ public class AXESInserter extends DBInserter implements Runnable {
 			
 			String solvent = metaDataSolvent.getString("Solvent");
 			solvent = solvent.toUpperCase().trim();
-			double solventConcentration = -1;
+			double solventConcentration = -1.0;
 			if (metaDataSolvent.has("Solvent conc.*")) {
 				solventConcentration = metaDataSolvent.getDouble("Solvent conc.*");
+			}
+			if (Double.isNaN(solventConcentration)) {
+				addError("Warning: Solvent has illegal values!");
+				solventConcentration = -1.0;
 			}
 			
 			long solventID = -1;
@@ -125,17 +138,30 @@ public class AXESInserter extends DBInserter implements Runnable {
 				addError("Compound is unknown!", true);
 			}
 			
-			//Next: Insert it into the database
-			Log.i("TODO: Actually insert it now...");
+			long individualID;
+			long mutationID;
+			if (individual == null && mutation == null) {
+				addError("Sheet has neither an individual or a mutation!");
+			}
+			
+			if (individual == null) {
+				individualID = getInvalidIndividualID();
+			} else {
+				individualID = getIndividualID(individual, sex, species);
+			}
+			if (mutation == null) {
+				mutationID = getInvalidMutationID();
+			} else {
+				mutationID = getMutationID(mutation);
+			}
 			
 			//But first: Let me take a sel... the necessary IDs of existing meta data from the Database
 			long assayID = executor.getIDViaName("assay", assay);
 			long cellTypeID = executor.getIDViaName("cell_type", cellType);
 			long projectID = executor.getIDViaName("project", projectName);
-			long plateformatID = executor.getIDViaName("plate_format", plateFormat);
+			long plateFormatID = executor.getIDViaName("plate_format", plateFormat);
 			long workgroupID = executor.getIDViaName("workgroup", workgroup);
 			
-			long individualID = getIndividualID(individual, sex, species);
 			long wellNotAvailableID = executor.getIDViaName("well", "Unknown");
 			long detectionMethodNotAvailableID = executor.getIDViaName("detection_method", "Unknown");
 			
@@ -157,7 +183,7 @@ public class AXESInserter extends DBInserter implements Runnable {
 						}
 					}
 				} else {
-					addError("Failed to resolve compound name: '" + compound + "' [" + compuntAbbreviation + "]. That's okay, if a valid Cas Nr. is provided instead: '" + casNR + "'.");
+					addError("Failed to resolve compound name: '" + compound + "' [" + compoundAbbreviation + "]. That's okay, if a valid Cas Nr. is provided instead: '" + casNR + "'.");
 					compoundID = executor.getIDViaFeature("compound", "cas_no", casNR);
 					String newCompoundName = executor.getNameViaID("compound", compoundID);
 					addError("\t\t\tBut that CAS Nr. existed in the DB and the compound was resolved as '" + newCompoundName + "'.");
@@ -182,7 +208,7 @@ public class AXESInserter extends DBInserter implements Runnable {
 					if (compoundHolder != null) {
 						compound = compoundHolder.getName();
 						casNR = compoundHolder.getCas();
-						compuntAbbreviation = compoundHolder.getAbbreviation();
+						compoundAbbreviation = compoundHolder.getAbbreviation();
 						compoundID = compoundHolder.getCompoundID();
 					}
 				} else {
@@ -193,7 +219,7 @@ public class AXESInserter extends DBInserter implements Runnable {
 			long experimentID;
 			synchronized (executor) {
 				experimentID = executor.getNextSequenceTableVal("experiment");
-				executor.insertExperiment(experimentID, date.getTime(), experimentName, projectID, workgroupID, individualID, compoundID, cellTypeID, assayID, plateformatID, solventID, solventConcentration, controlPlateID);
+				executor.insertExperiment(experimentID, date.getTime(), experimentName, projectID, workgroupID, individualID, mutationID, compoundID, cellTypeID, assayID, plateFormatID, solventID, solventConcentration, controlPlateID);
 			}
 			
 			for (String passageP : JSONOperator.getKeys(metaDataPassages)) {
@@ -328,11 +354,69 @@ public class AXESInserter extends DBInserter implements Runnable {
 				}
 			}
 		} catch (Throwable e) {
+			String fatalErrorText = " == FATAL ERROR! == Failed to insert Experiment " + getName() + " into the database! Error Type: " + e.getClass().getSimpleName() + ". Reason: '" + e.getMessage() + "'";
+			if (e instanceof SQLException) {
+				fatalErrorText = fatalErrorText + ". Last SQL query: " + QueryExecutor.getLastCachedQuery();
+			}
+			
 			Log.e("Failed to insert Experiment: " + getName(), e);
-			addError(" == FATAL ERROR! == Failed to insert Experiment " + getName() + " into the database! Error Type: " + e.getClass().getSimpleName() + ". Reason: '" + e.getMessage() + "'");
+			addError(fatalErrorText);
 		}
 		Log.i("Finished inserting responses for " + getName() + ". Count: " + getInsertedResponsesCount());
 		setFinished();
+	}
+	
+	private synchronized long getIndividualID(String individual, String sex, String species) throws JSONException, SQLException {
+		long individualID;
+		
+		synchronized (executor) {
+			try {
+				individualID = executor.getIDViaName("individual", individual);
+			} catch (Throwable e) {
+				long sexID = executor.getIDViaFeature("sex", "label", sex);
+				long speciesID = executor.getIDViaName("species", species);
+				
+				individualID = executor.getNextSequenceTableVal("individual");
+				executor.insertIndividual(individualID, individual, sexID, speciesID);
+				Log.i("New individual inserted into the database. Name: '" + individual + "'. ID: " + individualID);
+				addError("Warning. Individual '" + individual + "' was not in the database. It has been added. Species: " + species + ". Sex: " + sex);
+			}
+		}
+		
+		return individualID;
+	}
+	
+	public static synchronized long getInvalidIndividualID() throws JSONException, SQLException {
+		long individualID;
+		
+		synchronized (executor) {
+			try {
+				individualID = executor.getIDViaName("individual", INVALID_INDIVIDUAL_NAME);
+			} catch (Throwable e) {
+				long sexID = executor.getIDViaFeature("sex", "label", INVALID_SEX_NAME);
+				long speciesID = executor.getIDViaName("species", INVALID_SPECIES_NAME);
+				
+				individualID = executor.getNextSequenceTableVal("individual");
+				executor.insertIndividual(individualID, INVALID_INDIVIDUAL_NAME, sexID, speciesID);
+			}
+		}
+		
+		return individualID;
+	}
+	
+	public static synchronized long getInvalidMutationID() throws SQLException {
+		long mutationID;
+		
+		synchronized (executor) {
+			try {
+				mutationID = executor.getIDViaName("mutation", INVALID_MUTATION_NAME);
+			} catch (Throwable e) {
+				mutationID = executor.getNextSequenceTableVal("mutation");
+				executor.insertMutation(mutationID, INVALID_MUTATION_NAME);
+			}
+		}
+		
+		return mutationID;
 	}
 	
 	@Override

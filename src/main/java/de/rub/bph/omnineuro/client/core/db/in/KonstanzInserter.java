@@ -330,10 +330,11 @@ public class KonstanzInserter extends DBInserter {
 							//TODO Add solvent ID to UKN assay experiments
 							long solventID = -1;
 							double solventConcentration = -1d;
+							long mutationID = AXESInserter.getInvalidMutationID();
 							String controlPlateID = "<Unknown>";
 							
 							experimentID = executor.getNextSequenceTableVal("experiment");
-							executor.insertExperiment(experimentID, timestampExperiment, experimentName, projectID, workgroupID, individualID, compoundID, cellTypeID, assayID, plateFormatID, solventID, solventConcentration, controlPlateID);
+							executor.insertExperiment(experimentID, timestampExperiment, experimentName, projectID, workgroupID, individualID, mutationID, compoundID, cellTypeID, assayID, plateFormatID, solventID, solventConcentration, controlPlateID);
 						}
 						Log.v("Experiment ID extracted: " + experimentID);
 					}

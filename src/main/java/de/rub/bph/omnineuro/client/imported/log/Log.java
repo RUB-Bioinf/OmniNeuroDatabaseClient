@@ -1,9 +1,11 @@
 package de.rub.bph.omnineuro.client.imported.log;
 
 import de.rub.bph.omnineuro.client.Client;
+import de.rub.bph.omnineuro.client.core.db.QueryExecutor;
 import de.rub.bph.omnineuro.client.imported.filemanager.FileManager;
 
 import java.io.*;
+import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.concurrent.ExecutorService;
@@ -83,6 +85,11 @@ public abstract class Log {
 		text = "V" + VERSION + " +" + level.getSign() + classPath + " - " + text;
 		if (throwable != null) {
 			text = text + "\n" + throwable.getClass().getName() + ": '" + throwable.getMessage() + "'";
+			if (throwable instanceof SQLException) {
+				String cachedQuery = QueryExecutor.getLastCachedQuery();
+				text = text + "\nLast known SQL query: '" + cachedQuery + "'";
+			}
+			
 			for (StackTraceElement trace : throwable.getStackTrace()) {
 				text = text + "\n\t" + trace.toString();
 			}

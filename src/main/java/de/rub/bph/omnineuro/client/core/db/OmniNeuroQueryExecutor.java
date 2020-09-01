@@ -21,6 +21,10 @@ public class OmniNeuroQueryExecutor extends QueryExecutor {
 		return execute("INSERT INTO individual VALUES (" + id + ",'" + name + "'," + sexID + "," + speciesID + ");");
 	}
 	
+	public synchronized boolean insertMutation(long id, String name) throws SQLException {
+		return execute("INSERT INTO mutation VALUES (" + id + ",'" + name + "');");
+	}
+	
 	public synchronized boolean insertComment(String text, long experimentID) throws SQLException {
 		return execute("INSERT INTO comment VALUES (DEFAULT, '" + text + "'," + experimentID + ");");
 	}
@@ -33,9 +37,9 @@ public class OmniNeuroQueryExecutor extends QueryExecutor {
 		return execute("INSERT INTO passage VALUES (DEFAULT, " + experimentID + "," + timestamp + "," + p + ");");
 	}
 	
-	public synchronized boolean insertExperiment(long id, long timestamp, String name, long projectID, long labID, long individualID, long compoundID, long cellTypeID, long assayID, long plateFormatID, long solventID, double solventConcentration, String controlWellID) throws SQLException {
+	public synchronized boolean insertExperiment(long id, long timestamp, String name, long projectID, long labID, long individualID, long mutationID, long compoundID, long cellTypeID, long assayID, long plateFormatID, long solventID, double solventConcentration, String controlWellID) throws SQLException {
 		return execute("INSERT INTO experiment VALUES (" + id + "," + timestamp + ",'" + name + "'," + projectID +
-				"," + labID + "," + individualID + "," + compoundID + "," + cellTypeID + "," + assayID + "," + plateFormatID + "," + solventID + "," + solventConcentration + ", '" + controlWellID + "');");
+				"," + labID + "," + individualID + "," + compoundID + "," + cellTypeID + "," + assayID + "," + plateFormatID + "," + solventID + "," + solventConcentration + ", '" + controlWellID + "', " + mutationID + ");");
 	}
 	
 	public synchronized boolean insertCompound(String name, String casNR, String abbreviation, boolean blinded) throws SQLException {
@@ -50,6 +54,8 @@ public class OmniNeuroQueryExecutor extends QueryExecutor {
 		b &= deleteTable("passage", true);
 		b &= deleteTable("experiment", true);
 		b &= deleteTable("well", true);
+		b &= deleteTable("individual", true);
+		b &= deleteTable("mutation", true);
 		b &= deleteBlindedCompounds();
 		
 		b &= insertWell("Unknown");

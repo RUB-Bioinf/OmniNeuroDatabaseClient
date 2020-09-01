@@ -12,6 +12,7 @@ public class QueryExecutor {
 	
 	private Connection connection;
 	private boolean logEnabled;
+	private static String lastCachedQuery = null;
 	
 	public QueryExecutor(Connection connection) {
 		this.connection = connection;
@@ -20,6 +21,7 @@ public class QueryExecutor {
 	
 	public synchronized ResultSet executeQuery(String query) throws SQLException {
 		synchronized (connection) {
+			setLastCachedQuery(query);
 			if (connection.isClosed()) {
 				Log.w("Connection closed unexpectedly! Reconnecting...");
 				DBConnection c = DBConnection.getDBConnection();
@@ -37,6 +39,7 @@ public class QueryExecutor {
 	}
 	
 	public synchronized boolean execute(String query) throws SQLException {
+		setLastCachedQuery(query);
 		Statement stmt = connection.createStatement();
 		
 		if (isLogEnabled()) {
@@ -284,8 +287,25 @@ public class QueryExecutor {
 		return b;
 	}
 	
+	public synchronized boolean isExecutableQuery(String query) {
+		try {
+			executeQuery(query);
+		} catch (SQLException e) {
+			return false;
+		}
+		return true;
+	}
+	
 	public Connection getConnection() {
 		return connection;
+	}
+	
+	public static synchronized String getLastCachedQuery() {
+		return lastCachedQuery;
+	}
+	
+	private static synchronized void setLastCachedQuery(String pLastCachedQuery) {
+		lastCachedQuery = pLastCachedQuery;
 	}
 	
 	public boolean isLogEnabled() {
@@ -294,15 +314,6 @@ public class QueryExecutor {
 	
 	public void setLogEnabled(boolean logEnabled) {
 		this.logEnabled = logEnabled;
-	}
-	
-	public synchronized boolean isExecutableQuery(String query) {
-		try {
-			executeQuery(query);
-		} catch (SQLException e) {
-			return false;
-		}
-		return true;
 	}
 	
 }
