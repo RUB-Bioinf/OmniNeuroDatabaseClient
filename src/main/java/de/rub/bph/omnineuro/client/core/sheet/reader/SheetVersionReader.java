@@ -17,24 +17,25 @@ public class SheetVersionReader extends MetaDataReaderTask {
 		super(workbook, EXCEL_SHEET_SUBNAME_METADATA, sourceFile);
 	}
 	
-	public int readVersion() {
+	public String readVersion() {
 		NumberUtils numberUtils = new NumberUtils();
 		try {
 			String versionKey = getValueAt("A1");
 			if (versionKey == null || !versionKey.equals("Version")) {
-				return 0;
+				return "0";
 			}
 			
-			String s = getValueAt("B1", true);
+			String s = getValueAt("B1");
 			if (numberUtils.isNumeric(s)) {
 				double d = Double.parseDouble(s);
-				return (int) d;
+				int i = (int) d;
+				return String.valueOf(i);
 			}
 			
-			return 0;
+			return s;
 		} catch (SheetReaderTask.SheetReaderException e) {
 			Log.e(e);
-			return -1;
+			return null;
 		}
 	}
 	

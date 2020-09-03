@@ -27,12 +27,12 @@ public class AXESSheetReader extends JSONOperator implements Runnable {
 	private File outDir;
 	private File experimentJSONFile;
 	private JSONObject bufferedExperiment;
-	private int sheetVersion;
+	private String sheetVersion;
 	
 	public AXESSheetReader(File sourceFile, File outDir) {
 		this.sourceFile = sourceFile;
 		this.outDir = outDir;
-		sheetVersion = -1;
+		sheetVersion = null;
 	}
 	
 	public boolean hasExperimentJSONFile() {
@@ -124,7 +124,7 @@ public class AXESSheetReader extends JSONOperator implements Runnable {
 		return experimentJSONFile;
 	}
 	
-	public int getSheetVersion() {
+	public String getSheetVersion() {
 		return sheetVersion;
 	}
 	

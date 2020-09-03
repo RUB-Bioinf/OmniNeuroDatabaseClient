@@ -15,7 +15,7 @@ import java.util.ArrayList;
 public class ExperimentDataReaderTaskV1 extends ExperimentDataReaderTask {
 	
 	public ExperimentDataReaderTaskV1(Workbook workbook, String sheetName, File sourceFile) throws IOException {
-		super(workbook, sheetName, sourceFile, 1);
+		super(workbook, sheetName, sourceFile, "1");
 	}
 	
 	public ArrayList<EndpointHeader> readEndpointsHeaders(int startIndex, boolean hasDetectionMethod) throws SheetReaderException, NumberFormatException {

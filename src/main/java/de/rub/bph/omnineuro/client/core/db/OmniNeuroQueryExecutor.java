@@ -25,6 +25,10 @@ public class OmniNeuroQueryExecutor extends QueryExecutor {
 		return execute("INSERT INTO mutation VALUES (" + id + ",'" + name + "');");
 	}
 	
+	public synchronized boolean insertCellLine(long id, String name) throws SQLException {
+		return execute("INSERT INTO cell_line VALUES (" + id + ",'" + name + "');");
+	}
+	
 	public synchronized boolean insertComment(String text, long experimentID) throws SQLException {
 		return execute("INSERT INTO comment VALUES (DEFAULT, '" + text + "'," + experimentID + ");");
 	}
@@ -37,9 +41,9 @@ public class OmniNeuroQueryExecutor extends QueryExecutor {
 		return execute("INSERT INTO passage VALUES (DEFAULT, " + experimentID + "," + timestamp + "," + p + ");");
 	}
 	
-	public synchronized boolean insertExperiment(long id, long timestamp, String name, long projectID, long labID, long individualID, long mutationID, long compoundID, long cellTypeID, long assayID, long plateFormatID, long solventID, double solventConcentration, String controlWellID) throws SQLException {
+	public synchronized boolean insertExperiment(long id, long timestamp, String name, long projectID, long labID, long individualID, long mutationID, long compoundID, long cellTypeID, long assayID, long plateFormatID, long solventID, double solventConcentration, String controlWellID, long cell_line_id) throws SQLException {
 		return execute("INSERT INTO experiment VALUES (" + id + "," + timestamp + ",'" + name + "'," + projectID +
-				"," + labID + "," + individualID + "," + compoundID + "," + cellTypeID + "," + assayID + "," + plateFormatID + "," + solventID + "," + solventConcentration + ", '" + controlWellID + "', " + mutationID + ");");
+				"," + labID + "," + individualID + "," + compoundID + "," + cellTypeID + "," + assayID + "," + plateFormatID + "," + solventID + "," + solventConcentration + ", '" + controlWellID + "', " + mutationID + ", " + cell_line_id + ");");
 	}
 	
 	public synchronized boolean insertCompound(String name, String casNR, String abbreviation, boolean blinded) throws SQLException {

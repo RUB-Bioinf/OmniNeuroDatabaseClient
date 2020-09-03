@@ -16,7 +16,7 @@ public class QueryExecutor {
 	
 	public QueryExecutor(Connection connection) {
 		this.connection = connection;
-		setLogEnabled(true);
+		setLogEnabled(false);
 	}
 	
 	public synchronized ResultSet executeQuery(String query) throws SQLException {

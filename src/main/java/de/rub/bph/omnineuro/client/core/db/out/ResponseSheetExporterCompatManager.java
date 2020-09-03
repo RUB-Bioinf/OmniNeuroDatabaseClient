@@ -50,7 +50,7 @@ public class ResponseSheetExporterCompatManager extends SheetExporterCompatManag
 		
 		//TODO: This will lead to technical debt!
 		//  The idea here is that only blinded compounds are affected by this export. But since specific ones were requested
-		//  at one point in time, this mess was implemented. This hould be fixed in the future
+		//  at one point in time, this mess was implemented. This should be fixed in the future
 		retained = responseIDs;
 		
 		File targetDir = new File(sourceDir, EXPORT_DIRNAME_EFSA);

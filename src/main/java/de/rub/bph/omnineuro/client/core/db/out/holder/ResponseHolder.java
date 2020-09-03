@@ -17,33 +17,47 @@ public class ResponseHolder {
 	private long endpointID;
 	private long experimentID;
 	private long assayID;
+	private long compoundID;
 	private String assayName;
 	private String endpointName;
 	private String experimentName;
 	private String well;
 	private double response;
 	private long wellID;
+	private String cellLine;
+	private String mutation;
+	private String cellType;
 	private ConcentrationHolder concentrationHolder;
 	
 	public ResponseHolder(long responseID, OmniNeuroQueryExecutor queryExecutor) throws SQLException {
-		ResultSet resultSet = queryExecutor.getFeaturesViaID("response", responseID);
-		resultSet.next();
-		timestamp = resultSet.getInt("timestamp");
-		endpointID = resultSet.getLong("endpoint_id");
-		response = resultSet.getDouble("value");
+		ResultSet responseResultSet = queryExecutor.getFeaturesViaID("response", responseID);
+		responseResultSet.next();
+		timestamp = responseResultSet.getInt("timestamp");
+		endpointID = responseResultSet.getLong("endpoint_id");
+		response = responseResultSet.getDouble("value");
 		
-		experimentID = resultSet.getLong("experiment_id");
-		experimentName = queryExecutor.getNameViaID("experiment", experimentID);
+		experimentID = responseResultSet.getLong("experiment_id");
+		ResultSet experimentResultSet = queryExecutor.getFeaturesViaID("experiment", experimentID);
+		experimentResultSet.next();
+		experimentName = experimentResultSet.getString("name");
+		compoundID = experimentResultSet.getLong("compound_id");
+		long mutationID = experimentResultSet.getLong("mutation_id");
+		long cellTypeID = experimentResultSet.getLong("cell_type_id");
+		long cellLineID = experimentResultSet.getLong("cell_line_id");
 		
 		assayID = Long.parseLong(queryExecutor.getFeatureViaID("experiment", "assay_id", experimentID));
 		assayName = queryExecutor.getNameViaID("assay", assayID);
 		
-		long concentrationID = resultSet.getLong("concentration_id");
+		long concentrationID = responseResultSet.getLong("concentration_id");
 		concentrationHolder = new ConcentrationHolder(concentrationID, queryExecutor);
 		endpointName = queryExecutor.getNameViaID("endpoint", endpointID);
 		
-		wellID = resultSet.getLong("well_id");
+		wellID = responseResultSet.getLong("well_id");
 		well = queryExecutor.getNameViaID("well", wellID);
+		
+		cellLine = queryExecutor.getNameViaID("mutation", mutationID);
+		mutation = queryExecutor.getNameViaID("cell_type", cellTypeID);
+		cellType = queryExecutor.getNameViaID("cell_line", cellLineID);
 		
 		if (holderCreationCountMap == null) {
 			resetCreationCounts();
@@ -158,6 +172,18 @@ public class ResponseHolder {
 		return assayName;
 	}
 	
+	public String getCellLine() {
+		return cellLine;
+	}
+	
+	public String getCellType() {
+		return cellType;
+	}
+	
+	public long getCompoundID() {
+		return compoundID;
+	}
+	
 	public double getConcentration() {
 		return getConcentrationHolder().getValue();
 	}
@@ -196,6 +222,10 @@ public class ResponseHolder {
 	
 	public void setExperimentName(String experimentName) {
 		this.experimentName = experimentName;
+	}
+	
+	public String getMutation() {
+		return mutation;
 	}
 	
 	public double getResponse() {

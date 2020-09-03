@@ -10,10 +10,14 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 
+/**
+ * Reading endpoint data from (typically) the DB Import sheet of the AXES Sheet.
+ * This is expected to include wells.
+ */
 public class ExperimentDataReaderTaskV2 extends ExperimentDataReaderTask {
 	
 	public ExperimentDataReaderTaskV2(Workbook workbook, String sheetName, File sourceFile) throws IOException {
-		super(workbook, sheetName, sourceFile, 2);
+		super(workbook, sheetName, sourceFile, "2");
 	}
 	
 	@Override

@@ -5,6 +5,7 @@ import de.rub.bph.omnineuro.client.config.ExportConfigManager;
 import de.rub.bph.omnineuro.client.core.db.DBConnection;
 import de.rub.bph.omnineuro.client.core.db.OmniNeuroQueryExecutor;
 import de.rub.bph.omnineuro.client.core.db.in.InsertManager;
+import de.rub.bph.omnineuro.client.core.db.out.MutationCellLineExporterCompatManager;
 import de.rub.bph.omnineuro.client.core.db.out.ResponseIDLimiter;
 import de.rub.bph.omnineuro.client.core.db.out.ResponseSheetExporterCompatManager;
 import de.rub.bph.omnineuro.client.core.db.out.SheetExporterCompatManager;
@@ -39,7 +40,7 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 	public static final String OUT_FILE_NAME_ERRORS = "errors.txt";
 	private JPanel rootPanel;
 	private DBCredentialsPanel DBCredentialsPanel;
-	private JButton button1;
+	private JButton startImportBT;
 	private FolderChooserPanel importDirChooserPanel;
 	private FolderChooserPanel exportDirChooserPanel;
 	private JSpinner threadsSP;
@@ -58,6 +59,7 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 	private JButton importOutliersBT;
 	private JButton fixEPAConcentrationsButton;
 	private JTabbedPane exportMethodTBP;
+	private JCheckBox mutationPoolingCB;
 	
 	/**
 	 * Main frame of the UI.
@@ -79,7 +81,7 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 		startExportButton.addActionListener(actionEvent -> requestExport());
 		resetDatabaseButton.addActionListener(actionEvent -> resetDatabase());
 		configurationEditorButton.addActionListener(actionEvent -> actionOpenConfigWindow());
-		button1.addActionListener(actionEvent -> startImport());
+		startImportBT.addActionListener(actionEvent -> startImport());
 		importOutliersBT.addActionListener(e -> startOutlierImport());
 		fixEPAConcentrationsButton.addActionListener(e -> startEPAFix());
 		searchForHashButton.addActionListener(actionEvent -> {
@@ -263,6 +265,7 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 		ExportConfigManager configManager = ExportConfigManager.getInstance();
 		
 		boolean useComma = commaCB.isSelected();
+		boolean mutationPooling = mutationPoolingCB.isSelected();
 		int exportMethod = exportMethodTBP.getSelectedIndex();
 		
 		if (!testDBConnection()) {
@@ -338,7 +341,17 @@ public class OmniFrame extends NFrame implements DBCredentialsPanel.DBTextListen
 		SheetExporterCompatManager compatManager = null;
 		switch (exportMethod) {
 			case 0:
-				compatManager = new ResponseSheetExporterCompatManager(threads, dir, limitedResponseIDs, includeBlinded, useComma);
+				if (mutationPooling) {
+					try {
+						compatManager = new MutationCellLineExporterCompatManager(threads, dir, limitedResponseIDs, useComma);
+					} catch (SQLException e) {
+						Log.e(e);
+						Client.showSQLErrorMessage(e, this);
+						return;
+					}
+				} else {
+					compatManager = new ResponseSheetExporterCompatManager(threads, dir, limitedResponseIDs, includeBlinded, useComma);
+				}
 				break;
 			case 1:
 				try {

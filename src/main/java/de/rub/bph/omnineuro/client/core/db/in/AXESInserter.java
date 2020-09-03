@@ -24,6 +24,7 @@ public class AXESInserter extends DBInserter implements Runnable {
 	
 	public static final String INVALID_INDIVIDUAL_NAME = "<unknown individual>";
 	public static final String INVALID_MUTATION_NAME = "<unknown mutation>";
+	private static final String INVALID_CELL_LINE_NAME = "<unknown cell line>";
 	public static final String INVALID_SEX_NAME = "undefined";
 	public static final String INVALID_SPECIES_NAME = "unknown";
 	
@@ -82,11 +83,15 @@ public class AXESInserter extends DBInserter implements Runnable {
 			
 			String individual = null;
 			String mutation = null;
+			String cellLine = null;
 			if (metaDataGeneral.has("Individual")) {
 				individual = metaDataGeneral.getString("Individual");
 			}
 			if (metaDataGeneral.has("Mutation")) {
 				mutation = metaDataGeneral.getString("Mutation");
+			}
+			if (metaDataGeneral.has("Cell line")) {
+				cellLine = metaDataGeneral.getString("Cell line");
 			}
 			
 			if (compound.equals("0.0")) {
@@ -140,6 +145,7 @@ public class AXESInserter extends DBInserter implements Runnable {
 			
 			long individualID;
 			long mutationID;
+			long cellLineID;
 			if (individual == null && mutation == null) {
 				addError("Sheet has neither an individual or a mutation!");
 			}
@@ -153,6 +159,11 @@ public class AXESInserter extends DBInserter implements Runnable {
 				mutationID = getInvalidMutationID();
 			} else {
 				mutationID = getMutationID(mutation);
+			}
+			if (cellLine == null) {
+				cellLineID = getInvalidCellLineID();
+			} else {
+				cellLineID = getCellLineID(cellLine);
 			}
 			
 			//But first: Let me take a sel... the necessary IDs of existing meta data from the Database
@@ -219,7 +230,7 @@ public class AXESInserter extends DBInserter implements Runnable {
 			long experimentID;
 			synchronized (executor) {
 				experimentID = executor.getNextSequenceTableVal("experiment");
-				executor.insertExperiment(experimentID, date.getTime(), experimentName, projectID, workgroupID, individualID, mutationID, compoundID, cellTypeID, assayID, plateFormatID, solventID, solventConcentration, controlPlateID);
+				executor.insertExperiment(experimentID, date.getTime(), experimentName, projectID, workgroupID, individualID, mutationID, compoundID, cellTypeID, assayID, plateFormatID, solventID, solventConcentration, controlPlateID, cellLineID);
 			}
 			
 			for (String passageP : JSONOperator.getKeys(metaDataPassages)) {
@@ -366,6 +377,21 @@ public class AXESInserter extends DBInserter implements Runnable {
 		setFinished();
 	}
 	
+	public static synchronized long getInvalidCellLineID() throws SQLException {
+		long cellLineID;
+		
+		synchronized (executor) {
+			try {
+				cellLineID = executor.getIDViaName("cell_line", INVALID_CELL_LINE_NAME);
+			} catch (Throwable e) {
+				cellLineID = executor.getNextSequenceTableVal("cell_line");
+				executor.insertCellLine(cellLineID, INVALID_CELL_LINE_NAME);
+			}
+		}
+		
+		return cellLineID;
+	}
+	
 	private synchronized long getIndividualID(String individual, String sex, String species) throws JSONException, SQLException {
 		long individualID;
 		
@@ -417,6 +443,21 @@ public class AXESInserter extends DBInserter implements Runnable {
 		}
 		
 		return mutationID;
+	}
+	
+	private synchronized long getCellLineID(String cellLine) throws SQLException {
+		long cellLineID;
+		
+		synchronized (executor) {
+			try {
+				cellLineID = executor.getIDViaName("cell_line", cellLine);
+			} catch (Throwable e) {
+				cellLineID = executor.getNextSequenceTableVal("cell_line");
+				executor.insertCellLine(cellLineID, cellLine);
+			}
+		}
+		
+		return cellLineID;
 	}
 	
 	@Override

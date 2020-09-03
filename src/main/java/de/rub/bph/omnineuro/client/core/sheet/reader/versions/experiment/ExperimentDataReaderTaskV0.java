@@ -17,7 +17,7 @@ import java.util.ArrayList;
 public class ExperimentDataReaderTaskV0 extends ExperimentDataReaderTask {
 
 	public ExperimentDataReaderTaskV0(Workbook workbook, String sheetName, File sourceFile) throws IOException {
-		super(workbook, sheetName, sourceFile, 0);
+		super(workbook, sheetName, sourceFile, "0");
 	}
 
 	@Override
@@ -41,7 +41,7 @@ public class ExperimentDataReaderTaskV0 extends ExperimentDataReaderTask {
 		if (amalgamV0V1) {
 			Log.i(getFileName() + " is a version 0 and version 1 amalgam! Calculating amalgam headers.");
 			try {
-				return new DataReaderCompat(workbook, sourceFile, 1).getExperimentDataTask().readEndpointsHeaders();
+				return new DataReaderCompat(workbook, sourceFile, "1").getExperimentDataTask().readEndpointsHeaders();
 			} catch (IOException e) {
 				Log.e("Failed to generate header amalgam info for experiment: " + getFileName(), e);
 			}

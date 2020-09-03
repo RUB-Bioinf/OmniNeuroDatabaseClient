@@ -331,10 +331,11 @@ public class KonstanzInserter extends DBInserter {
 							long solventID = -1;
 							double solventConcentration = -1d;
 							long mutationID = AXESInserter.getInvalidMutationID();
+							long cellLineID = AXESInserter.getInvalidCellLineID();
 							String controlPlateID = "<Unknown>";
 							
 							experimentID = executor.getNextSequenceTableVal("experiment");
-							executor.insertExperiment(experimentID, timestampExperiment, experimentName, projectID, workgroupID, individualID, mutationID, compoundID, cellTypeID, assayID, plateFormatID, solventID, solventConcentration, controlPlateID);
+							executor.insertExperiment(experimentID, timestampExperiment, experimentName, projectID, workgroupID, individualID, mutationID, compoundID, cellTypeID, assayID, plateFormatID, solventID, solventConcentration, controlPlateID, cellLineID);
 						}
 						Log.v("Experiment ID extracted: " + experimentID);
 					}
