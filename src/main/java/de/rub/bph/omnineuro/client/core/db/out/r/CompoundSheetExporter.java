@@ -26,10 +26,13 @@ public class CompoundSheetExporter extends ResponseExporter {
 	protected boolean successful;
 	
 	private ArrayList<ResponseHolder> responseHolders;
+	private boolean removeDuplicateHolders;
 	
-	public CompoundSheetExporter(File targetDir, DBConnection connection, long compoundID, ArrayList<Long> responseIDs, boolean useComma) throws SQLException {
+	public CompoundSheetExporter(File targetDir, DBConnection connection, long compoundID, ArrayList<Long> responseIDs, boolean useComma, boolean removeDuplicateHolders) throws SQLException {
 		super(targetDir, connection, responseIDs, useComma);
 		this.compoundID = compoundID;
+		this.removeDuplicateHolders = removeDuplicateHolders;
+		
 		successful = false;
 		
 		queryExecutor = new OmniNeuroQueryExecutor(connection.getConnection());
@@ -40,6 +43,78 @@ public class CompoundSheetExporter extends ResponseExporter {
 		outFile = new File(targetDir, compoundAbbreviation + ".csv");
 		Log.i("Writing " + compoundName + " results to: " + outFile.getAbsolutePath());
 		Log.i("Compound " + getCompoundAbbreviation() + " has " + responseIDs.size() + " responses in the DB.");
+	}
+	
+	public String getCompoundAbbreviation() {
+		return compoundAbbreviation;
+	}
+	
+	@Override
+	public void run() {
+		try {
+			//ArrayList<Long> responseIDs = new ArrayList<>();
+			//for (long id : getExperimentIDs()) {
+			//	responseIDs.addAll(queryExecutor.getIDsViaFeature("response", "experiment_id", String.valueOf(id)));
+			//}
+			//Log.i("Compound " + getCompoundAbbreviation() + " has " + responseIDs.size() + " responses in the database.");
+			
+			responseHolders = new ArrayList<>();
+			for (long id : responseIDs) {
+				ResponseHolder holder = new ResponseHolder(id, queryExecutor);
+				Log.v("I have a holder: " + holder);
+				responseHolders.add(holder);
+			}
+			Log.i("Holders created for " + getCompoundAbbreviation() + ": " + responseHolders.size());
+			
+			if (removeDuplicateHolders) {
+				responseHolders = removeDuplicateResponseHolders();
+			}
+			
+			ArrayList<String> uniqueConcentrations = ResponseHolder.getUniqueConcentrations(responseHolders);
+			Log.i("Unique concentrations: " + uniqueConcentrations);
+			
+			boolean separatePerAssay = false;
+			//TODO make this a parameter
+			
+			StringBuilder fileContents = buildCSV(separatePerAssay);
+			FileManager fileManager = new FileManager();
+			fileManager.writeFile(outFile, fileContents.toString());
+			
+			successful = true;
+		} catch (Throwable e) {
+			addError("Failed to create " + getCompoundAbbreviation() + " ['" + getCompoundName() + "'] export file because of an " + e.getClass().getSimpleName() + "-Error!");
+			Log.e(e);
+		}
+		setFinished();
+	}
+	
+	private ArrayList<ResponseHolder> removeDuplicateResponseHolders() {
+		Log.i("Checking " + responseHolders.size() + " for uniqueness.");
+		ArrayList<ResponseHolder> uniqueHolders = new ArrayList<>();
+		ArrayList<ResponseHolder> duplicateHolders = new ArrayList<>();
+		
+		for (ResponseHolder holder : responseHolders) {
+			if (holder.isUniquelyCreated()) {
+				uniqueHolders.add(holder);
+			} else {
+				duplicateHolders.add(holder);
+			}
+		}
+		Log.i("In the first round, " + duplicateHolders.size() + " holders were uniquely fetched, but " + duplicateHolders.size() + " were duplicates!");
+		
+		ArrayList<Integer> knownHashesList = new ArrayList<>();
+		for (ResponseHolder holder : duplicateHolders) {
+			int hash = holder.hashCode();
+			if (!knownHashesList.contains(hash)) {
+				knownHashesList.add(hash);
+				uniqueHolders.add(holder);
+				addError("Response duplicate detected: " + holder.getWell() + " at " + holder.getTimestamp() + "h at endpoint '" + holder.getEndpointName() + "' has value " + holder.getResponse() + " " + holder.getCreationCount() + " times for concentration '" + holder.getConcentrationDescription() + "'. Reduced to 1.");
+			} else {
+				Log.i("Sanity check. Are these lines the same: [" + hash + "] -> " + holder.toString());
+			}
+		}
+		
+		return uniqueHolders;
 	}
 	
 	public StringBuilder buildCSV(boolean separatePerAssay) {
@@ -230,6 +305,10 @@ public class CompoundSheetExporter extends ResponseExporter {
 		return builder;
 	}
 	
+	public String getCompoundName() {
+		return compoundName;
+	}
+	
 	/**
 	 * Data structure: Experiment Name -> Concentration -> Well -> Endpoint name -> Timestamp -> List of Responses
 	 */
@@ -269,81 +348,8 @@ public class CompoundSheetExporter extends ResponseExporter {
 		return data;
 	}
 	
-	private ArrayList<ResponseHolder> removeDuplicateResponseHolders() {
-		Log.i("Checking " + responseHolders.size() + " for uniqueness.");
-		ArrayList<ResponseHolder> uniqueHolders = new ArrayList<>();
-		ArrayList<ResponseHolder> duplicateHolders = new ArrayList<>();
-		
-		for (ResponseHolder holder : responseHolders) {
-			if (holder.isUniquelyCreated()) {
-				uniqueHolders.add(holder);
-			} else {
-				duplicateHolders.add(holder);
-			}
-		}
-		Log.i("In the first round, " + duplicateHolders.size() + " holders were uniquely fetched, but " + duplicateHolders.size() + " were duplicates!");
-		
-		ArrayList<Integer> knownHashesList = new ArrayList<>();
-		for (ResponseHolder holder : duplicateHolders) {
-			int hash = holder.hashCode();
-			if (!knownHashesList.contains(hash)) {
-				knownHashesList.add(hash);
-				uniqueHolders.add(holder);
-				addError("Response duplicate detected: " + holder.getWell() + " at " + holder.getTimestamp() + "h at endpoint '" + holder.getEndpointName() + "' has value " + holder.getResponse() + " " + holder.getCreationCount() + " times for concentration '" + holder.getConcentrationDescription() + "'. Reduced to 1.");
-			} else {
-				Log.i("Sanity check. Are these lines the same: [" + hash + "] -> " + holder.toString());
-			}
-		}
-		
-		return uniqueHolders;
-	}
-	
-	@Override
-	public void run() {
-		try {
-			//ArrayList<Long> responseIDs = new ArrayList<>();
-			//for (long id : getExperimentIDs()) {
-			//	responseIDs.addAll(queryExecutor.getIDsViaFeature("response", "experiment_id", String.valueOf(id)));
-			//}
-			//Log.i("Compound " + getCompoundAbbreviation() + " has " + responseIDs.size() + " responses in the database.");
-			
-			responseHolders = new ArrayList<>();
-			for (long id : responseIDs) {
-				ResponseHolder holder = new ResponseHolder(id, queryExecutor);
-				Log.v("I have a holder: " + holder);
-				responseHolders.add(holder);
-			}
-			Log.i("Holders created for " + getCompoundAbbreviation() + ": " + responseHolders.size());
-			responseHolders = removeDuplicateResponseHolders();
-			
-			ArrayList<String> uniqueConcentrations = ResponseHolder.getUniqueConcentrations(responseHolders);
-			Log.i("Unique concentrations: " + uniqueConcentrations);
-			
-			boolean separatePerAssay = false;
-			//TODO make this a parameter
-			
-			StringBuilder fileContents = buildCSV(separatePerAssay);
-			FileManager fileManager = new FileManager();
-			fileManager.writeFile(outFile, fileContents.toString());
-			
-			successful = true;
-		} catch (Throwable e) {
-			addError("Failed to create " + getCompoundAbbreviation() + " ['" + getCompoundName() + "'] export file because of an " + e.getClass().getSimpleName() + "-Error!");
-			Log.e(e);
-		}
-		setFinished();
-	}
-	
-	public String getCompoundAbbreviation() {
-		return compoundAbbreviation;
-	}
-	
 	public long getCompoundID() {
 		return compoundID;
-	}
-	
-	public String getCompoundName() {
-		return compoundName;
 	}
 	
 	public File getOutFile() {

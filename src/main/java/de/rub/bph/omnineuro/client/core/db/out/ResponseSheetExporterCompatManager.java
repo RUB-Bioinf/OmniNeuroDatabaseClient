@@ -92,7 +92,7 @@ public class ResponseSheetExporterCompatManager extends SheetExporterCompatManag
 		for (Long id : retainedCompoundIDs) {
 			Log.i("I am working with this compound id " + id + ". Name: " + queryExecutor.getNameViaID("compound", id));
 			
-			CompoundSheetExporter exporter = new CompoundSheetExporter(targetDir, connection, id, compoundResponseMap.get(id), useComma);
+			CompoundSheetExporter exporter = new CompoundSheetExporter(targetDir, connection, id, compoundResponseMap.get(id), useComma, true);
 			exporterList.add(exporter);
 			submitTask(exporter);
 		}

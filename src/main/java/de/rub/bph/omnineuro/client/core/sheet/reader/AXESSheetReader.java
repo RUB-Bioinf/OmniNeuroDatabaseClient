@@ -39,10 +39,6 @@ public class AXESSheetReader extends JSONOperator implements Runnable {
 		return getExperimentJSONFile() != null;
 	}
 	
-	public boolean hasBufferedExperiment() {
-		return getBufferedExperiment() != null;
-	}
-	
 	@Override
 	public void run() {
 		Workbook workbook;
@@ -100,7 +96,7 @@ public class AXESSheetReader extends JSONOperator implements Runnable {
 			experiment.put(EXCEL_SHEET_SUBNAME_SHEET_VERSION, getSheetVersion());
 		} catch (Throwable e) {
 			e.printStackTrace();
-			Log.e("FATAL ERROR! Failed to resolve meta data!", e);
+			Log.e("FATAL ERROR! Failed to resolve meta data for " + getSourceFile() + "!", e);
 			return;
 		}
 		
@@ -114,6 +110,10 @@ public class AXESSheetReader extends JSONOperator implements Runnable {
 		Log.v("Experiment data read: " + experiment.toString());
 		
 		bufferedExperiment = experiment;
+	}
+	
+	public boolean hasBufferedExperiment() {
+		return getBufferedExperiment() != null;
 	}
 	
 	public JSONObject getBufferedExperiment() {

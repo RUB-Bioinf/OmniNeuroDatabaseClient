@@ -68,80 +68,13 @@ public class ResponseHolder {
 		holderCreationCountMap.put(hashCode(), holderCreationCountMap.get(hashCode()) + 1);
 	}
 	
-	public static int getResponseHolderCreationCount(ResponseHolder holder) {
-		return holderCreationCountMap.get(holder.hashCode());
-	}
-	
 	public static void resetCreationCounts() {
 		holderCreationCountMap = new HashMap<>();
 	}
 	
-	public static ArrayList<Long> getUniqueEndpointIDs(List<ResponseHolder> holders) {
-		ArrayList<Long> list = new ArrayList<>();
-		for (ResponseHolder h : holders) {
-			long l = h.getEndpointID();
-			if (!list.contains(l)) list.add(l);
-		}
-		return list;
-	}
-	
-	public static ArrayList<String> getUniqueExperimentNames(List<ResponseHolder> holders) {
-		ArrayList<String> list = new ArrayList<>();
-		for (ResponseHolder h : holders) {
-			String s = h.getExperimentName();
-			if (!list.contains(s)) list.add(s);
-		}
-		return list;
-	}
-	
-	public static ArrayList<String> getUniqueWells(List<ResponseHolder> holders) {
-		ArrayList<String> list = new ArrayList<>();
-		for (ResponseHolder h : holders) {
-			String s = h.getWell();
-			if (!list.contains(s)) list.add(s);
-		}
-		return list;
-	}
-	
-	public static ArrayList<String> getUniqueAssays(List<ResponseHolder> holders) {
-		ArrayList<String> list = new ArrayList<>();
-		for (ResponseHolder h : holders) {
-			String s = h.getAssayName();
-			if (!list.contains(s)) list.add(s);
-		}
-		return list;
-	}
-	
-	public static ArrayList<String> getUniqueEndpointNames(List<ResponseHolder> holders) {
-		ArrayList<String> list = new ArrayList<>();
-		for (ResponseHolder h : holders) {
-			String s = h.getEndpointName();
-			if (!list.contains(s)) list.add(s);
-		}
-		return list;
-	}
-	
-	public static ArrayList<Integer> getUniqueTimestamps(List<ResponseHolder> holders) {
-		ArrayList<Integer> list = new ArrayList<>();
-		for (ResponseHolder h : holders) {
-			int i = h.getTimestamp();
-			if (!list.contains(i)) list.add(i);
-		}
-		return list;
-	}
-	
-	public static ArrayList<String> getUniqueConcentrations(List<ResponseHolder> holders) {
-		ArrayList<String> list = new ArrayList<>();
-		for (ResponseHolder h : holders) {
-			String s = h.getConcentrationDescription();
-			if (!list.contains(s)) list.add(s);
-		}
-		return list;
-	}
-	
 	@Override
 	public int hashCode() {
-		return Objects.hash(getTimestamp(), getEndpointID(), getExperimentID(), getResponse(), getWellID(), getConcentrationHolder());
+		return Objects.hash(getTimestamp(), getEndpointID(), getExperimentID(), getResponse(), getWellID(), getConcentrationHolder(), getMutation(), getCellLine(), getCellType());
 	}
 	
 	@Override
@@ -164,12 +97,48 @@ public class ResponseHolder {
 				". Response value: " + getResponse() + ". Hash: " + hashCode() + " [Created " + getCreationCount() + " times].";
 	}
 	
+	public boolean isControl() {
+		return getConcentrationHolder().isControl();
+	}
+	
+	public int getCreationCount() {
+		return getResponseHolderCreationCount(this);
+	}
+	
+	public static int getResponseHolderCreationCount(ResponseHolder holder) {
+		return holderCreationCountMap.get(holder.hashCode());
+	}
+	
 	public long getAssayID() {
 		return assayID;
 	}
 	
-	public String getAssayName() {
-		return assayName;
+	public int getTimestamp() {
+		return timestamp;
+	}
+	
+	public long getEndpointID() {
+		return endpointID;
+	}
+	
+	public long getExperimentID() {
+		return experimentID;
+	}
+	
+	public double getResponse() {
+		return response;
+	}
+	
+	public long getWellID() {
+		return wellID;
+	}
+	
+	public ConcentrationHolder getConcentrationHolder() {
+		return concentrationHolder;
+	}
+	
+	public String getMutation() {
+		return mutation;
 	}
 	
 	public String getCellLine() {
@@ -180,40 +149,22 @@ public class ResponseHolder {
 		return cellType;
 	}
 	
-	public long getCompoundID() {
-		return compoundID;
+	public static ArrayList<Long> getUniqueEndpointIDs(List<ResponseHolder> holders) {
+		ArrayList<Long> list = new ArrayList<>();
+		for (ResponseHolder h : holders) {
+			long l = h.getEndpointID();
+			if (!list.contains(l)) list.add(l);
+		}
+		return list;
 	}
 	
-	public double getConcentration() {
-		return getConcentrationHolder().getValue();
-	}
-	
-	public String getConcentrationDescription() {
-		return getConcentrationHolder().getDescription();
-	}
-	
-	public ConcentrationHolder getConcentrationHolder() {
-		return concentrationHolder;
-	}
-	
-	public long getConcentrationID() {
-		return getConcentrationHolder().getId();
-	}
-	
-	public int getCreationCount() {
-		return getResponseHolderCreationCount(this);
-	}
-	
-	public long getEndpointID() {
-		return endpointID;
-	}
-	
-	public String getEndpointName() {
-		return endpointName;
-	}
-	
-	public long getExperimentID() {
-		return experimentID;
+	public static ArrayList<String> getUniqueExperimentNames(List<ResponseHolder> holders) {
+		ArrayList<String> list = new ArrayList<>();
+		for (ResponseHolder h : holders) {
+			String s = h.getExperimentName();
+			if (!list.contains(s)) list.add(s);
+		}
+		return list;
 	}
 	
 	public String getExperimentName() {
@@ -224,28 +175,77 @@ public class ResponseHolder {
 		this.experimentName = experimentName;
 	}
 	
-	public String getMutation() {
-		return mutation;
-	}
-	
-	public double getResponse() {
-		return response;
-	}
-	
-	public int getTimestamp() {
-		return timestamp;
+	public static ArrayList<String> getUniqueWells(List<ResponseHolder> holders) {
+		ArrayList<String> list = new ArrayList<>();
+		for (ResponseHolder h : holders) {
+			String s = h.getWell();
+			if (!list.contains(s)) list.add(s);
+		}
+		return list;
 	}
 	
 	public String getWell() {
 		return well;
 	}
 	
-	public long getWellID() {
-		return wellID;
+	public static ArrayList<String> getUniqueAssays(List<ResponseHolder> holders) {
+		ArrayList<String> list = new ArrayList<>();
+		for (ResponseHolder h : holders) {
+			String s = h.getAssayName();
+			if (!list.contains(s)) list.add(s);
+		}
+		return list;
 	}
 	
-	public boolean isControl() {
-		return getConcentrationHolder().isControl();
+	public String getAssayName() {
+		return assayName;
+	}
+	
+	public static ArrayList<String> getUniqueEndpointNames(List<ResponseHolder> holders) {
+		ArrayList<String> list = new ArrayList<>();
+		for (ResponseHolder h : holders) {
+			String s = h.getEndpointName();
+			if (!list.contains(s)) list.add(s);
+		}
+		return list;
+	}
+	
+	public String getEndpointName() {
+		return endpointName;
+	}
+	
+	public static ArrayList<Integer> getUniqueTimestamps(List<ResponseHolder> holders) {
+		ArrayList<Integer> list = new ArrayList<>();
+		for (ResponseHolder h : holders) {
+			int i = h.getTimestamp();
+			if (!list.contains(i)) list.add(i);
+		}
+		return list;
+	}
+	
+	public static ArrayList<String> getUniqueConcentrations(List<ResponseHolder> holders) {
+		ArrayList<String> list = new ArrayList<>();
+		for (ResponseHolder h : holders) {
+			String s = h.getConcentrationDescription();
+			if (!list.contains(s)) list.add(s);
+		}
+		return list;
+	}
+	
+	public String getConcentrationDescription() {
+		return getConcentrationHolder().getDescription();
+	}
+	
+	public long getCompoundID() {
+		return compoundID;
+	}
+	
+	public double getConcentration() {
+		return getConcentrationHolder().getValue();
+	}
+	
+	public long getConcentrationID() {
+		return getConcentrationHolder().getId();
 	}
 	
 	public boolean isUniquelyCreated() {

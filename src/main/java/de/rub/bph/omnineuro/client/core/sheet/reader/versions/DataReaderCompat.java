@@ -5,6 +5,7 @@ import de.rub.bph.omnineuro.client.core.sheet.reader.MetaDataReaderTask;
 import de.rub.bph.omnineuro.client.core.sheet.reader.versions.experiment.ExperimentDataReaderTaskV0;
 import de.rub.bph.omnineuro.client.core.sheet.reader.versions.experiment.ExperimentDataReaderTaskV1;
 import de.rub.bph.omnineuro.client.core.sheet.reader.versions.experiment.ExperimentDataReaderTaskV2;
+import de.rub.bph.omnineuro.client.core.sheet.reader.versions.meta.MetaDataReaderTaskNPC2VIPPlus;
 import de.rub.bph.omnineuro.client.core.sheet.reader.versions.meta.MetaDataReaderTaskV0;
 import de.rub.bph.omnineuro.client.core.sheet.reader.versions.meta.MetaDataReaderTaskV1;
 import de.rub.bph.omnineuro.client.imported.log.Log;
@@ -43,6 +44,7 @@ public class DataReaderCompat {
 				return new ExperimentDataReaderTaskV0(workbook, EXCEL_SHEET_SUBNAME_EXPERIMENT_DATA, sourceFile);
 			case "1":
 			case "iNPC1ab_VIP+_V1":
+			case "iNPC2_VIP+_V1":
 				return new ExperimentDataReaderTaskV1(workbook, EXCEL_SHEET_SUBNAME_EXPERIMENT_DATA, sourceFile);
 			case "2":
 				return new ExperimentDataReaderTaskV2(workbook, EXCEL_SHEET_SUBNAME_EXPERIMENT_DATA, sourceFile);
@@ -73,6 +75,8 @@ public class DataReaderCompat {
 			case "2":
 			case "iNPC1ab_VIP+_V1":
 				return new MetaDataReaderTaskV1(workbook, EXCEL_SHEET_SUBNAME_METADATA, sourceFile);
+			case "iNPC2_VIP+_V1":
+				return new MetaDataReaderTaskNPC2VIPPlus(workbook, EXCEL_SHEET_SUBNAME_METADATA, sourceFile);
 			default:
 				Log.e("Sheet version read as " + getVersion() + ", but don't know how to handle it for meta compat reader.");
 				return null;

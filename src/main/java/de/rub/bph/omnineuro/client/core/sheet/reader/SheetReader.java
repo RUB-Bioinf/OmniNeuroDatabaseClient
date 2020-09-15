@@ -100,13 +100,13 @@ public class SheetReader {
 		//}
 		
 		if (row == null) {
-			throw new SheetReaderTask.SheetReaderException("(row is null)-Error fetching cell data at " + cellName + "'! Looks like the row is not available!");
+			throw new SheetReaderTask.SheetReaderException("(row is null)-Error fetching cell data at " + cellName + " in " + getFileName() + "'! Looks like the row is not available!");
 		}
 		
 		Cell cell = row.getCell(getCol(cellName));
 		if (cell == null) {
 			if (forceNumeric) {
-				throw new SheetReaderTask.SheetReaderException("(cell is null)-Error fetching cell data at " + cellName + "! Looks like the cell is empty!");
+				throw new SheetReaderTask.SheetReaderException("(cell is null)-Error fetching cell data at " + cellName + " in " + getFileName() + "! Looks like the cell is empty!");
 			} else return "";
 		}
 		

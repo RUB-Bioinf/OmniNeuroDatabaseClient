@@ -75,6 +75,8 @@ public class AXESSheetReaderManager extends ConcurrentExecutionManager {
 				} catch (JSONException e) {
 					Log.e("Failed to add experiment for " + reader.getSourceFile().getName() + " to combined JSON!", e);
 				}
+			} else {
+				Log.w("Experiment " + reader.getSourceFile() + " failed to extract experiment!!");
 			}
 		}
 		

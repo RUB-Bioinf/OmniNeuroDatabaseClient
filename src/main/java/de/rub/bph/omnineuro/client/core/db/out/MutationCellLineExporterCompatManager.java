@@ -122,7 +122,11 @@ public class MutationCellLineExporterCompatManager extends SheetExporterCompatMa
 			
 			allPoolers.add(pooler);
 			holders.add(holder);
-			if (i % 500 == 0) Log.i("Holders created: " + i + " / " + responseIDs.size());
+			if (i % 500 == 0) {
+				double p = ((double) i / (double) responseIDs.size());
+				int pp = (int) (p * 100);
+				Log.i("Holders created: " + i + " / " + responseIDs.size() + ". " + pp + "%.");
+			}
 		}
 		Log.i("Converted Holders: " + responseIDs.size());
 		
@@ -166,7 +170,7 @@ public class MutationCellLineExporterCompatManager extends SheetExporterCompatMa
 				ArrayList<Long> responseIDs = compoundResponseMap.get(compoundID);
 				File outPath = mutationOutDirMap.get(pooler);
 				
-				CompoundSheetExporter exporter = new CompoundSheetExporter(outPath, connection, compoundID, responseIDs, useComma);
+				CompoundSheetExporter exporter = new CompoundSheetExporter(outPath, connection, compoundID, responseIDs, useComma, false);
 				exporterList.add(exporter);
 				submitTask(exporter);
 			}
