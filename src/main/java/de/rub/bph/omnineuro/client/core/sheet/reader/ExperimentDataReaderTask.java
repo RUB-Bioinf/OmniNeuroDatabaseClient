@@ -91,7 +91,7 @@ public abstract class ExperimentDataReaderTask extends SheetReaderTask {
 			if (wellColumnIndex != WELL_INDEX_NOT_AVAILABLE) {
 				String wellColumn = getExcelColumn(wellColumnIndex);
 				String wellCell = wellColumn + i;
-				Log.i("Reading sourceWell here: " + wellCell);
+				Log.v("Reading sourceWell here: " + wellCell);
 				try {
 					sourceWell = getValueAt(wellCell);
 					response.put("well", sourceWell);
@@ -100,8 +100,7 @@ public abstract class ExperimentDataReaderTask extends SheetReaderTask {
 				}
 			}
 			
-			Log.i("Reading cell " + cell + ": " + value + " [ExcelType: " + getCellType(cell) + "]. Conc: " + currentConcentration + ", Replicate: " + replicate + ", Well: " + sourceWell);
-			
+			Log.v("Reading cell: " + cell + ": " + value + " [ExcelType: " + getCellType(cell) + "]. Conc: " + currentConcentration + ", Replicate: " + replicate + ", Well: " + sourceWell);
 			if (!data.has(currentConcentration)) data.put(currentConcentration, new JSONArray());
 			JSONArray array = data.getJSONArray(currentConcentration);
 			array.put(response);

@@ -143,6 +143,7 @@ public class InsertManager {
 	public ArrayList<JSONObject> readAXESSheets(File sourceDir, int cores) {
 		AXESSheetReaderManager readerManager = new AXESSheetReaderManager(sourceDir, cores);
 		ArrayList<JSONObject> readExperiments = readerManager.startReading();
+		errors.addAll(readerManager.getErrors());
 		
 		if (readExperiments == null || readExperiments.size() == 0) {
 			Client.showInfoMessage("No Experiments were found!", parent);

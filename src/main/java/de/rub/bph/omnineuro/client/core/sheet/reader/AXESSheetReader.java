@@ -35,10 +35,6 @@ public class AXESSheetReader extends JSONOperator implements Runnable {
 		sheetVersion = null;
 	}
 	
-	public boolean hasExperimentJSONFile() {
-		return getExperimentJSONFile() != null;
-	}
-	
 	@Override
 	public void run() {
 		Workbook workbook;
@@ -106,6 +102,7 @@ public class AXESSheetReader extends JSONOperator implements Runnable {
 			fileManager.writeFile(experimentJSONFile, experiment.toString(JSON_ROW_SPACES));
 		} catch (IOException | JSONException e) {
 			e.printStackTrace();
+			Log.e("Failed to output a JSON File for: " + sourceFile.getAbsolutePath(), e);
 		}
 		Log.v("Experiment data read: " + experiment.toString());
 		

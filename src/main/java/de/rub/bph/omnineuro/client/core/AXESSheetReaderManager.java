@@ -16,12 +16,16 @@ import static de.rub.bph.omnineuro.client.core.sheet.reader.AXESSheetReader.JSON
 
 public class AXESSheetReaderManager extends ConcurrentExecutionManager {
 	
-	public static final String EXCEL_FILE_EXTENSION = "xlsx";
 	public static final String CSV_FILE_EXTENSION = "csv";
+	public static final String EXCEL_FILE_EXTENSION = "xlsx";
 	public static final String[] DEFAULT_ALLOWED_EXTENSIONS = new String[]{EXCEL_FILE_EXTENSION};
 	public static final String JSON_FILE_OUTDIRNAME = "json";
 	private File sourceDir;
 	private FileNameExtensionFilter filter;
+	
+	private ArrayList<File> discoveredAXESSheetsList;
+	private ArrayList<File> JSONAXESSheetsList;
+	private ArrayList<String> errorList;
 	
 	public AXESSheetReaderManager(File sourceDir, int threads) {
 		this(sourceDir, threads, DEFAULT_ALLOWED_EXTENSIONS);
@@ -31,6 +35,10 @@ public class AXESSheetReaderManager extends ConcurrentExecutionManager {
 		super(threads);
 		this.sourceDir = sourceDir;
 		setFilter(new FileNameExtensionFilter("Allowed files", allowedExtensions));
+		
+		discoveredAXESSheetsList = new ArrayList<>();
+		JSONAXESSheetsList = new ArrayList<>();
+		errorList = new ArrayList<>();
 	}
 	
 	public ArrayList<JSONObject> startReading() {
@@ -55,6 +63,7 @@ public class AXESSheetReaderManager extends ConcurrentExecutionManager {
 			File f = files.get(i);
 			Log.i("[" + (i + 1) + "/" + count + "] Setting up an executor service for " + f.getName());
 			AXESSheetReader reader = new AXESSheetReader(f, outDir);
+			discoveredAXESSheetsList.add(f);
 			
 			readers.add(reader);
 			submitTask(reader);
@@ -64,26 +73,40 @@ public class AXESSheetReaderManager extends ConcurrentExecutionManager {
 		
 		JSONObject combinedExperiments = new JSONObject();
 		File combinedExperimentsFile = new File(outDir, "combinedExperiments.json");
-		
 		for (AXESSheetReader reader : readers) {
 			if (reader.hasBufferedExperiment()) {
 				JSONObject experiment = reader.getBufferedExperiment();
 				experiments.add(experiment);
+				JSONAXESSheetsList.add(reader.getSourceFile());
 				
 				try {
 					combinedExperiments.put(reader.getExperimentJSONFile().getName(), experiment);
 				} catch (JSONException e) {
 					Log.e("Failed to add experiment for " + reader.getSourceFile().getName() + " to combined JSON!", e);
+					addError(reader.getSourceFile().getName() + " == FATAL ERROR == while preparing sheet for DB: " + e.getClass().getName());
 				}
 			} else {
-				Log.w("Experiment " + reader.getSourceFile() + " failed to extract experiment!!");
+				Log.e("Experiment " + reader.getSourceFile() + " failed to extract experiment!!");
+				addError(reader.getSourceFile().getName() + " == FATAL ERROR == while reading sheet.");
 			}
 		}
 		
+		// Writing combined experiments JSON
 		try {
 			fileManager.writeFile(combinedExperimentsFile, combinedExperiments.toString(JSON_ROW_SPACES));
 		} catch (IOException | JSONException e) {
 			Log.e("Failed to write combined experiments file at " + combinedExperimentsFile.getAbsolutePath(), e);
+		}
+		
+		// Writing error file
+		File errorOutFile = new File(outDir, "fatal_errors.txt");
+		ArrayList<String> tempList = new ArrayList<>();
+		tempList.add("AXES Sheets: " + discoveredAXESSheetsList.size() + ". JSON Files: " + JSONAXESSheetsList.size() + "\n");
+		tempList.addAll(errorList);
+		try {
+			fileManager.saveListFile(tempList, errorOutFile);
+		} catch (IOException e) {
+			Log.e("Failed to write JSON error experiments file at " + errorOutFile.getAbsolutePath(), e);
 		}
 		
 		Log.i("Files read: " + readers.size() + ". Experiments extracted: " + experiments.size());
@@ -129,12 +152,29 @@ public class AXESSheetReaderManager extends ConcurrentExecutionManager {
 	
 	}
 	
+	private void addError(String error) {
+		Log.e(error);
+		errorList.add("[ReaderError] " + error);
+	}
+	
+	public ArrayList<File> getDiscoveredAXESSheetsList() {
+		return new ArrayList<>(discoveredAXESSheetsList);
+	}
+	
+	public ArrayList<String> getErrors() {
+		return new ArrayList<>(errorList);
+	}
+	
 	public FileNameExtensionFilter getFilter() {
 		return filter;
 	}
 	
 	public void setFilter(FileNameExtensionFilter filter) {
 		this.filter = filter;
+	}
+	
+	public ArrayList<File> getJSONAXESSheetsList() {
+		return new ArrayList<>(JSONAXESSheetsList);
 	}
 	
 }

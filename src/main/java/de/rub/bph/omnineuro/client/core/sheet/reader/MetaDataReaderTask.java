@@ -8,6 +8,8 @@ import org.json.JSONObject;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Iterator;
 
 public abstract class MetaDataReaderTask extends SheetReaderTask {
 	
@@ -80,7 +82,22 @@ public abstract class MetaDataReaderTask extends SheetReaderTask {
 			}
 		}
 		
+		// Removing empty key entries
 		data.remove("");
+		
+		// Checking for empty values
+		ArrayList<String> emptyErrorList = new ArrayList<>();
+		for (Iterator it = data.keys(); it.hasNext(); ) {
+			String key = it.next().toString();
+			String value = data.getString(key).trim();
+			if (value.length() == 0) {
+				Log.v("[EMPTY META VALUE WARNING] Entry '" + key + "' has no entry!");
+				emptyErrorList.add(key);
+			}
+		}
+		if (!emptyErrorList.isEmpty() && emptyErrorList.size() != data.length()) {
+			errors.put("[EMPTY META VALUE WARNING] The following entries have no values: " + emptyErrorList.toString());
+		}
 		
 		input.put(JSON_EXTRACTION_ENTRY_DATA, data);
 		input.put(JSON_EXTRACTION_ENTRY_ERRORS_COUNT, errors.length());
