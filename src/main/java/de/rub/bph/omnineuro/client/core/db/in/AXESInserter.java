@@ -19,14 +19,13 @@ import static de.rub.bph.omnineuro.client.core.sheet.reader.ExperimentDataReader
 
 public class AXESInserter extends DBInserter implements Runnable {
 	
-	private JSONObject data;
-	private String name;
-	
 	public static final String INVALID_INDIVIDUAL_NAME = "<unknown individual>";
 	public static final String INVALID_MUTATION_NAME = "<unknown mutation>";
-	private static final String INVALID_CELL_LINE_NAME = "<unknown cell line>";
 	public static final String INVALID_SEX_NAME = "undefined";
 	public static final String INVALID_SPECIES_NAME = "unknown";
+	private static final String INVALID_CELL_LINE_NAME = "<unknown cell line>";
+	private JSONObject data;
+	private String name;
 	
 	public AXESInserter(JSONObject data, boolean attemptUnblinding) {
 		super(attemptUnblinding);
@@ -39,21 +38,6 @@ public class AXESInserter extends DBInserter implements Runnable {
 		} catch (Throwable e) {
 			Log.e(e);
 		}
-	}
-	
-	private synchronized long getMutationID(String mutation) throws SQLException {
-		long mutationID;
-		
-		synchronized (executor) {
-			try {
-				mutationID = executor.getIDViaName("mutation", mutation);
-			} catch (Throwable e) {
-				mutationID = executor.getNextSequenceTableVal("mutation");
-				executor.insertMutation(mutationID, mutation);
-			}
-		}
-		
-		return mutationID;
 	}
 	
 	@Override
@@ -141,6 +125,9 @@ public class AXESInserter extends DBInserter implements Runnable {
 			
 			if (compound.equals("NaN")) {
 				addError("Compound is unknown!", true);
+			}
+			if (isCompatibleCompoundName(compound)) {
+				addError("Warning: The compound '" + compound + "' has troubling characters. Make sure it's alphanumeric! [Special connecting characters are allowed.]");
 			}
 			
 			long individualID;
@@ -377,19 +364,22 @@ public class AXESInserter extends DBInserter implements Runnable {
 		setFinished();
 	}
 	
-	public static synchronized long getInvalidCellLineID() throws SQLException {
-		long cellLineID;
+	public static synchronized long getInvalidIndividualID() throws JSONException, SQLException {
+		long individualID;
 		
 		synchronized (executor) {
 			try {
-				cellLineID = executor.getIDViaName("cell_line", INVALID_CELL_LINE_NAME);
+				individualID = executor.getIDViaName("individual", INVALID_INDIVIDUAL_NAME);
 			} catch (Throwable e) {
-				cellLineID = executor.getNextSequenceTableVal("cell_line");
-				executor.insertCellLine(cellLineID, INVALID_CELL_LINE_NAME);
+				long sexID = executor.getIDViaFeature("sex", "label", INVALID_SEX_NAME);
+				long speciesID = executor.getIDViaName("species", INVALID_SPECIES_NAME);
+				
+				individualID = executor.getNextSequenceTableVal("individual");
+				executor.insertIndividual(individualID, INVALID_INDIVIDUAL_NAME, sexID, speciesID);
 			}
 		}
 		
-		return cellLineID;
+		return individualID;
 	}
 	
 	private synchronized long getIndividualID(String individual, String sex, String species) throws JSONException, SQLException {
@@ -412,24 +402,6 @@ public class AXESInserter extends DBInserter implements Runnable {
 		return individualID;
 	}
 	
-	public static synchronized long getInvalidIndividualID() throws JSONException, SQLException {
-		long individualID;
-		
-		synchronized (executor) {
-			try {
-				individualID = executor.getIDViaName("individual", INVALID_INDIVIDUAL_NAME);
-			} catch (Throwable e) {
-				long sexID = executor.getIDViaFeature("sex", "label", INVALID_SEX_NAME);
-				long speciesID = executor.getIDViaName("species", INVALID_SPECIES_NAME);
-				
-				individualID = executor.getNextSequenceTableVal("individual");
-				executor.insertIndividual(individualID, INVALID_INDIVIDUAL_NAME, sexID, speciesID);
-			}
-		}
-		
-		return individualID;
-	}
-	
 	public static synchronized long getInvalidMutationID() throws SQLException {
 		long mutationID;
 		
@@ -443,6 +415,36 @@ public class AXESInserter extends DBInserter implements Runnable {
 		}
 		
 		return mutationID;
+	}
+	
+	private synchronized long getMutationID(String mutation) throws SQLException {
+		long mutationID;
+		
+		synchronized (executor) {
+			try {
+				mutationID = executor.getIDViaName("mutation", mutation);
+			} catch (Throwable e) {
+				mutationID = executor.getNextSequenceTableVal("mutation");
+				executor.insertMutation(mutationID, mutation);
+			}
+		}
+		
+		return mutationID;
+	}
+	
+	public static synchronized long getInvalidCellLineID() throws SQLException {
+		long cellLineID;
+		
+		synchronized (executor) {
+			try {
+				cellLineID = executor.getIDViaName("cell_line", INVALID_CELL_LINE_NAME);
+			} catch (Throwable e) {
+				cellLineID = executor.getNextSequenceTableVal("cell_line");
+				executor.insertCellLine(cellLineID, INVALID_CELL_LINE_NAME);
+			}
+		}
+		
+		return cellLineID;
 	}
 	
 	private synchronized long getCellLineID(String cellLine) throws SQLException {

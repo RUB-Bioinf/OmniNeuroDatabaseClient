@@ -8,8 +8,12 @@ import de.rub.bph.omnineuro.client.util.concurrent.TimedRunnable;
 
 import java.sql.Connection;
 import java.util.ArrayList;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public abstract class DBInserter extends TimedRunnable {
+	
+	public static final String COMPOUND_NAME_REGEX = "^([\\w\\d-()\\s])+$";
 	
 	protected static OmniNeuroQueryExecutor executor;
 	protected boolean attemptUnblinding;
@@ -72,14 +76,32 @@ public abstract class DBInserter extends TimedRunnable {
 		addError(text, false);
 	}
 	
-	protected void addError(String text, boolean isNaN) {
+	protected void addError(String text, boolean isNaN, boolean allowDoubles) {
 		String s = getName() + ": " + text;
-		Log.w("Inserter error: " + s);
-		errors.add(s);
 		
-		if (!isNaN) {
-			errorsWoNaN.add(s);
+		if (allowDoubles) {
+			Log.w("Inserting error: " + s);
+			errors.add(s);
+			if (!isNaN) {
+				errorsWoNaN.add(s);
+			}
+		} else {
+			if (!errors.contains(text)) {
+				Log.w("Inserting unique error: " + s);
+				errors.add(s);
+				if (!isNaN) {
+					errorsWoNaN.add(s);
+				}
+			} else {
+				Log.w("Wanted to insert error, but it was already present: " + s);
+			}
 		}
+	}
+	
+	public abstract String getName();
+	
+	protected void addError(String text, boolean isNaN) {
+		addError(text, isNaN, false);
 	}
 	
 	public void incrementNaNCount() {
@@ -102,6 +124,10 @@ public abstract class DBInserter extends TimedRunnable {
 		return getNaNCount() != 0;
 	}
 	
+	public int getNaNCount() {
+		return NaNCounts;
+	}
+	
 	public ArrayList<String> getBlindingInfo() {
 		return new ArrayList<>(blindingInfo);
 	}
@@ -118,10 +144,10 @@ public abstract class DBInserter extends TimedRunnable {
 		return insertedResponsesCount;
 	}
 	
-	public int getNaNCount() {
-		return NaNCounts;
+	public static boolean isCompatibleCompoundName(String input){
+		Pattern p = Pattern.compile(COMPOUND_NAME_REGEX);
+		Matcher m = p.matcher(input.toLowerCase());
+		return m.matches();
 	}
-	
-	public abstract String getName();
 	
 }

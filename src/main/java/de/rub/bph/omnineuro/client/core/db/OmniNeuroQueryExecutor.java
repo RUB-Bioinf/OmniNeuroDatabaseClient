@@ -63,6 +63,7 @@ public class OmniNeuroQueryExecutor extends QueryExecutor {
 		b &= deleteBlindedCompounds();
 		
 		b &= insertWell("Unknown");
+		b &= insertIndividual(0,"Unknown",getIDViaFeature("sex","label","undefined"),getIDViaName("species","unknown"));
 		
 		return b;
 	}

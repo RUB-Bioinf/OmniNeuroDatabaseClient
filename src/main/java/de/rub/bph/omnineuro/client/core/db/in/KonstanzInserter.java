@@ -28,58 +28,15 @@ public class KonstanzInserter extends DBInserter {
 		casOutRows = new ArrayList<>();
 	}
 	
-	private long decodeKonstanzEndpoint(String endpointName) throws SQLException {
-		if (endpointName == null) {
-			return DECODED_ENDPOINT_FAILURE;
-		}
-		
-		endpointName = endpointName.trim();
-		switch (endpointName) {
-			case "Migration":
-				return executor.getIDViaName("endpoint", "Migration");
-			case "Viability":
-				return executor.getIDViaName("endpoint", "Viabillity");
-			case "neurite area":
-				return executor.getIDViaName("endpoint", "Neurite Area");
-			case "selected objects":
-				return executor.getIDViaName("endpoint", "Selected Objects");
-			case "valid objects":
-				return executor.getIDViaName("endpoint", "Valid Objects");
-			case "valid objects UKN4":
-				return executor.getIDViaName("endpoint", "Valid Objects UKN4");
-			case "selected objects UKN4":
-				return executor.getIDViaName("endpoint", "Selected Objects UKN4");
-			case "valid objects UKN5":
-				return executor.getIDViaName("endpoint", "Valid Objects UKN5");
-			case "selected objects UKN5":
-				return executor.getIDViaName("endpoint", "Selected Objects UKN5");
-			case "Migration UKN2":
-				return executor.getIDViaName("endpoint", "Migration UKN2");
-			case "Viabilty UKN2":
-			case "Viability UKN2":
-				return executor.getIDViaName("endpoint", "Viability UKN2");
-			case "neurite area UKN5":
-				return executor.getIDViaName("endpoint", "Neurite Area UKN5");
-			case "neurite area UKN4":
-				return executor.getIDViaName("endpoint", "Neurite Area UKN4");
-			default:
-				addError("FATAL ERROR! Failed to decode a database compatible endpoint from '" + endpointName + "'!");
-				return DECODED_ENDPOINT_FAILURE;
-		}
-	}
-	
-	protected void addCASRow(String row) {
-		casOutRows.add(row);
-	}
-	
 	@Override
 	public void run() {
 		long timestampExperiment = new Date(0).getTime();
 		int timestampEndpoint = 24;
-		addError("TODO later: get the timestamp (experiment, endpoint) from file: " + sourceFile.getName());
-		addError("TODO later: read the individual from file: " + sourceFile.getName());
-		addError("TODO later: read the detection method from file: " + sourceFile.getName());
-		addError("TODO later: get workgroup name for " + sourceFile.getName());
+		addError("TODO later: get the timestamp (experiment, endpoint) from file: " + sourceFile.getName(), true);
+		addError("TODO later: read the individual from file: " + sourceFile.getName(), true);
+		addError("TODO later: read the detection method from file: " + sourceFile.getName(), true);
+		addError("TODO later: get workgroup name for " + sourceFile.getName(), true);
+		boolean displayUnnecessaryPlateIDWarning = false;
 		
 		int cachedRow = -1;
 		String cachedWell = "<None>";
@@ -134,8 +91,9 @@ public class KonstanzInserter extends DBInserter {
 					// Example of undesireable plate: UKN4_PreProject_Acet_plate 1_N1
 					String plate = "_plate " + j;
 					if (plateID.contains(plate)) {
-						addError("Warning! '" + plateID + "' contained plate ID in the experiment. Deleting '" + plate + "'!");
+						addError("Warning! '" + plateID + "' contained plate ID in the experiment name. Please avoid doing that. Deleting '" + plate + "' from the name during evaluations!", true);
 						plateID = plateID.replace(plate, "");
+						displayUnnecessaryPlateIDWarning = true;
 					}
 				}
 				
@@ -204,23 +162,26 @@ public class KonstanzInserter extends DBInserter {
 				try {
 					response1 = Double.parseDouble(reader.getValueAt("H" + i, true));
 				} catch (Exception e) {
-					addError("Failed to the response to " + endpoint1 + " at H" + i + ". Error: " + e.getMessage());
+					addError("Failed to read the response to " + endpoint1 + " at H" + i + ". Error: " + e.getMessage());
 				}
 				if (hasWell) {
 					try {
 						response2 = Double.parseDouble(reader.getValueAt("I" + i, true));
 					} catch (Exception e) {
-						addError("Failed to the response to " + endpoint2 + " at I" + i + ". Error: " + e.getMessage());
+						addError("Failed to read the response to " + endpoint2 + " at I" + i + ". Error: " + e.getMessage());
 					}
 				}
 				if (extendedEndpoints) {
 					try {
 						response3 = Double.parseDouble(reader.getValueAt("J" + i, true));
 					} catch (Exception e) {
-						addError("Failed to the response to " + endpoint3 + " at J" + i + ". Error: " + e.getMessage());
+						addError("Failed to read the response to " + endpoint3 + " at J" + i + ". Error: " + e.getMessage());
 					}
 				}
 				String experimentName = sampleID + "#" + plateID;
+				if (isCompatibleCompoundName(sampleID)) {
+					addError("Warning: The compound '" + sampleID + "' has troubling characters. Make sure it's alphanumeric! [Special connecting characters are allowed.]");
+				}
 				
 				// DATABASE STUFF
 				long concentrationID;
@@ -256,7 +217,7 @@ public class KonstanzInserter extends DBInserter {
 							long projectID = executor.getIDViaName("project", "EFSA DNT2");
 							long assayID = executor.getIDViaName("assay", assay);
 							long cellTypeID = executor.getIDViaName("cell_type", "iPSCs");
-							long individualID = executor.getIDViaName("individual", "SBAD2");
+							long individualID = executor.getIDViaName("individual", "Unknown");
 							long plateFormatID = 0;
 							long workgroupID = 3;
 							
@@ -353,11 +314,12 @@ public class KonstanzInserter extends DBInserter {
 					
 					ArrayList<Long> experimentIDList = new ArrayList<>();
 					if (isControl) {
-						if (!experimentName.startsWith("Narciclasine#UKN4_PreProject_Narci_plate")) {
-							// Hier eine Extrawurst, weil auf der selben plate als compound und auch als kontrolle verwendet wurde
-							//TODO this should be discussed and deleted! Technical debt gedetected!!
-							executor.deleteRow("experiment", experimentID);
-						}
+						//if (!experimentName.startsWith("Narciclasine#UKN4_PreProject_Narci_plate")) {
+						//	// Hier eine Extrawurst, weil auf der selben plate als compound und auch als kontrolle verwendet wurde
+						//	//TODO this should be discussed and deleted! Technical debt gedetected!!
+						//	executor.deleteRow("experiment", experimentID);
+						//}
+						
 						ArrayList<String> experimentList = lookupMapDMSO.get(plateID);
 						for (String s : experimentList) {
 							long id = executor.getIDViaName("experiment", s + "#" + plateID);
@@ -407,7 +369,55 @@ public class KonstanzInserter extends DBInserter {
 			addError("Fatal Error in: " + sourceFile.getName() + ". Type: " + e.getClass().getSimpleName() + ": '" + e.getMessage() + "'! Last known row: " + cachedRow + ". Last known well: " + cachedWell);
 		}
 		
+		if (displayUnnecessaryPlateIDWarning) {
+			addError("Warning! This experiment contained the plate ID in the experiment name. Please avoid doing that. Deleting the ID from the name during evaluations!");
+		}
+		
 		setFinished();
+	}
+	
+	protected void addCASRow(String row) {
+		casOutRows.add(row);
+	}
+	
+	private long decodeKonstanzEndpoint(String endpointName) throws SQLException {
+		if (endpointName == null) {
+			return DECODED_ENDPOINT_FAILURE;
+		}
+		
+		endpointName = endpointName.trim();
+		switch (endpointName) {
+			case "Migration":
+				return executor.getIDViaName("endpoint", "Migration");
+			case "Viability":
+				return executor.getIDViaName("endpoint", "Viabillity");
+			case "neurite area":
+				return executor.getIDViaName("endpoint", "Neurite Area");
+			case "selected objects":
+				return executor.getIDViaName("endpoint", "Selected Objects");
+			case "valid objects":
+				return executor.getIDViaName("endpoint", "Valid Objects");
+			case "valid objects UKN4":
+				return executor.getIDViaName("endpoint", "Valid Objects UKN4");
+			case "selected objects UKN4":
+				return executor.getIDViaName("endpoint", "Selected Objects UKN4");
+			case "valid objects UKN5":
+				return executor.getIDViaName("endpoint", "Valid Objects UKN5");
+			case "selected objects UKN5":
+				return executor.getIDViaName("endpoint", "Selected Objects UKN5");
+			case "Migration UKN2":
+				return executor.getIDViaName("endpoint", "Migration UKN2");
+			case "Viabilty UKN2":
+			case "Viability UKN2":
+				return executor.getIDViaName("endpoint", "Viability UKN2");
+			case "neurite area UKN5":
+				return executor.getIDViaName("endpoint", "Neurite Area UKN5");
+			case "neurite area UKN4":
+				return executor.getIDViaName("endpoint", "Neurite Area UKN4");
+			default:
+				addError("FATAL ERROR! Failed to decode a database compatible endpoint from '" + endpointName + "'!");
+				return DECODED_ENDPOINT_FAILURE;
+		}
 	}
 	
 	@Override
