@@ -2,6 +2,7 @@ package de.rub.bph.omnineuro.client.core.db.out.holder;
 
 
 import de.rub.bph.omnineuro.client.core.db.OmniNeuroQueryExecutor;
+import de.rub.bph.omnineuro.client.imported.log.Log;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -106,7 +107,19 @@ public class ResponseHolder {
 	}
 	
 	public static int getResponseHolderCreationCount(ResponseHolder holder) {
-		return holderCreationCountMap.get(holder.hashCode());
+		// if (holderCreationCountMap == null) {
+		// 	resetCreationCounts();
+		// }
+		
+		int count = (int) Double.NaN;
+		try {
+			count = holderCreationCountMap.get(holder.hashCode());
+		} catch (Throwable e) {
+			Log.e(e);
+			resetCreationCounts();
+			count = holderCreationCountMap.get(holder.hashCode());
+		}
+		return count;
 	}
 	
 	public long getAssayID() {

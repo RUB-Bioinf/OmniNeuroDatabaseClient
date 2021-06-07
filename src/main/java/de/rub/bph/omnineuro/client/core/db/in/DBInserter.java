@@ -13,7 +13,7 @@ import java.util.regex.Pattern;
 
 public abstract class DBInserter extends TimedRunnable {
 	
-	public static final String COMPOUND_NAME_REGEX = "^([\\w\\d-()\\s])+$";
+	public static final String COMPOUND_NAME_REGEX = "^([\\w\\d-(),'\\s])+$";
 	
 	protected static OmniNeuroQueryExecutor executor;
 	protected boolean attemptUnblinding;

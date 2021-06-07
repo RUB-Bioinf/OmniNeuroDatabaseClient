@@ -127,6 +127,8 @@ public class CompactExperimentSheetExporter extends SheetExporterCompatManager {
 			endpointNames.add("Mean Migration Distance all neurons");
 			endpointNames.add("Cytotoxicity (NPC1ab)");
 			endpointNames.add("Cytotoxicity (NPC2-5)");
+			endpointNames.add("Total Subneuritelength per Nucleus limited");
+			endpointNames.add("Mean Neurite Area wo Nuclei");
 			
 			//Konstanz Endpoints
 			// endpointNames.add("Viability UKN2");

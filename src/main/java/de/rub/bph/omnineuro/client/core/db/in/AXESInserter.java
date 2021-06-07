@@ -126,8 +126,8 @@ public class AXESInserter extends DBInserter implements Runnable {
 			if (compound.equals("NaN")) {
 				addError("Compound is unknown!", true);
 			}
-			if (isCompatibleCompoundName(compound)) {
-				addError("Warning: The compound '" + compound + "' has troubling characters. Make sure it's alphanumeric! [Special connecting characters are allowed.]");
+			if (!isCompatibleCompoundName(compound)) {
+				addError("Warning: The compound '" + compound + "' has potentially troubling characters. Make sure it's alphanumeric! [Special connecting characters are allowed.]");
 			}
 			
 			long individualID;

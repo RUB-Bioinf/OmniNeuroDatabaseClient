@@ -179,8 +179,8 @@ public class KonstanzInserter extends DBInserter {
 					}
 				}
 				String experimentName = sampleID + "#" + plateID;
-				if (isCompatibleCompoundName(sampleID)) {
-					addError("Warning: The compound '" + sampleID + "' has troubling characters. Make sure it's alphanumeric! [Special connecting characters are allowed.]");
+				if (!isCompatibleCompoundName(sampleID)) {
+					addError("Warning: The compound '" + sampleID + "' has troubling characters. Make sure it's alphanumeric! [Special connecting characters are allowed.]", false, false);
 				}
 				
 				// DATABASE STUFF
@@ -414,8 +414,10 @@ public class KonstanzInserter extends DBInserter {
 				return executor.getIDViaName("endpoint", "Neurite Area UKN5");
 			case "neurite area UKN4":
 				return executor.getIDViaName("endpoint", "Neurite Area UKN4");
+			case "ped objects UKN4":
+				return executor.getIDViaName("endpoint", "Ped Objects UKN4");
 			default:
-				addError("FATAL ERROR! Failed to decode a database compatible endpoint from '" + endpointName + "'!");
+				addError("FATAL ERROR! Failed to decode a database compatible endpoint from '" + endpointName + "'!", false, true);
 				return DECODED_ENDPOINT_FAILURE;
 		}
 	}

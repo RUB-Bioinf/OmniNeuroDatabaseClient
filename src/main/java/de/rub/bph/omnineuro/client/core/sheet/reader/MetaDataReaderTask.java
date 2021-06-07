@@ -106,20 +106,6 @@ public abstract class MetaDataReaderTask extends SheetReaderTask {
 		return input;
 	}
 	
-	public abstract JSONObject readMetaDataControls() throws JSONException;
-	
-	public abstract JSONObject readMetaDataReagents() throws JSONException;
-	
-	public abstract JSONObject readMetaDataOperationProcedures() throws JSONException;
-	
-	public abstract String readMetaDataComments() throws SheetReaderException;
-	
-	public abstract JSONObject readMetaDataGeneral() throws JSONException;
-	
-	public abstract JSONObject readPassages() throws JSONException;
-	
-	public abstract JSONObject readSolvent() throws JSONException;
-	
 	@Override
 	public JSONObject readSheet() throws JSONException {
 		JSONObject data = new JSONObject();
@@ -143,6 +129,7 @@ public abstract class MetaDataReaderTask extends SheetReaderTask {
 			data.put(JSON_METADATA_TYPE_COMMENTS, readMetaDataComments());
 		} catch (Throwable e) {
 			Log.e("Failed to read comments metadata JSON!", e);
+			data.put(JSON_METADATA_TYPE_COMMENTS, "Error: Failed to read comment. Reason: " + e.getClass().getName());
 		}
 		try {
 			data.put(JSON_METADATA_TYPE_PASSAGES, readPassages());
@@ -162,5 +149,19 @@ public abstract class MetaDataReaderTask extends SheetReaderTask {
 		
 		return data;
 	}
+	
+	public abstract JSONObject readMetaDataControls() throws JSONException;
+	
+	public abstract JSONObject readMetaDataReagents() throws JSONException;
+	
+	public abstract JSONObject readMetaDataOperationProcedures() throws JSONException;
+	
+	public abstract String readMetaDataComments() throws SheetReaderException;
+	
+	public abstract JSONObject readPassages() throws JSONException;
+	
+	public abstract JSONObject readSolvent() throws JSONException;
+	
+	public abstract JSONObject readMetaDataGeneral() throws JSONException;
 	
 }
