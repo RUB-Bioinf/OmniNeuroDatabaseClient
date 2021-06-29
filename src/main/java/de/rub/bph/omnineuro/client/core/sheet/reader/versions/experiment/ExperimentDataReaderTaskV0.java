@@ -44,6 +44,7 @@ public class ExperimentDataReaderTaskV0 extends ExperimentDataReaderTask {
 				return new DataReaderCompat(workbook, sourceFile, "1").getExperimentDataTask().readEndpointsHeaders();
 			} catch (IOException e) {
 				Log.e("Failed to generate header amalgam info for experiment: " + getFileName(), e);
+				addError(e.getMessage());
 			}
 		}
 

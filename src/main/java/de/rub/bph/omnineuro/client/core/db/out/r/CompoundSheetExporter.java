@@ -82,7 +82,8 @@ public class CompoundSheetExporter extends ResponseExporter {
 			
 			successful = true;
 		} catch (Throwable e) {
-			addError("Failed to create " + getCompoundAbbreviation() + " ['" + getCompoundName() + "'] export file because of an " + e.getClass().getSimpleName() + "-Error!");
+			addError("Failed to create " + getCompoundAbbreviation() + " ['" + getCompoundName() + "'] export file because of an " + e.getClass().getSimpleName() + "-Error: '" + e.getMessage() + "'!");
+			e.printStackTrace();
 			Log.e(e);
 		}
 		setFinished();

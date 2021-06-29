@@ -16,7 +16,7 @@ import static de.rub.bph.omnineuro.client.imported.log.Log.TIME_PATTERN;
 public abstract class Log {
 	
 	public static final int DATE_DETAIL = -1;
-	public static final String TIME_PATTERN = "hh:mm:ss"; //TODO: Your own date pattern here
+	public static final String TIME_PATTERN = "yyyy-MM-dd hh:mm:ss"; //TODO: Your own date pattern here
 	public static final String VERSION = "VERSION: " + Client.VERSION; //TODO: Your own version here
 	private static ExecutorService logger;
 	private static LogLevel myLevel;

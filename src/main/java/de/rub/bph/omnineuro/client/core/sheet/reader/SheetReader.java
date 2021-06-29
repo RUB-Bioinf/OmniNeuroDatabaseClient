@@ -6,6 +6,7 @@ import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.util.CellReference;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.HashMap;
 
 public class SheetReader {
@@ -17,6 +18,8 @@ public class SheetReader {
 	private HashMap<String, FormulaEvaluator> externalEvaluators;
 	private int sheetIndex;
 	
+	private ArrayList<String> errorList;
+	
 	public SheetReader(File sourceFile, Workbook workbook, int sheetIndex) {
 		this.workbook = workbook;
 		this.sourceFile = sourceFile;
@@ -27,6 +30,7 @@ public class SheetReader {
 		
 		sheet = workbook.getSheetAt(sheetIndex);
 		evaluator = workbook.getCreationHelper().createFormulaEvaluator();
+		errorList = new ArrayList<>();
 	}
 	
 	public SheetReader(File sourceFile, Workbook workbook) {
@@ -299,6 +303,15 @@ public class SheetReader {
 			super(s);
 		}
 	}
+	
+	public void addError(String error) {
+		errorList.add(error);
+	}
+	
+	public ArrayList<String> getAllErrors() {
+		return new ArrayList<>(errorList);
+	}
+	
 	
 }
 

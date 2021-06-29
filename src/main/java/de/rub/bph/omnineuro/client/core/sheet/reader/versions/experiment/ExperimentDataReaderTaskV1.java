@@ -54,11 +54,27 @@ public class ExperimentDataReaderTaskV1 extends ExperimentDataReaderTask {
 				detectionMethod = getValueAt(cellName);
 			}
 			
-			cellName = getExcelColumn(i) + (3 + detectionMethodModifier);
-			int expectedValues = (int) Double.parseDouble(getValueAt(cellName));
+			int expectedValues = -1;
+			try {
+				cellName = getExcelColumn(i) + (3 + detectionMethodModifier);
+				expectedValues = (int) Double.parseDouble(getValueAt(cellName));
+			} catch (Throwable e) {
+				String er = "FATAL ERROR! - Failed to read the expected amount of values to read!";
+				addError(er);
+				Log.e(er);
+				throw new IllegalStateException(er);
+			}
 			
-			cellName = getExcelColumn(i) + (2 + detectionMethodModifier);
-			int timestamp = (int) Double.parseDouble(getValueAt(cellName));
+			int timestamp = -1;
+			try {
+				cellName = getExcelColumn(i) + (2 + detectionMethodModifier);
+				timestamp = (int) Double.parseDouble(getValueAt(cellName));
+			} catch (Throwable e) {
+				String er = "FATAL ERROR! - Failed to read the timestamp for an endpoint from this experiment!";
+				addError(er);
+				Log.e(er);
+				throw new IllegalStateException(er);
+			}
 			
 			EndpointHeader header = new EndpointHeader(endpointName, i, expectedValues, timestamp, 4 + detectionMethodModifier, detectionMethod);
 			Log.i("Header added: " + header);

@@ -97,10 +97,18 @@ public abstract class ExperimentDataReaderTask extends SheetReaderTask {
 					response.put("well", sourceWell);
 				} catch (SheetReaderException e) {
 					e.printStackTrace();
+					addError("Warning! There was no well information found for this experiment!");
 				}
 			}
 			
-			Log.v("Reading cell: " + cell + ": " + value + " [ExcelType: " + getCellType(cell) + "]. Conc: " + currentConcentration + ", Replicate: " + replicate + ", Well: " + sourceWell);
+			try {
+				Log.v("Reading cell: " + cell + ": " + value + " [ExcelType: " + getCellType(cell) + "]. Conc: " + currentConcentration + ", Replicate: " + replicate + ", Well: " + sourceWell);
+			} catch (Throwable t) {
+				Log.w("FYI: If the well is missing, this might be the cause of this issue: " + sourceWell);
+				Log.e(t);
+				throw t;
+			}
+			
 			if (!data.has(currentConcentration)) data.put(currentConcentration, new JSONArray());
 			JSONArray array = data.getJSONArray(currentConcentration);
 			array.put(response);

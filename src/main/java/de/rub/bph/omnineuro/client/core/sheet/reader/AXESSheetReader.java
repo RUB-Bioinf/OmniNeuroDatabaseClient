@@ -85,14 +85,22 @@ public class AXESSheetReader extends JSONOperator implements Runnable {
 			return;
 		}
 		
+		String progressLabel = null;
 		try {
+			progressLabel = "meta data";
 			experiment.put(JSON_ENTRY_METADATA, metaDataReader.readSheet());
+			
+			progressLabel = "experiment data";
 			experiment.put(JSON_ENTRY_EXPERIMENTDATA, experimentDataReader.readSheet());
+			
+			progressLabel = "local path";
 			experiment.put(JSON_ENTRY_SOURCEFILE, getSourceFile().getAbsolutePath());
+			
+			progressLabel = "sheet version";
 			experiment.put(EXCEL_SHEET_SUBNAME_SHEET_VERSION, getSheetVersion());
 		} catch (Throwable e) {
 			e.printStackTrace();
-			Log.e("FATAL ERROR! Failed to resolve meta data for " + getSourceFile() + "!", e);
+			Log.e("FATAL ERROR! Failed to resolve '" + progressLabel + "' for " + getSourceFile() + "!", e);
 			return;
 		}
 		
