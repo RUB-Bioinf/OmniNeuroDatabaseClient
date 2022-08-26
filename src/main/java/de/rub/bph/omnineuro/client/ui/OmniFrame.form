@@ -312,7 +312,7 @@
                           <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                         </constraints>
                         <properties>
-                          <text value="Lists ever compound and counts its appeance in every registered Assay."/>
+                          <text value="Lists every compound and counts its appeance in every registered Assay."/>
                         </properties>
                       </component>
                       <hspacer id="279a">

@@ -2,6 +2,10 @@
 .classpath
 .project
 .git
+.idea
+.gradle
+build
+out
 
 # Project ignores
 /ExperimentExporter.iml
