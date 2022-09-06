@@ -4,6 +4,7 @@ import de.rub.bph.omnineuro.client.core.db.DBConnection;
 import de.rub.bph.omnineuro.client.core.db.OmniNeuroQueryExecutor;
 import de.rub.bph.omnineuro.client.core.db.out.SheetExporterCompatManager;
 import de.rub.bph.omnineuro.client.core.db.out.holder.ConcentrationHolder;
+import de.rub.bph.omnineuro.client.core.sheet.data.DateInterpreter;
 import de.rub.bph.omnineuro.client.imported.filemanager.FileManager;
 import de.rub.bph.omnineuro.client.imported.log.Log;
 
@@ -11,7 +12,6 @@ import java.io.File;
 import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -112,7 +112,7 @@ public class CompactExperimentSheetExporter extends SheetExporterCompatManager {
 			for (int i = 0; i < experimentNames.size(); i++) {
 				String experimentName = experimentNames.get(i);
 				StringBuilder metaDataBuilder = new StringBuilder();
-				Log.i("Running experiment " + (i + 1) + "/" + experimentNames.size() + ": " + experimentName);
+				Log.i("Adding experiment to concurrent queue: " + (i + 1) + "/" + experimentNames.size() + ": " + experimentName);
 				
 				//if (i == 7) break;
 				
@@ -122,21 +122,27 @@ public class CompactExperimentSheetExporter extends SheetExporterCompatManager {
 						"                species.name,\n" +
 						"                cell_type.name,\n" +
 						"                individual.name,\n" +
+						"                experiment.control_plate_id,\n" +
 						"                compound.name,\n" +
 						"                compound.abbreviation,\n" +
-						"                compound.cas_no\n" +
+						"                compound.cas_no,\n" +
+						"                compound.molecular_weight,\n" +
+						"                experiment.solvent_concentration,\n" +
+						"                solvent.name\n" +
 						"FROM experiment,\n" +
 						"     individual,\n" +
 						"     cell_type,\n" +
 						"     species,\n" +
 						"     assay,\n" +
 						"     compound,\n" +
+						"     solvent,\n" +
 						"     sex\n" +
 						"WHERE experiment.name = '" + experimentName + "'\n" +
 						"  AND individual.id = experiment.individual_id\n" +
 						"  AND species.id = individual.species_id\n" +
 						"  AND assay.id = experiment.assay_id\n" +
 						"  AND compound.id = experiment.compound_id\n" +
+						"  AND experiment.solvent_id = solvent.id\n" +
 						"  AND cell_type.id = experiment.cell_type_id";
 				ResultSet set = queryExecutor.executeQuery(query);
 				if (!set.next()) {
@@ -145,21 +151,45 @@ public class CompactExperimentSheetExporter extends SheetExporterCompatManager {
 				}
 				
 				long platingDate = Long.parseLong(set.getString(2));
-				SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yy");
 				
 				metaDataBuilder.append(set.getString(1) + ";");
-				metaDataBuilder.append(sdf.format(platingDate) + ";");
+				metaDataBuilder.append(DateInterpreter.parseDate(platingDate).getBaseDate() + ";");
 				metaDataBuilder.append(set.getString(3) + ";");
 				metaDataBuilder.append(set.getString(4) + ";");
 				metaDataBuilder.append(set.getString(5) + ";");
 				metaDataBuilder.append(set.getString(6) + ";");
-				metaDataBuilder.append("?;?;?;?;?;");
+				
+				query = "SELECT passage.timestamp, passage.p\n" +
+						"FROM passage,\n" +
+						"     experiment\n" +
+						"WHERE passage.experiment_id = experiment.id\n" +
+						"  AND experiment.name = '" + experimentName + "'\n" +
+						"ORDER BY passage.p\n" +
+						"LIMIT 2";
+				ResultSet passageSet = queryExecutor.executeQuery(query);
+				for (int j = 0; j < 2; j++) {
+					String passageTimestamp = "?";
+					String passageP = "?";
+					if (passageSet.next()) {
+						long resultTimestamp = passageSet.getLong(1);
+						
+						passageTimestamp = DateInterpreter.parseDate(resultTimestamp).getBaseDate();
+						passageP = String.valueOf(passageSet.getDouble(2));
+					}
+					
+					metaDataBuilder.append(passageTimestamp + ";" + passageP + ";");
+				}
+				
 				metaDataBuilder.append(set.getString(7) + ";");
 				metaDataBuilder.append(set.getString(8) + ";");
 				metaDataBuilder.append(set.getString(9) + ";");
-				metaDataBuilder.append("?;?;?;?;?;?;?;?;?;");
+				metaDataBuilder.append(set.getString(10) + ";");
+				metaDataBuilder.append(set.getString(11) + ";");
+				metaDataBuilder.append("?;?;?;?;?;?;");
+				metaDataBuilder.append(set.getString(12) + ";");
+				metaDataBuilder.append(set.getString(13) + ";");
 				
-				Log.i(metaDataBuilder.toString());
+				//Log.i(metaDataBuilder.toString());
 				//outTextLines.add(metaDataBuilder.toString());
 				
 				query = "SELECT DISTINCT well.name\n" +
@@ -181,23 +211,31 @@ public class CompactExperimentSheetExporter extends SheetExporterCompatManager {
 			addError("Failed to set up export sheet: " + e.getMessage());
 		}
 		
+		Collections.sort(runnerList);
 		service.shutdown();
 		while (!service.isTerminated()) {
 			int terminatedCount = 0;
+			ArrayList<String> tempLinesList = new ArrayList<>();
+			
 			for (CompactExperimentSheetRunner runner : runnerList) {
+				tempLinesList.addAll(runner.getResultRows());
 				if (runner.isTerminated()) terminatedCount++;
+			}
+			try {
+				fileManager.saveListFile(tempLinesList, outFile, false);
+			} catch (IOException e) {
+				e.printStackTrace();
 			}
 			
 			double p = (double) terminatedCount / (double) runnerList.size();
 			Log.i("Waiting for threads... Finished: " + terminatedCount + "/" + runnerList.size() + " [" + (int) (p * 100) + "%]");
 			try {
-				Thread.sleep(100000);
+				Thread.sleep(20000);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
 		}
 		
-		Collections.sort(runnerList);
 		for (CompactExperimentSheetRunner runner : runnerList) {
 			outTextLines.addAll(runner.getResultRows());
 		}

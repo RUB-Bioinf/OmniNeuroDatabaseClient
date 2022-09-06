@@ -1,5 +1,6 @@
 package de.rub.bph.omnineuro.client;
 
+import de.rub.bph.omnineuro.client.core.sheet.data.DateInterpreter;
 import de.rub.bph.omnineuro.client.imported.log.Log;
 import de.rub.bph.omnineuro.client.ui.DialogFrame;
 import de.rub.bph.omnineuro.client.ui.OmniFrame;
@@ -24,6 +25,9 @@ public class Client {
 				e.printStackTrace();
 			}
 			Log.i("Initialling Client Frame");
+			
+			DateInterpreter.initMonthMap();
+			
 			new OmniFrame();
 		});
 	}

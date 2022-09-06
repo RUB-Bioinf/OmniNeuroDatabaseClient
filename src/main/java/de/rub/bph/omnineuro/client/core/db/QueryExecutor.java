@@ -254,6 +254,10 @@ public class QueryExecutor {
 		return restartSequence(tableName + "_id_seq");
 	}
 	
+	public synchronized boolean updateTable(String tableName, String columnName, String newEntry, long id) throws SQLException {
+		return execute("UPDATE " + tableName + " SET " + columnName + " = " + newEntry + " WHERE id = " + id + ";");
+	}
+	
 	public boolean deleteTable(String tableName, boolean resetSequence) throws SQLException {
 		if (resetSequence) {
 			return deleteTable(tableName, tableName + "_id_seq");

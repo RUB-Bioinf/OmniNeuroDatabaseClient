@@ -21,7 +21,11 @@ public abstract class SheetReaderTask extends SheetReader {
 	public abstract JSONObject readSheet() throws JSONException, SheetReaderException;
 	
 	public void addRowPair(JSONObject data, int line, boolean forceNumeric) throws SheetReaderException, JSONException {
-		data.put(getValueAt("A" + line, false), getValueAt("B" + line, forceNumeric));
+		addRowPair(data, line, forceNumeric, "A", "B");
+	}
+	
+	public void addRowPair(JSONObject data, int line, boolean forceNumeric, String keyChar, String valueChar) throws SheetReaderException, JSONException {
+		data.put(getValueAt(keyChar + line, false), getValueAt(valueChar + line, forceNumeric));
 	}
 	
 	public String getFileName() {

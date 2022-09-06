@@ -29,9 +29,13 @@ public class OmniNeuroQueryExecutor extends QueryExecutor {
 		return execute("INSERT INTO well VALUES (DEFAULT, '" + name + "');");
 	}
 	
-	public synchronized boolean insertExperiment(long id, long timestamp, String name, long projectID, long labID, long individualID, long compoundID, long cellTypeID, long assayID, long plateFormatID) throws SQLException {
+	public synchronized boolean insertPassage(long experimentID, long timestamp, int p) throws SQLException {
+		return execute("INSERT INTO passage VALUES (DEFAULT, " + experimentID + "," + timestamp + "," + p + ");");
+	}
+	
+	public synchronized boolean insertExperiment(long id, long timestamp, String name, long projectID, long labID, long individualID, long compoundID, long cellTypeID, long assayID, long plateFormatID, long solventID, double solventConcentration, String controlWellID) throws SQLException {
 		return execute("INSERT INTO experiment VALUES (" + id + "," + timestamp + ",'" + name + "'," + projectID +
-				"," + labID + "," + individualID + "," + compoundID + "," + cellTypeID + "," + assayID + "," + plateFormatID + ");");
+				"," + labID + "," + individualID + "," + compoundID + "," + cellTypeID + "," + assayID + "," + plateFormatID + "," + solventID + "," + solventConcentration + ", '" + controlWellID + "');");
 	}
 	
 	public synchronized boolean insertCompound(String name, String casNR, String abbreviation, boolean blinded) throws SQLException {
@@ -43,6 +47,7 @@ public class OmniNeuroQueryExecutor extends QueryExecutor {
 		b &= deleteTable("comment", true);
 		b &= deleteTable("response", true);
 		b &= deleteTable("concentration", true);
+		b &= deleteTable("passage", true);
 		b &= deleteTable("experiment", true);
 		b &= deleteTable("well", true);
 		b &= deleteBlindedCompounds();
